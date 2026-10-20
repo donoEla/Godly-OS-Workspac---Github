@@ -13,16 +13,17 @@ import {
 } from 'lucide-react';
 import { AppId } from '../../types/os';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 const PINNED_APPS: { id: AppId; name: string; category: string; icon: string }[] = [
-  { id: 'app-store',    name: 'Godly Store',   category: 'Hub',     icon: '/assets/icons/app-store.jpg' },
-  { id: 'terminal',     name: 'Terminal',       category: 'Dev',     icon: '/assets/icons/terminal.jpg' },
-  { id: 'notes',        name: 'Notes Studio',   category: 'Work',    icon: '/assets/icons/notes.jpg' },
-  { id: 'spotify',      name: 'Music',          category: 'Media',   icon: '/assets/icons/spotify.jpg' },
-  { id: 'file-manager', name: 'Files',          category: 'System',  icon: '/assets/icons/file-manager.jpg' },
-  { id: 'games',        name: 'Arcade',         category: 'Gaming',  icon: '/assets/icons/games.jpg' },
-  { id: 'calculator',   name: 'Calculator',     category: 'Utility', icon: '/assets/icons/calculator.jpg' },
-  { id: 'settings',     name: 'Settings',       category: 'System',  icon: '/assets/icons/settings.jpg' },
+  { id: 'app-store',    name: 'Godly Store',   category: 'Hub',     icon: getAssetUrl('assets/icons/app-store.jpg') },
+  { id: 'terminal',     name: 'Terminal',       category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
+  { id: 'notes',        name: 'Notes Studio',   category: 'Work',    icon: getAssetUrl('assets/icons/notes.jpg') },
+  { id: 'spotify',      name: 'Music',          category: 'Media',   icon: getAssetUrl('assets/icons/spotify.jpg') },
+  { id: 'file-manager', name: 'Files',          category: 'System',  icon: getAssetUrl('assets/icons/file-manager.jpg') },
+  { id: 'games',        name: 'Arcade',         category: 'Gaming',  icon: getAssetUrl('assets/icons/games.jpg') },
+  { id: 'calculator',   name: 'Calculator',     category: 'Utility', icon: getAssetUrl('assets/icons/calculator.jpg') },
+  { id: 'settings',     name: 'Settings',       category: 'System',  icon: getAssetUrl('assets/icons/settings.jpg') },
 ];
 
 export const StartMenu: React.FC = () => {
@@ -161,7 +162,7 @@ export const StartMenu: React.FC = () => {
                     boxShadow: '0 4px 16px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.10)',
                   }}
                 >
-                  <img src={app.icon} alt={app.name} className="w-full h-full object-cover" draggable={false} />
+                  <img src={getAssetUrl(app.icon)} alt={app.name} className="w-full h-full object-cover" draggable={false} />
                 </div>
                 <span className="text-[11px] font-medium text-center leading-tight truncate max-w-full" style={{ color: 'rgba(255,255,255,0.85)' }}>
                   {app.name}

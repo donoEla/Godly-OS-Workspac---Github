@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/assets/icons/settings.jpg" />
+    <link rel="icon" type="image/jpeg" href="./assets/icons/settings.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Godly OS — Divine Browser Operating System</title>
     <meta name="description" content="A breathtaking, production-quality browser-based luxury operating system with window management, interactive apps, and fluid motion." />
@@ -16,8 +16,8 @@
     <script src="./uv/uv.bundle.js"></script>
     <script src="./uv/uv.config.js"></script>
     <script src="./baremux/index.js"></script>
-    <!-- Lumin SDK -->
-    <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js" crossorigin="anonymous"></script>
+    <!-- Lumin SDK (Asynchronous with fallback) -->
+    <script async src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js" crossorigin="anonymous"></script>
   </head>
   <body class="overflow-hidden select-none bg-black text-slate-100 font-sans antialiased m-0 p-0">
     <div id="root" class="w-screen h-screen overflow-hidden"></div>

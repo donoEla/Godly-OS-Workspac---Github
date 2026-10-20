@@ -2,6 +2,7 @@ import React from 'react';
 import { AppId } from '../../types/os';
 import { useOS } from '../../context/OSContext';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface DesktopIconProps {
   id: string;
@@ -48,6 +49,8 @@ export const DesktopIcon: React.FC<DesktopIconProps> = ({
     openContextMenu(e, 'item', { id, name });
   };
 
+  const resolvedIcon = getAssetUrl(icon);
+
   return (
     <div
       onClick={handleClick}
@@ -68,7 +71,7 @@ export const DesktopIcon: React.FC<DesktopIconProps> = ({
         }}
       >
         <img
-          src={icon}
+          src={resolvedIcon}
           alt={name}
           className="w-full h-full object-cover"
           draggable={false}

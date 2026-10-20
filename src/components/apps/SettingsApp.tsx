@@ -27,6 +27,7 @@ import { WALLPAPERS, ACCENT_CONFIGS, CLOAK_PRESETS } from '../../constants/asset
 import { AccentColor } from '../../types/os';
 import { sound } from '../../utils/sound';
 import { getActiveWispUrl, setActiveWispUrl, WISP_ENDPOINTS } from '../../utils/uvProxy';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 type SettingsSection = 'wallpapers' | 'appearance' | 'proxy' | 'desktop' | 'stealth' | 'display' | 'sound' | 'performance' | 'about';
 
@@ -175,12 +176,12 @@ export const SettingsApp: React.FC = () => {
             {/* Thumbnail Grid of Real Backgrounds */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {filteredWallpapers.map((wp) => {
-                const isSelected = settings.wallpaper === wp.path;
+                const isSelected = getAssetUrl(settings.wallpaper) === getAssetUrl(wp.path);
                 return (
                   <div
                     key={wp.id}
                     onClick={() => {
-                      setWallpaper(wp.path);
+                      setWallpaper(getAssetUrl(wp.path));
                       addNotification('Wallpaper Changed', `Applied "${wp.name}" to desktop.`, 'success');
                     }}
                     className={`group relative rounded-2xl overflow-hidden border cursor-pointer aspect-video transition-all duration-300 ${
@@ -189,7 +190,7 @@ export const SettingsApp: React.FC = () => {
                         : 'border-white/10 hover:border-purple-400/40 hover:scale-[1.02] hover:shadow-lg'
                     }`}
                   >
-                    <img src={wp.path} alt={wp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={getAssetUrl(wp.path)} alt={wp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-2.5">
                       <span className="text-[11px] font-semibold text-white truncate drop-shadow-sm">{wp.name}</span>
                     </div>
@@ -737,7 +738,7 @@ export const SettingsApp: React.FC = () => {
         {activeSection === 'about' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-purple-950/80 via-indigo-950/70 to-slate-950/90 border border-white/15 rounded-3xl p-7 flex items-center gap-6 shadow-2xl shadow-purple-950/50 backdrop-blur-xl">
-              <img src="/assets/icons/settings.jpg" alt="Godly OS" className="w-20 h-20 rounded-3xl shadow-2xl shadow-purple-500/30 border border-white/20" />
+              <img src={getAssetUrl('assets/icons/settings.jpg')} alt="Godly OS" className="w-20 h-20 rounded-3xl shadow-2xl shadow-purple-500/30 border border-white/20" />
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight">Godly OS — Divine Edition</h2>
                 <p className="text-xs text-purple-300 font-bold font-mono mt-0.5">Version 2.4.0 (Lux-Release)</p>

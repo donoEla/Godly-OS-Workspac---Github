@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { AppId, WindowInstance, SystemSettings, AccentColor, FileItem, NotificationItem, SnapRegion, InstalledApp } from '../types/os';
 import { WALLPAPERS, INITIAL_FILESYSTEM, ACCENT_CONFIGS, CLOAK_PRESETS } from '../constants/assets';
 import { sound } from '../utils/sound';
+import { getAssetUrl } from '../utils/assetHelper';
 
 interface ContextMenuState {
   isOpen: boolean;
@@ -102,7 +103,7 @@ const OSContext = createContext<OSContextType | null>(null);
 const DEFAULT_SETTINGS: SystemSettings = {
   theme: 'dark',
   accentColor: 'violet',
-  wallpaper: WALLPAPERS[0].path,
+  wallpaper: getAssetUrl(WALLPAPERS[0].path),
   wallpaperBlur: 0,
   soundEnabled: true,
   volume: 0.6,
@@ -116,28 +117,28 @@ const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
-  { id: 'spotify-app', name: 'Spotify Cloud', icon: '/assets/icons/spotify.jpg', category: 'Media', appId: 'spotify' },
-  { id: 'octave-stream', name: 'Octave Streaming', icon: '/assets/icons/octave.png?v=3', category: 'Media', url: 'https://octavestreaming.com/' },
-  { id: 'streamflix', name: 'StreamFlix Cinema', icon: '/assets/icons/streamflix.png?v=3', category: 'Media', url: 'https://watch.streamflix.one/' },
-  { id: 'games-arcade', name: 'Godly Arcade', icon: '/assets/icons/games.jpg', category: 'Games', appId: 'games' },
-  { id: 'terminal', name: 'Terminal', icon: '/assets/icons/terminal.jpg', category: 'Utilities', appId: 'terminal' },
-  { id: 'notes-studio', name: 'Notes Studio', icon: '/assets/icons/notes.jpg', category: 'Productivity', appId: 'notes' },
-  { id: 'calculator-pro', name: 'Calculator Pro', icon: '/assets/icons/calculator.jpg', category: 'Utilities', appId: 'calculator' },
-  { id: 'file-manager', name: 'File Manager', icon: '/assets/icons/file-manager.jpg', category: 'System', appId: 'file-manager' },
-  { id: 'app-store', name: 'Godly Store', icon: '/assets/icons/app-store.jpg', category: 'System', appId: 'app-store' },
-  { id: 'settings', name: 'Settings', icon: '/assets/icons/settings.jpg', category: 'System', appId: 'settings' },
+  { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
+  { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
+  { id: 'streamflix', name: 'StreamFlix Cinema', icon: getAssetUrl('assets/icons/streamflix.png?v=3'), category: 'Media', url: 'https://watch.streamflix.one/' },
+  { id: 'games-arcade', name: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'games' },
+  { id: 'terminal', name: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'terminal' },
+  { id: 'notes-studio', name: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), category: 'Productivity', appId: 'notes' },
+  { id: 'calculator-pro', name: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), category: 'Utilities', appId: 'calculator' },
+  { id: 'file-manager', name: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), category: 'System', appId: 'file-manager' },
+  { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
+  { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
 const APP_META: Record<AppId, { title: string; icon: string; width: number; height: number }> = {
-  'app-store': { title: 'Godly Store', icon: '/assets/icons/app-store.jpg', width: 920, height: 640 },
-  'calculator': { title: 'Calculator Pro', icon: '/assets/icons/calculator.jpg', width: 440, height: 600 },
-  'file-manager': { title: 'File Manager', icon: '/assets/icons/file-manager.jpg', width: 880, height: 580 },
-  'games': { title: 'Godly Arcade', icon: '/assets/icons/games.jpg', width: 860, height: 640 },
-  'notes': { title: 'Notes Studio', icon: '/assets/icons/notes.jpg', width: 880, height: 600 },
-  'settings': { title: 'Settings', icon: '/assets/icons/settings.jpg', width: 860, height: 620 },
-  'spotify': { title: 'Spotify Cloud', icon: '/assets/icons/spotify.jpg', width: 920, height: 640 },
-  'terminal': { title: 'Terminal', icon: '/assets/icons/terminal.jpg', width: 780, height: 520 },
-  'web-app': { title: 'Web App', icon: '/assets/icons/settings.jpg', width: 960, height: 660 },
+  'app-store': { title: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), width: 920, height: 640 },
+  'calculator': { title: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), width: 440, height: 600 },
+  'file-manager': { title: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), width: 880, height: 580 },
+  'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 860, height: 640 },
+  'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
+  'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 860, height: 620 },
+  'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
+  'terminal': { title: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), width: 780, height: 520 },
+  'web-app': { title: 'Web App', icon: getAssetUrl('assets/icons/settings.jpg'), width: 960, height: 660 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -145,7 +146,14 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [settings, setSettings] = useState<SystemSettings>(() => {
     try {
       const saved = localStorage.getItem('godly_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.wallpaper) {
+          parsed.wallpaper = getAssetUrl(parsed.wallpaper);
+        }
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+      return DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -162,7 +170,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
       
-      if (saved && version === '3.1') {
+      if (saved && version === '3.2') {
         const list: InstalledApp[] = JSON.parse(saved);
         return list
           .filter((a: any) => a.id !== 'gnmath-leonard')
@@ -171,11 +179,11 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
             if (def) {
               return { ...app, icon: def.icon, name: def.name, url: def.url };
             }
-            return app;
+            return { ...app, icon: getAssetUrl(app.icon) };
           });
       }
       // Migrate old storage: force update default icons and set version
-      localStorage.setItem('godly_apps_version', '3.1');
+      localStorage.setItem('godly_apps_version', '3.2');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
@@ -198,7 +206,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       if (changed) {
         try {
           localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-          localStorage.setItem('godly_apps_version', '3.1');
+          localStorage.setItem('godly_apps_version', '3.2');
         } catch {}
         return updated;
       }
@@ -226,7 +234,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     artist: 'Godly OS Ensemble',
     album: 'Ascension Vol. 1',
     duration: 184,
-    cover: '/assets/backgrounds/kali-ferrofluid-1298846866.jpg',
+    cover: getAssetUrl('assets/backgrounds/kali-ferrofluid-1298846866.jpg'),
     isPlaying: false,
     progress: 42,
   });
@@ -249,7 +257,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       message: 'Luxury browser operating system loaded with full fluid desktop features.',
       time: 'Just now',
       type: 'info',
-      icon: '/assets/icons/settings.jpg',
+      icon: getAssetUrl('assets/icons/settings.jpg'),
     },
   ]);
 
@@ -363,7 +371,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         link.rel = 'icon';
         document.head.appendChild(link);
       }
-      link.href = '/assets/icons/app-store.jpg';
+      link.href = getAssetUrl('assets/icons/app-store.jpg');
       updateSettings({ activeCloak: null });
       return;
     }

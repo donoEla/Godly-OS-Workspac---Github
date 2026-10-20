@@ -23,6 +23,7 @@ import {
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 import { encodeUvUrl } from '../../utils/uvProxy';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 declare global {
   interface Window {
@@ -224,7 +225,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   // Load Game Vault games once on mount
   useEffect(() => {
     let mounted = true;
-    fetch('/local_games.json')
+    fetch(getAssetUrl('local_games.json'))
       .then((res) => res.json())
       .then((data: LocalGame[]) => {
         if (mounted) {
@@ -244,7 +245,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   // Load GN-Math games once on mount
   useEffect(() => {
     let mounted = true;
-    fetch('/gn_math_games.json')
+    fetch(getAssetUrl('gn_math_games.json'))
       .then((res) => res.json())
       .then((data: GNMathGame[]) => {
         if (mounted) {
@@ -759,7 +760,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <button
                       onClick={() => {
                         sound.playClick();
-                        window.open(activeVaultGame.url, '_blank');
+                        window.open(getAssetUrl(activeVaultGame.url), '_blank');
                       }}
                       className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
                       title="Popout Window"
@@ -773,7 +774,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <iframe
                     ref={gameFrameRef}
                     key={vaultRefreshKey}
-                    src={activeVaultGame.url}
+                    src={getAssetUrl(activeVaultGame.url)}
                     title={activeVaultGame.title}
                     className="w-full h-full border-0 bg-black"
                     allow="autoplay; fullscreen; gamepad; focus-without-user-activation *"

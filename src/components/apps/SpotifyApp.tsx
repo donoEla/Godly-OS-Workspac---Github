@@ -26,6 +26,7 @@ import {
 import { sound } from '../../utils/sound';
 import { useOS } from '../../context/OSContext';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface Track {
   id: string;
@@ -46,7 +47,7 @@ const PLAYLIST: Track[] = [
     artist: 'Godly OS Ensemble',
     album: 'Ascension Vol. 1',
     duration: 184,
-    cover: '/assets/backgrounds/kali-ferrofluid-1298846866.jpg',
+    cover: getAssetUrl('assets/backgrounds/kali-ferrofluid-1298846866.jpg'),
     genre: 'Ambient Synth',
     frequencies: [220, 277.18, 329.63, 440],
     lyrics: [
@@ -64,7 +65,7 @@ const PLAYLIST: Track[] = [
     artist: 'Celestial Echoes',
     album: 'Starlight Dreamer',
     duration: 210,
-    cover: '/assets/backgrounds/wp4906049-566896159.jpg',
+    cover: getAssetUrl('assets/backgrounds/wp4906049-566896159.jpg'),
     genre: 'Synthwave',
     frequencies: [261.63, 329.63, 392.00, 523.25],
     lyrics: [
@@ -82,7 +83,7 @@ const PLAYLIST: Track[] = [
     artist: 'Void Walker',
     album: 'Deep Frequency',
     duration: 165,
-    cover: '/assets/backgrounds/Cr2viQw-255237102.jpg',
+    cover: getAssetUrl('assets/backgrounds/Cr2viQw-255237102.jpg'),
     genre: 'Cyber Lo-Fi',
     frequencies: [174.61, 220.00, 261.63, 349.23],
     lyrics: [
@@ -100,7 +101,7 @@ const PLAYLIST: Track[] = [
     artist: 'Prism Velocity',
     album: 'Hyperlight 2049',
     duration: 198,
-    cover: '/assets/backgrounds/KwLOdlh-2592565610.jpg',
+    cover: getAssetUrl('assets/backgrounds/KwLOdlh-2592565610.jpg'),
     genre: 'Retrowave',
     frequencies: [329.63, 415.30, 493.88, 659.25],
     lyrics: [
@@ -118,7 +119,7 @@ const PLAYLIST: Track[] = [
     artist: 'Antigravity Architect',
     album: 'Singularity Hymns',
     duration: 240,
-    cover: '/assets/backgrounds/50694-1188339185.jpg',
+    cover: getAssetUrl('assets/backgrounds/50694-1188339185.jpg'),
     genre: 'Chamber Ambient',
     frequencies: [196.00, 246.94, 293.66, 392.00],
     lyrics: [
@@ -585,7 +586,7 @@ export const SpotifyApp: React.FC = () => {
                       </div>
 
                       <div className="relative z-10 w-full h-full rounded-3xl overflow-hidden border border-white/20 shadow-2xl shadow-black/90">
-                        <img src={currentTrack.cover} alt={currentTrack.title} className="w-full h-full object-cover" />
+                        <img src={getAssetUrl(currentTrack.cover)} alt={currentTrack.title} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       </div>
                     </div>
@@ -677,7 +678,7 @@ export const SpotifyApp: React.FC = () => {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <img src={track.cover} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                          <img src={getAssetUrl(track.cover)} alt="" className="w-10 h-10 rounded-xl object-cover" />
                           <div>
                             <div className="text-xs text-white">{track.title}</div>
                             <div className="text-[10px] text-slate-400">{track.artist}</div>
@@ -721,7 +722,7 @@ export const SpotifyApp: React.FC = () => {
                             : 'hover:bg-white/[0.06] text-slate-300 border border-transparent'
                         }`}
                       >
-                        <img src={t.cover} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                        <img src={getAssetUrl(t.cover)} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <div className="text-xs truncate">{t.title}</div>
                           <div className="text-[10px] text-slate-400 truncate">{t.artist}</div>

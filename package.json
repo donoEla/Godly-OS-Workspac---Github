@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "homepage": "./",
+  "main": "dist/index.html",
+  "jsdelivr": "dist/assets/index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",

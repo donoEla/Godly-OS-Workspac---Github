@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useOS } from '../../context/OSContext';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface Dot {
   ox: number;
@@ -25,7 +26,7 @@ export const ParticleCanvas: React.FC = () => {
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = settings.wallpaper;
+    img.src = getAssetUrl(settings.wallpaper);
     wallpaperImgRef.current = img;
 
     img.onload = () => {

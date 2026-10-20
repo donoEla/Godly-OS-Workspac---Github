@@ -302,4 +302,13 @@ function godlyOsProxyPlugin(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), godlyOsProxyPlugin()],
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
+    },
+  },
 })

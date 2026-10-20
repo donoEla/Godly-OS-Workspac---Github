@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AppId } from '../../types/os';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface PinnedTaskbarItem {
   id: AppId;
@@ -19,14 +20,14 @@ interface PinnedTaskbarItem {
 }
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
-  { id: 'app-store',    name: 'Godly Store',  icon: '/assets/icons/app-store.jpg' },
-  { id: 'terminal',     name: 'Terminal',     icon: '/assets/icons/terminal.jpg' },
-  { id: 'notes',        name: 'Notes',        icon: '/assets/icons/notes.jpg' },
-  { id: 'spotify',      name: 'Music',        icon: '/assets/icons/spotify.jpg' },
-  { id: 'file-manager', name: 'Files',        icon: '/assets/icons/file-manager.jpg' },
-  { id: 'games',        name: 'Arcade',       icon: '/assets/icons/games.jpg' },
-  { id: 'calculator',   name: 'Calculator',   icon: '/assets/icons/calculator.jpg' },
-  { id: 'settings',     name: 'Settings',     icon: '/assets/icons/settings.jpg' },
+  { id: 'app-store',    name: 'Godly Store',  icon: getAssetUrl('assets/icons/app-store.jpg') },
+  { id: 'terminal',     name: 'Terminal',     icon: getAssetUrl('assets/icons/terminal.jpg') },
+  { id: 'notes',        name: 'Notes',        icon: getAssetUrl('assets/icons/notes.jpg') },
+  { id: 'spotify',      name: 'Music',        icon: getAssetUrl('assets/icons/spotify.jpg') },
+  { id: 'file-manager', name: 'Files',        icon: getAssetUrl('assets/icons/file-manager.jpg') },
+  { id: 'games',        name: 'Arcade',       icon: getAssetUrl('assets/icons/games.jpg') },
+  { id: 'calculator',   name: 'Calculator',   icon: getAssetUrl('assets/icons/calculator.jpg') },
+  { id: 'settings',     name: 'Settings',     icon: getAssetUrl('assets/icons/settings.jpg') },
 ];
 
 export const Taskbar: React.FC = () => {
@@ -207,7 +208,7 @@ export const Taskbar: React.FC = () => {
                   }}
                 >
                   <img
-                    src={item.icon}
+                    src={getAssetUrl(item.icon)}
                     alt={item.name}
                     className="w-full h-full object-cover"
                     draggable={false}

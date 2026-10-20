@@ -3,6 +3,7 @@ import { useOS } from '../../context/OSContext';
 import { DesktopIcon } from './DesktopIcon';
 import { DesktopContextMenu } from './DesktopContextMenu';
 import { ParticleCanvas } from './ParticleCanvas';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 export const Desktop: React.FC = () => {
   const { 
@@ -33,13 +34,15 @@ export const Desktop: React.FC = () => {
     openContextMenu(e, 'desktop');
   };
 
+  const wallpaperUrl = getAssetUrl(settings.wallpaper);
+
   return (
     <div
       onClick={handleDesktopClick}
       onContextMenu={handleDesktopContextMenu}
       className="relative w-full h-full overflow-hidden select-none"
       style={{
-        backgroundImage: `url("${encodeURI(settings.wallpaper)}")`,
+        backgroundImage: `url("${encodeURI(wallpaperUrl)}")`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

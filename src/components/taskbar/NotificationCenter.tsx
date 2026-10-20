@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOS } from '../../context/OSContext';
 import { Bell, X, Info, CheckCircle, AlertTriangle, AlertCircle, Trash2 } from 'lucide-react';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 const PANEL_STYLES = {
   background: 'rgba(8, 8, 14, 0.94)',
@@ -68,7 +69,7 @@ export const NotificationCenter: React.FC = () => {
 
               <div className="flex-shrink-0 mt-0.5 ml-1.5">
                 {notif.icon ? (
-                  <img src={notif.icon} alt="" className="w-5 h-5 rounded-lg object-cover" style={{ border: '1px solid rgba(255,255,255,0.10)' }} />
+                  <img src={getAssetUrl(notif.icon)} alt="" className="w-5 h-5 rounded-lg object-cover" style={{ border: '1px solid rgba(255,255,255,0.10)' }} />
                 ) : getIcon(notif.type)}
               </div>
 

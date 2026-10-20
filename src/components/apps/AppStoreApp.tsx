@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface StoreApp {
   id: string;
@@ -58,7 +59,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'StreamFlix Network',
     rating: 4.9,
     reviews: '64.8K',
-    icon: '/assets/icons/streamflix.png?v=3',
+    icon: getAssetUrl('assets/icons/streamflix.png?v=3'),
     description: 'High-definition on-demand cinematic movies and series streaming via Ultraviolet proxy.',
     isInstalled: true,
     embedUrl: 'https://watch.streamflix.one/',
@@ -71,7 +72,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'Octave Media',
     rating: 4.8,
     reviews: '31.2K',
-    icon: '/assets/icons/octave.png?v=3',
+    icon: getAssetUrl('assets/icons/octave.png?v=3'),
     description: 'High-fidelity audio streaming, albums, and curated playlists seamlessly routed through Ultraviolet SW.',
     isInstalled: true,
     embedUrl: 'https://octavestreaming.com/',
@@ -84,7 +85,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'Godly Core Archive',
     rating: 5.0,
     reviews: '98.4K',
-    icon: '/assets/icons/games.jpg',
+    icon: getAssetUrl('assets/icons/games.jpg'),
     description: 'Vault of 1,567 unblocked standalone HTML5 and waflash games plus GN-Math integration.',
     isInstalled: true,
     appId: 'games',
@@ -98,7 +99,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'Spotify / nowgg.fun',
     rating: 4.9,
     reviews: '128K',
-    icon: '/assets/icons/spotify.jpg',
+    icon: getAssetUrl('assets/icons/spotify.jpg'),
     description: 'Stream music from nowgg.fun Spotify with instant Octave & Synth fallbacks.',
     isInstalled: true,
     appId: 'spotify',
@@ -163,7 +164,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'Godly Core',
     rating: 4.7,
     reviews: '11.5K',
-    icon: '/assets/icons/calculator.jpg',
+    icon: getAssetUrl('assets/icons/calculator.jpg'),
     description: 'Scientific calculator with live 2D Cartesian graphing and function analysis.',
     isInstalled: true,
     appId: 'calculator',
@@ -202,7 +203,7 @@ const STORE_CATALOG: StoreApp[] = [
     developer: 'Lumin Games',
     rating: 4.9,
     reviews: '31.0K',
-    icon: '/assets/icons/games.jpg',
+    icon: getAssetUrl('assets/icons/games.jpg'),
     description: 'Instant playable retro arcade games: 2048, Cyber Snake, and Minesweeper.',
     isInstalled: true,
     appId: 'games',
@@ -275,7 +276,7 @@ export const AppStoreApp: React.FC = () => {
           {/* Top Bar with Frosted Glass */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0 z-20">
             <div className="flex items-center gap-2">
-              <img src={embeddedApp.icon} alt="" className="w-5 h-5 rounded-md object-cover" />
+              <img src={getAssetUrl(embeddedApp.icon)} alt="" className="w-5 h-5 rounded-md object-cover" />
               <span className="text-xs font-bold text-white font-mono">{embeddedApp.name}</span>
             </div>
             <button
@@ -356,7 +357,7 @@ export const AppStoreApp: React.FC = () => {
               </div>
 
               <div className="relative z-10 hidden sm:block w-36 h-36 rounded-3xl overflow-hidden border border-white/20 shadow-2xl shadow-purple-950/60 group">
-                <img src={catalog[0].icon} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={getAssetUrl(catalog[0].icon)} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
             </div>
 
@@ -390,7 +391,7 @@ export const AppStoreApp: React.FC = () => {
                   <div>
                     <div className="flex items-start gap-4">
                       <img
-                        src={app.icon}
+                        src={getAssetUrl(app.icon)}
                         alt={app.name}
                         className="w-14 h-14 rounded-2xl object-cover border border-white/15 shadow-lg group-hover:scale-105 transition-transform duration-300 flex-shrink-0"
                       />
@@ -461,7 +462,7 @@ export const AppStoreApp: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-4">
-                  <img src={activeAppModal.icon} alt="" className="w-16 h-16 rounded-2xl object-cover border border-white/20 shadow-xl" />
+                  <img src={getAssetUrl(activeAppModal.icon)} alt="" className="w-16 h-16 rounded-2xl object-cover border border-white/20 shadow-xl" />
                   <div>
                     <h3 className="text-lg font-bold text-white">{activeAppModal.name}</h3>
                     <p className="text-xs text-purple-400">{activeAppModal.developer}</p>

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Minus, Square, X, Copy } from 'lucide-react';
 import { WindowInstance } from '../../types/os';
 import { useOS } from '../../context/OSContext';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -268,7 +269,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-20">
           <div className="flex items-center gap-1.5 min-w-0">
             <img
-              src={win.icon}
+              src={getAssetUrl(win.icon)}
               alt=""
               className="w-3.5 h-3.5 rounded-md object-cover flex-shrink-0"
               style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }}

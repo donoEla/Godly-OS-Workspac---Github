@@ -8,7 +8,13 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+dist/*
+!dist/index.html
+!dist/404.html
+!dist/assets/
+dist/assets/*
+!dist/assets/index.js
+!dist/assets/index.css
 dist-ssr
 *.local
 

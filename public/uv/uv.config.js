@@ -11,16 +11,18 @@
               self.location.pathname.lastIndexOf("/"),
           );
 
+    let fullPrefix = (loc ? loc : "") + uvPfx + "service/";
+
     self.__uv$config = {
-        prefix: uvPfx + "service/",
+        prefix: fullPrefix,
         encodeUrl: Ultraviolet.codec.xor.encode,
         decodeUrl: Ultraviolet.codec.xor.decode,
-        handler: loc + uvPfx + "uv.handler.js",
-        client: loc + uvPfx + "uv.client.js",
-        bundle: loc + uvPfx + "uv.bundle.js",
-        config: loc + uvPfx + "uv.config.js",
-        sw: loc + uvPfx + "uv.sw.js",
-        stockSW: loc + uvPfx + "sw.js",
+        handler: (loc ? loc : "") + uvPfx + "uv.handler.js",
+        client: (loc ? loc : "") + uvPfx + "uv.client.js",
+        bundle: (loc ? loc : "") + uvPfx + "uv.bundle.js",
+        config: (loc ? loc : "") + uvPfx + "uv.config.js",
+        sw: (loc ? loc : "") + uvPfx + "uv.sw.js",
+        stockSW: (loc ? loc : "") + uvPfx + "sw.js",
         loc: loc,
     };
 })();

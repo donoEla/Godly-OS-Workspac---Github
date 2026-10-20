@@ -18,6 +18,7 @@ declare global {
       bundle: string;
       config: string;
       sw: string;
+      loc?: string;
     };
     Ultraviolet?: {
       codec: {
@@ -71,17 +72,33 @@ export function getActiveWispUrl(): string {
   }
 }
 
+export function getBasePrefix(): string {
+  if (typeof window !== 'undefined') {
+    if (window.__uv$config?.loc) {
+      return window.__uv$config.loc.replace(/\/$/, '');
+    }
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    // If running under GitHub Pages subpath e.g. /Godly-OS-Workspac---Github/
+    if (parts.length > 0 && !['uv', 'assets', 'local-games', 'epoxy', 'baremux', 'index.html'].includes(parts[0])) {
+      return '/' + parts[0];
+    }
+  }
+  return '';
+}
+
 export async function setActiveWispUrl(url: string) {
   try {
     localStorage.setItem('godly_wisp_url', url);
   } catch {}
   if (connectionInstance) {
+    const base = getBasePrefix();
     try {
-      await connectionInstance.setTransport('/epoxy/index.mjs', [{ wisp: url }]);
+      await connectionInstance.setTransport(`${base}/epoxy/index.mjs`, [{ wisp: url }]);
       console.log('[Godly UV-Static 2.0] Switched Epoxy transport to:', url);
     } catch {
       try {
-        await connectionInstance.setTransport('/libcurl/index.mjs', [{ websocket: url, wisp: url }]);
+        await connectionInstance.setTransport(`${base}/libcurl/index.mjs`, [{ websocket: url, wisp: url }]);
       } catch (err) {
         console.warn('[Godly UV] Failed to re-bind transport:', err);
       }
@@ -108,13 +125,16 @@ export async function initUvProxy(): Promise<boolean> {
   }
 
   isInitializing = true;
+  const base = getBasePrefix();
 
   try {
     // 1. Register Ultraviolet Service Worker from UV-Static-2.0
     if ('serviceWorker' in navigator) {
       try {
-        const reg = await navigator.serviceWorker.register('/uv/sw.js', {
-          scope: '/uv/',
+        const swPath = `${base}/uv/sw.js`;
+        const swScope = `${base}/uv/`;
+        const reg = await navigator.serviceWorker.register(swPath, {
+          scope: swScope,
         });
         console.log('[Godly UV-Static 2.0] Service Worker registered:', reg.scope);
       } catch (swErr) {
@@ -124,18 +144,21 @@ export async function initUvProxy(): Promise<boolean> {
 
     // 2. Initialize BareMux Connection with Epoxy Transport (UV-Static 2.0)
     if (window.BareMux) {
-      connectionInstance = new window.BareMux.BareMuxConnection('/baremux/worker.js');
+      const workerPath = `${base}/baremux/worker.js`;
+      connectionInstance = new window.BareMux.BareMuxConnection(workerPath);
       const wisp = getActiveWispUrl();
+      const epoxyPath = `${base}/epoxy/index.mjs`;
       try {
         const currentTransport = await connectionInstance.getTransport();
-        if (currentTransport !== '/epoxy/index.mjs') {
-          await connectionInstance.setTransport('/epoxy/index.mjs', [{ wisp }]);
+        if (currentTransport !== epoxyPath) {
+          await connectionInstance.setTransport(epoxyPath, [{ wisp }]);
         }
         console.log('[Godly UV-Static 2.0] BareMux connected with Epoxy transport to:', wisp);
       } catch (epoxyErr) {
         console.warn('[Godly UV-Static 2.0] Epoxy transport failed, falling back to libcurl:', epoxyErr);
         try {
-          await connectionInstance.setTransport('/libcurl/index.mjs', [{ websocket: wisp, wisp }]);
+          const curlPath = `${base}/libcurl/index.mjs`;
+          await connectionInstance.setTransport(curlPath, [{ websocket: wisp, wisp }]);
         } catch (curlErr) {
           console.warn('[Godly UV-Static 2.0] Libcurl fallback failed:', curlErr);
         }
@@ -178,19 +201,22 @@ export function encodeUvUrl(rawUrl: string): string {
     url = 'https://' + url;
   }
 
+  const base = getBasePrefix();
+  const defaultPrefix = `${base}/uv/service/`;
+
   try {
     if (window.__uv$config && typeof window.__uv$config.encodeUrl === 'function') {
-      const prefix = window.__uv$config.prefix || '/uv/service/';
+      const prefix = window.__uv$config.prefix || defaultPrefix;
       return prefix + window.__uv$config.encodeUrl(url);
     }
     if (window.Ultraviolet?.codec?.xor?.encode) {
-      return '/uv/service/' + window.Ultraviolet.codec.xor.encode(url);
+      return defaultPrefix + window.Ultraviolet.codec.xor.encode(url);
     }
   } catch (e) {
     console.warn('[Godly UV] Encoder fallback invoked', e);
   }
 
-  return '/uv/service/' + fallbackXorEncode(url);
+  return defaultPrefix + fallbackXorEncode(url);
 }
 
 export function decodeUvUrl(encodedPath: string): string {

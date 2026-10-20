@@ -9,7 +9,8 @@ export type AppId =
   | 'settings'
   | 'spotify'
   | 'terminal'
-  | 'web-app';
+  | 'web-app'
+  | 'zen';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 

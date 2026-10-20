@@ -117,6 +117,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
+  { id: 'zen-browser', name: 'Zen Browser', icon: getAssetUrl('assets/icons/zen.jpg'), category: 'Productivity', appId: 'zen' },
   { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
   { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
   { id: 'streamflix', name: 'StreamFlix Cinema', icon: getAssetUrl('assets/icons/streamflix.png?v=3'), category: 'Media', url: 'https://watch.streamflix.one/' },
@@ -139,6 +140,7 @@ const APP_META: Record<AppId, { title: string; icon: string; width: number; heig
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
   'terminal': { title: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), width: 780, height: 520 },
   'web-app': { title: 'Web App', icon: getAssetUrl('assets/icons/settings.jpg'), width: 960, height: 660 },
+  'zen': { title: 'Zen Browser', icon: getAssetUrl('assets/icons/zen.jpg'), width: 1040, height: 700 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -170,7 +172,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
       
-      if (saved && version === '3.3') {
+      if (saved && version === '3.4') {
         const list: InstalledApp[] = JSON.parse(saved);
         return list
           .filter((a: any) => a.id !== 'gnmath-leonard')
@@ -183,7 +185,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           });
       }
       // Migrate old storage: force update default icons and set version
-      localStorage.setItem('godly_apps_version', '3.3');
+      localStorage.setItem('godly_apps_version', '3.4');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
@@ -195,7 +197,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   useEffect(() => {
     setInstalledApps((prev) => {
       let changed = false;
-      const updated = prev.map((app) => {
+      let updated = prev.map((app) => {
         const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === app.id);
         if (def && app.icon !== def.icon) {
           changed = true;
@@ -203,10 +205,20 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         }
         return app;
       });
+
+      // Ensure Zen Browser is present
+      if (!updated.some((a) => a.id === 'zen-browser')) {
+        const zenDef = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'zen-browser');
+        if (zenDef) {
+          updated = [zenDef, ...updated];
+          changed = true;
+        }
+      }
+
       if (changed) {
         try {
           localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-          localStorage.setItem('godly_apps_version', '3.3');
+          localStorage.setItem('godly_apps_version', '3.4');
         } catch {}
         return updated;
       }

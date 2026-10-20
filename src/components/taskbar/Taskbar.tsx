@@ -20,6 +20,7 @@ interface PinnedTaskbarItem {
 }
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
+  { id: 'zen',          name: 'Zen Browser',  icon: getAssetUrl('assets/icons/zen.jpg') },
   { id: 'app-store',    name: 'Godly Store',  icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'terminal',     name: 'Terminal',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'notes',        name: 'Notes',        icon: getAssetUrl('assets/icons/notes.jpg') },

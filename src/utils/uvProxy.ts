@@ -31,6 +31,71 @@ declare global {
   }
 }
 
+export type SearchEngineId = 'duckduckgo' | 'brave' | 'google';
+
+export interface SearchEngineMeta {
+  id: SearchEngineId;
+  name: string;
+  queryUrl: string;
+  homeUrl: string;
+  tagline: string;
+  badgeColor: string;
+}
+
+export const SEARCH_ENGINES: Record<SearchEngineId, SearchEngineMeta> = {
+  duckduckgo: {
+    id: 'duckduckgo',
+    name: 'DuckDuckGo',
+    queryUrl: 'https://duckduckgo.com/?q=',
+    homeUrl: 'https://duckduckgo.com',
+    tagline: 'Privacy, simplified. No tracking or profile building.',
+    badgeColor: '#DE5833',
+  },
+  brave: {
+    id: 'brave',
+    name: 'Brave Search',
+    queryUrl: 'https://search.brave.com/search?q=',
+    homeUrl: 'https://search.brave.com',
+    tagline: 'Independent index, private AI answers, zero bias.',
+    badgeColor: '#FB542B',
+  },
+  google: {
+    id: 'google',
+    name: 'Google',
+    queryUrl: 'https://www.google.com/search?q=',
+    homeUrl: 'https://www.google.com',
+    tagline: 'Comprehensive global search and real-time knowledge.',
+    badgeColor: '#4285F4',
+  },
+};
+
+export function formatSearchOrUrl(input: string, engine: SearchEngineId = 'duckduckgo'): string {
+  const trimmed = input.trim();
+  if (!trimmed) return SEARCH_ENGINES[engine].homeUrl;
+
+  // Check if it's already an explicit URL
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Check if it's a domain or IP e.g. "github.com", "sub.domain.org/path", "localhost:3000"
+  const isDomainPattern = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/\S*)?$/i.test(trimmed);
+  const isLocalhost = /^localhost(:\d+)?(\/\S*)?$/i.test(trimmed);
+
+  if (isDomainPattern || isLocalhost) {
+    return 'https://' + trimmed;
+  }
+
+  // Treat as search query
+  const meta = SEARCH_ENGINES[engine] || SEARCH_ENGINES.duckduckgo;
+  return `${meta.queryUrl}${encodeURIComponent(trimmed)}`;
+}
+
+export function isServiceWorkerActive(): boolean {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
+  return !!navigator.serviceWorker.controller;
+}
+
 export interface WispEndpoint {
   id: string;
   name: string;
@@ -39,10 +104,9 @@ export interface WispEndpoint {
 }
 
 export const WISP_ENDPOINTS: WispEndpoint[] = [
-  { id: 'mercury', name: 'Mercury Workshop (Official)', url: 'wss://wisp.mercurywork.shop/', region: 'Global Fast (Active 101)' },
-  { id: 'anura', name: 'Anura OS Wisp (High-Speed)', url: 'wss://anura.pro/wisp/', region: 'US/EU (Active 101)' },
-  { id: 'ruby', name: 'Ruby Flamz Wisp', url: 'wss://ruby.flamz.dev/wisp/', region: 'Global' },
-  { id: 'nebula', name: 'Nebula Squid Wisp', url: 'wss://nebula.squid.ink/wisp/', region: 'Global Fast' },
+  { id: 'mercury', name: 'Mercury Workshop (Official)', url: 'wss://wisp.mercurywork.shop/', region: 'Global Fast (101 Active)' },
+  { id: 'flow', name: 'Flow Works Wisp', url: 'wss://wisp.flow-works.me/', region: 'Global Fast' },
+  { id: 'phantom', name: 'Phantom Fun Wisp', url: 'wss://phantom.fun/wisp/', region: 'US/EU' },
 ];
 
 const DEFAULT_WISP = WISP_ENDPOINTS[0].url;
@@ -61,6 +125,9 @@ export function getActiveWispUrl(): string {
         saved.includes('codd70') ||
         saved.includes('tar.black') ||
         saved.includes('unblocker.cc') ||
+        saved.includes('anura.pro') ||
+        saved.includes('ruby.flamz') ||
+        saved.includes('nebula.squid') ||
         saved.includes('tomp.app'))
     ) {
       localStorage.setItem('godly_wisp_url', DEFAULT_WISP);
@@ -107,7 +174,7 @@ export async function setActiveWispUrl(url: string) {
 }
 
 export async function initUvProxy(): Promise<boolean> {
-  if (isReady) return true;
+  if (isReady && isServiceWorkerActive()) return true;
   if (isInitializing) {
     // Wait for ongoing init
     return new Promise((resolve) => {
@@ -120,7 +187,7 @@ export async function initUvProxy(): Promise<boolean> {
       setTimeout(() => {
         clearInterval(check);
         resolve(isReady);
-      }, 3000);
+      }, 3500);
     });
   }
 
@@ -137,6 +204,18 @@ export async function initUvProxy(): Promise<boolean> {
           scope: swScope,
         });
         console.log('[Godly UV-Static 2.0] Service Worker registered:', reg.scope);
+        
+        // Ensure worker is activated
+        if (reg.installing) {
+          await new Promise<void>((resolve) => {
+            const worker = reg.installing;
+            if (!worker) return resolve();
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'activated') resolve();
+            });
+            setTimeout(resolve, 1500);
+          });
+        }
       } catch (swErr) {
         console.warn('[Godly UV-Static 2.0] Service Worker registration note:', swErr);
       }

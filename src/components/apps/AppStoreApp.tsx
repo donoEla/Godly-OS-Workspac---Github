@@ -24,7 +24,7 @@ import { getAssetUrl } from '../../utils/assetHelper';
 interface StoreApp {
   id: string;
   name: string;
-  category: 'Media' | 'Design' | 'Utilities' | 'Games' | 'Dev';
+  category: 'Media' | 'Design' | 'Utilities' | 'Games' | 'Dev' | 'Productivity';
   developer: string;
   rating: number;
   reviews: string;
@@ -38,6 +38,19 @@ interface StoreApp {
 }
 
 const STORE_CATALOG: StoreApp[] = [
+  {
+    id: 'zen-browser-app',
+    name: 'Zen Browser',
+    category: 'Productivity',
+    developer: 'Zen Team & Godly Core',
+    rating: 5.0,
+    reviews: '128.5K',
+    icon: getAssetUrl('assets/icons/zen.jpg'),
+    description: 'Calm, private, multi-engine browser recreation with vertical tabs, workspaces, and proxy search engine selector (DuckDuckGo, Brave, Google).',
+    isInstalled: true,
+    appId: 'zen',
+    features: ['Vertical tabs sidebar', 'DuckDuckGo, Brave & Google switcher', 'Ultraviolet & Direct fallback', 'Speed Dial bookmarks'],
+  },
   {
     id: 'zengs-games-library',
     name: 'Zen GS Cloud Library',

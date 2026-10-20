@@ -25,6 +25,8 @@ import {
 } from '../../utils/uvProxy';
 import { getAssetUrl } from '../../utils/assetHelper';
 
+import { useOS } from '../../context/OSContext';
+
 export type ProxyTunnelMode = 'uv' | 'direct' | 'local';
 
 interface ServiceWorkerAppViewProps {
@@ -46,6 +48,7 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
   onFallback,
   onClose
 }) => {
+  const { openApp } = useOS();
   // Normalize now.gg to nowgg.fun
   const initialUrl = url.includes('now.gg') ? url.replace(/now\.gg/g, 'nowgg.fun') : url;
 
@@ -53,15 +56,18 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
   const [urlInput, setUrlInput] = useState<string>(initialUrl);
   const [iframeSrc, setIframeSrc] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [showTroubleshoot, setShowTroubleshoot] = useState(false);
   const [activeWisp, setActiveWisp] = useState(getActiveWispUrl());
   const [showWispMenu, setShowWispMenu] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
-  // Default to UV-Static 2.0 (Epoxy + Wisp) - NOT auto local SW tunnel
+  // Default to UV-Static 2.0 (Epoxy + Wisp)
   const [tunnelMode, setTunnelMode] = useState<ProxyTunnelMode>('uv');
   const [ping, setPing] = useState(14);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const loadTimerRef = useRef<number | null>(null);
+  const timeoutTimerRef = useRef<number | null>(null);
 
   const isStreamFlix = appName.toLowerCase().includes('streamflix') || currentUrl.includes('streamflix');
   const isOctave = appName.toLowerCase().includes('octave') || currentUrl.includes('octave');
@@ -78,17 +84,28 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    setIframeLoaded(false);
+    setShowTroubleshoot(false);
 
-    // Fast auto-dismiss for top progress bar so proxy never feels stuck
+    // Fast progress bar dismissal
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     loadTimerRef.current = window.setTimeout(() => {
       if (mounted) setLoading(false);
-    }, 1500);
+    }, 2000);
+
+    // Auto-detect if app might be blocked or taking too long (e.g. 4 seconds)
+    if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+    timeoutTimerRef.current = window.setTimeout(() => {
+      if (mounted && !iframeLoaded) {
+        setShowTroubleshoot(true);
+      }
+    }, 4500);
 
     // 1. Direct local game stream
     if (currentUrl.startsWith('/local-games/') || currentUrl.includes('/local-games/')) {
       setIframeSrc(getAssetUrl(currentUrl));
       setLoading(false);
+      setIframeLoaded(true);
       return;
     }
 
@@ -125,12 +142,14 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
     return () => {
       mounted = false;
       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+      if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
     };
   }, [currentUrl, activeWisp, tunnelMode]);
 
   // When iframe loads
   const handleIframeLoad = () => {
     setLoading(false);
+    setIframeLoaded(true);
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
   };
 
@@ -209,6 +228,17 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
     setUrlInput(next);
   };
 
+  // Cycle Wisp Relay
+  const handleCycleWisp = async () => {
+    sound.playClick();
+    const currentIndex = WISP_ENDPOINTS.findIndex((w) => w.url === activeWisp);
+    const nextIndex = (currentIndex + 1) % WISP_ENDPOINTS.length;
+    const nextWisp = WISP_ENDPOINTS[nextIndex].url;
+    await setActiveWispUrl(nextWisp);
+    setActiveWisp(nextWisp);
+    handleReload();
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-[#08080c] text-slate-100 select-none overflow-hidden font-sans">
       {/* Top Glassmorphic Navigation Bar */}
@@ -278,7 +308,7 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
                 >
                   <div>
                     <div className="font-medium">Direct Sandbox</div>
-                    <div className="text-[10px] text-slate-400">No SW proxy (zero overhead)</div>
+                    <div className="text-[10px] text-slate-400">No SW proxy (bypasses SW blocks)</div>
                   </div>
                   {tunnelMode === 'direct' && <Check size={14} className="text-blue-400 flex-shrink-0" />}
                 </button>
@@ -409,6 +439,22 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
             </button>
           )}
 
+          {/* Diagnostics toggle */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              setShowTroubleshoot(!showTroubleshoot);
+            }}
+            className={`p-1.5 rounded-xl border transition-all ${
+              showTroubleshoot
+                ? 'bg-purple-600/30 border-purple-500/50 text-purple-300'
+                : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/10 text-slate-300 hover:text-white'
+            }`}
+            title="Smart Proxy Diagnostics & Fallbacks"
+          >
+            <Sparkles size={13} />
+          </button>
+
           {/* External Launch in New Tab */}
           <button
             onClick={() => {
@@ -445,8 +491,8 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
       </div>
 
       {/* Main Viewport Container */}
-      <div className="flex-1 relative overflow-hidden bg-black/80 flex flex-col">
-        {/* Sleek, Non-Blocking Top Progress Bar (Never locks the screen) */}
+      <div className="flex-1 relative overflow-hidden bg-black/90 flex flex-col">
+        {/* Sleek, Non-Blocking Top Progress Bar */}
         {loading && (
           <div className="absolute top-0 left-0 right-0 h-[2px] z-30 pointer-events-none overflow-hidden bg-white/5">
             <div className="h-full bg-gradient-to-r from-purple-500 via-emerald-400 to-indigo-500 animate-[loading-bar_1.2s_ease-in-out_infinite]" />
@@ -463,6 +509,67 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts allow-downloads"
           />
+        )}
+
+        {/* Floating Diagnostics & Recovery Card (Fixes Black Screen Feedback) */}
+        {showTroubleshoot && (
+          <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 rounded-2xl bg-[#0f121ecc]/95 backdrop-blur-2xl border border-purple-500/30 p-3.5 shadow-2xl z-40 text-xs">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5 text-purple-300 font-semibold font-mono">
+                <Sparkles size={13} className="text-purple-400" />
+                <span>Smart Proxy Diagnostics</span>
+              </div>
+              <button
+                onClick={() => setShowTroubleshoot(false)}
+                className="text-slate-400 hover:text-white px-1.5 py-0.5 rounded-lg text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
+              Black screen? If your current hosting environment (e.g. Wasmer or another web proxy) restricts nested Service Workers, use 1-click fallback:
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={() => handleSetTunnelMode('direct')}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-blue-600/25 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 font-mono text-[11px] font-semibold transition-all"
+                title="Bypass Service Worker proxy and load iframe directly"
+              >
+                <Zap size={12} className="text-blue-400" />
+                Direct Sandbox
+              </button>
+              <button
+                onClick={handleCycleWisp}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-mono text-[11px] font-semibold transition-all"
+                title="Cycle to next verified Wisp relay"
+              >
+                <Server size={12} className="text-purple-400" />
+                Next Wisp Relay
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  openApp('zen', 'Zen Browser', currentUrl);
+                }}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-200 font-mono text-[11px] font-semibold transition-all"
+                title="Open inside the new Zen Browser with search engines"
+              >
+                <Globe size={12} className="text-emerald-400" />
+                Zen Browser
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  window.open(currentUrl, '_blank');
+                }}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-slate-200 font-mono text-[11px] font-semibold transition-all"
+                title="Launch directly in a new browser tab"
+              >
+                <ExternalLink size={12} />
+                Open in Tab
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

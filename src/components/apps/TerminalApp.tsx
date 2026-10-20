@@ -172,6 +172,8 @@ export const TerminalApp: React.FC = () => {
           addLine('error', 'Usage: open <app-name> (e.g., spotify, notes, games, calculator, settings)');
         } else {
           const map: Record<string, AppId> = {
+            zen: 'zen',
+            browser: 'zen',
             spotify: 'spotify',
             music: 'spotify',
             notes: 'notes',

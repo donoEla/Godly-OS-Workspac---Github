@@ -13,6 +13,7 @@ import { NotesApp } from '../apps/NotesApp';
 import { SettingsApp } from '../apps/SettingsApp';
 import { SpotifyApp } from '../apps/SpotifyApp';
 import { TerminalApp } from '../apps/TerminalApp';
+import { ZenBrowserApp } from '../apps/ZenBrowserApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -20,6 +21,10 @@ export const WindowManager: React.FC = () => {
   const { windows } = useOS();
 
   const renderAppContent = (win: any) => {
+    if (win.appId === 'zen') {
+      return <ZenBrowserApp initialUrl={win.customUrl} />;
+    }
+
     if (win.appId === 'games' || win.appId === 'lumin' || win.appId === 'gnmath' || win.appId === 'zengs' || win.customUrl === 'lumin' || win.customUrl === 'gnmath' || win.customUrl === 'zengs' || win.customUrl === 'vault' || win.customUrl === 'nowgg' || win.customUrl === 'retro') {
       const tab =
         win.appId === 'lumin' || win.customUrl === 'lumin'

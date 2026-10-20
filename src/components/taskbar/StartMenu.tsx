@@ -16,6 +16,7 @@ import { sound } from '../../utils/sound';
 import { getAssetUrl } from '../../utils/assetHelper';
 
 const PINNED_APPS: { id: AppId; name: string; category: string; icon: string }[] = [
+  { id: 'zen',          name: 'Zen Browser',   category: 'Web',     icon: getAssetUrl('assets/icons/zen.jpg') },
   { id: 'app-store',    name: 'Godly Store',   category: 'Hub',     icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'terminal',     name: 'Terminal',       category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'notes',        name: 'Notes Studio',   category: 'Work',    icon: getAssetUrl('assets/icons/notes.jpg') },

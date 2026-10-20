@@ -56,12 +56,12 @@ export const DesktopIcon: React.FC<DesktopIconProps> = ({
       onClick={handleClick}
       onDoubleClick={handleOpen}
       onContextMenu={handleContextMenu}
-      className="group flex flex-col items-center justify-center p-2 w-[86px] cursor-pointer select-none transition-all duration-200"
+      className="group flex flex-col items-center justify-center p-2 w-[86px] shrink-0 cursor-pointer select-none transition-all duration-200"
       style={{ borderRadius: 18 }}
     >
       {/* Icon container */}
       <div
-        className="relative w-[54px] h-[54px] overflow-hidden bg-[#0a0a12] transition-all duration-200 group-hover:-translate-y-0.5 group-active:scale-95 flex items-center justify-center"
+        className="relative w-[54px] h-[54px] shrink-0 overflow-hidden bg-[#0a0a12] transition-all duration-200 group-hover:-translate-y-0.5 group-active:scale-95 flex items-center justify-center"
         style={{
           borderRadius: 14,
           boxShadow: isSelected

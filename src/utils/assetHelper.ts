@@ -9,21 +9,40 @@
 export function getAssetUrl(path: string | undefined | null): string {
   if (!path) return '';
 
-  // Return external/data/blob protocols as-is
-  if (
-    path.startsWith('http://') ||
-    path.startsWith('https://') ||
-    path.startsWith('data:') ||
-    path.startsWith('blob:')
-  ) {
+  if (path.startsWith('data:') || path.startsWith('blob:')) {
     return path;
   }
 
-  // Preserve query string if present (e.g. ?v=3)
-  const [basePath, query] = path.split('?');
-  const cleanPath = basePath.startsWith('/') ? basePath.slice(1) : basePath;
+  // If path contains internal assets/ or local-games/, extract relative path to repair any stored duplicated subpaths
+  const internalFolders = ['assets/', 'local-games/', 'uv/', 'baremux/', 'epoxy/'];
+  let assetRelPath: string | null = null;
+  for (const folder of internalFolders) {
+    const idx = path.indexOf('/' + folder);
+    if (idx !== -1) {
+      assetRelPath = path.slice(idx + 1);
+      break;
+    } else if (path.startsWith(folder)) {
+      assetRelPath = path;
+      break;
+    }
+  }
 
-  // If document.baseURI is set (e.g. SVG iframe loader with <base href="...">), resolve against it
+  // If external URL without internal asset path (e.g. Unsplash, external CDN), return as-is
+  if (!assetRelPath && (path.startsWith('http://') || path.startsWith('https://'))) {
+    return path;
+  }
+
+  const target = assetRelPath || path;
+  const [basePath, query] = target.split('?');
+  let cleanPath = basePath.startsWith('/') ? basePath.slice(1) : basePath;
+
+  // Prevent duplicating repo subpath if path already contains it (from storage or nested calls)
+  const repoName = 'Godly-OS-Workspac---Github';
+  while (cleanPath.startsWith(`${repoName}/`)) {
+    cleanPath = cleanPath.slice(repoName.length + 1);
+  }
+
+  // If document.baseURI is set (e.g. GitHub Pages or SVG iframe loader with <base href="...">), resolve against it
   if (typeof document !== 'undefined' && document.baseURI && !document.baseURI.startsWith('about:')) {
     try {
       const url = new URL(cleanPath, document.baseURI).href;

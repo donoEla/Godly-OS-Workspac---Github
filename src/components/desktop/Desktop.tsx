@@ -63,7 +63,7 @@ export const Desktop: React.FC = () => {
       <ParticleCanvas />
 
       {/* Desktop Installed Apps Grid */}
-      <div className="relative z-10 p-6 grid grid-flow-col grid-rows-6 gap-y-4 gap-x-3 w-fit max-h-[calc(100vh-70px)] overflow-y-auto">
+      <div className="relative z-10 p-6 flex flex-col flex-wrap gap-4 max-h-[calc(100vh-80px)] w-fit overflow-x-auto select-none">
         {installedApps.map((app) => (
           <DesktopIcon
             key={app.id}

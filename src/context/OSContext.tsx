@@ -170,7 +170,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
       
-      if (saved && version === '3.2') {
+      if (saved && version === '3.3') {
         const list: InstalledApp[] = JSON.parse(saved);
         return list
           .filter((a: any) => a.id !== 'gnmath-leonard')
@@ -183,7 +183,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           });
       }
       // Migrate old storage: force update default icons and set version
-      localStorage.setItem('godly_apps_version', '3.2');
+      localStorage.setItem('godly_apps_version', '3.3');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
@@ -206,7 +206,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       if (changed) {
         try {
           localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-          localStorage.setItem('godly_apps_version', '3.2');
+          localStorage.setItem('godly_apps_version', '3.3');
         } catch {}
         return updated;
       }

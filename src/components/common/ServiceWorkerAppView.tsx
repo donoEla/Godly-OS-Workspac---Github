@@ -23,6 +23,7 @@ import {
   setActiveWispUrl, 
   WISP_ENDPOINTS 
 } from '../../utils/uvProxy';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 export type ProxyTunnelMode = 'uv' | 'direct' | 'local';
 
@@ -85,8 +86,8 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
     }, 1500);
 
     // 1. Direct local game stream
-    if (currentUrl.startsWith('/local-games/')) {
-      setIframeSrc(currentUrl);
+    if (currentUrl.startsWith('/local-games/') || currentUrl.includes('/local-games/')) {
+      setIframeSrc(getAssetUrl(currentUrl));
       setLoading(false);
       return;
     }

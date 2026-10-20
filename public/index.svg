@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <foreignObject width="100%" height="100%">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Godly OS (SVG Edition)</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+        <style>
+          html, body, #root {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+          }
+        </style>
+        <!-- Ultraviolet & BareMux Proxy Engine -->
+        <script src="/uv/uv.bundle.js"></script>
+        <script src="/uv/uv.config.js"></script>
+        <script src="/baremux/index.js"></script>
+        <script><![CDATA[
+          (function () {
+            const XHTML_NS = 'http://www.w3.org/1999/xhtml';
+            const root = document.querySelector('foreignObject').firstElementChild;
+            const createElementNS = document.createElementNS.bind(document);
+            Object.defineProperty(document, 'head', { get: () => root.querySelector('head'), configurable: true });
+            Object.defineProperty(document, 'body', { get: () => root.querySelector('body'), configurable: true });
+            Object.defineProperty(document, 'documentElement', { get: () => root, configurable: true });
+            document.createElement = function (tagName, options) {
+              return createElementNS(XHTML_NS, tagName, options);
+            };
+          })();
+        ]]></script>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+      </body>
+    </html>
+  </foreignObject>
+</svg>

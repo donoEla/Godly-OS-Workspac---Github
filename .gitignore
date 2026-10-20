@@ -11,10 +11,22 @@ node_modules
 dist/*
 !dist/index.html
 !dist/404.html
+!dist/index.svg
+!dist/favicon.svg
+!dist/icons.svg
+!dist/gn_math_games.json
+!dist/local_games.json
+!dist/sw.js
 !dist/assets/
 dist/assets/*
 !dist/assets/index.js
 !dist/assets/index.css
+!dist/assets/icons/
+!dist/assets/backgrounds/
+!dist/uv/
+!dist/baremux/
+!dist/epoxy/
+!dist/local-games/
 dist-ssr
 *.local
 

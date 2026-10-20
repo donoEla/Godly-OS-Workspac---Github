@@ -23,6 +23,14 @@ export function getAssetUrl(path: string | undefined | null): string {
   const [basePath, query] = path.split('?');
   const cleanPath = basePath.startsWith('/') ? basePath.slice(1) : basePath;
 
+  // If document.baseURI is set (e.g. SVG iframe loader with <base href="...">), resolve against it
+  if (typeof document !== 'undefined' && document.baseURI && !document.baseURI.startsWith('about:')) {
+    try {
+      const url = new URL(cleanPath, document.baseURI).href;
+      return query ? (url.includes('?') ? url : `${url}?${query}`) : url;
+    } catch {}
+  }
+
   let resolved = cleanPath;
 
   if (typeof window !== 'undefined') {

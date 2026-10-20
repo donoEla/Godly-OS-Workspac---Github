@@ -42,8 +42,24 @@ function GodlyOS() {
 }
 
 export default function App() {
-  // Prevent recursive framing of Godly OS if a 404 or router redirect points to index.html inside an iframe
-  if (typeof window !== 'undefined' && window.self !== window.top) {
+  // Prevent recursive framing if an inner game inside Godly OS 404s and tries to load index.html
+  const isRecursiveLoop = typeof window !== 'undefined' && (() => {
+    try {
+      if (window.name === 'godly-game-sandbox') {
+        return true;
+      }
+      if (window.self !== window.top) {
+        if (window.parent && window.parent.document && window.parent.document.querySelector('main.font-sans')) {
+          return true;
+        }
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  })();
+
+  if (isRecursiveLoop) {
     return (
       <div className="w-screen h-screen bg-[#07070d] text-white flex flex-col items-center justify-center p-6 text-center font-sans select-none">
         <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-3 text-lg font-bold font-mono">

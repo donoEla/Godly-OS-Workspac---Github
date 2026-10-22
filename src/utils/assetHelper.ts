@@ -14,7 +14,17 @@ export function getAssetUrl(path: string | undefined | null): string {
   }
 
   // If path contains internal assets/ or local-games/, extract relative path to repair any stored duplicated subpaths
-  const internalFolders = ['assets/', 'local-games/', 'uv/', 'baremux/', 'epoxy/'];
+  const internalFolders = [
+    'assets/',
+    'local-games/',
+    'uv/',
+    'baremux/',
+    'epoxy/',
+    'scramjet/',
+    'scramjet-engine/',
+    'scramjet-transport/',
+    'transport/',
+  ];
   let assetRelPath: string | null = null;
   for (const folder of internalFolders) {
     const idx = path.indexOf('/' + folder);

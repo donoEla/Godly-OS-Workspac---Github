@@ -36,6 +36,8 @@ dist/assets/*
 !dist/scramjet-transport/
 !dist/transport/
 !dist/.nojekyll
+!dist/wasmer.toml
+!dist/wasmer.json
 dist-ssr
 *.local
 .agents/

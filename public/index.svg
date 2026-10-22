@@ -89,12 +89,14 @@
             try {
               const href = window.location.href.split('?')[0].split('#')[0];
               const baseUrl = href.substring(0, href.lastIndexOf('/') + 1);
+              const distBase = baseUrl.endsWith('/dist/') ? baseUrl : baseUrl + 'dist/';
+              const distHtmlUrl = distBase + 'index.html';
 
               status.textContent = 'Streaming Godly OS distribution bundle...';
-              const res = await fetch(baseUrl + 'dist/index.html', { cache: 'no-cache' });
+              const res = await fetch(distHtmlUrl, { cache: 'no-cache' });
               if (res.ok) {
                 let html = await res.text();
-                const baseTag = '<base href="' + baseUrl + 'dist/">';
+                const baseTag = '<base href="' + distBase + '">';
                 if (html.includes('<head>')) {
                   html = html.replace('<head>', '<head>' + baseTag);
                 } else {

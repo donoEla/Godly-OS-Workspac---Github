@@ -1,0 +1,17 @@
+[package]
+name = "godly-os"
+version = "3.2.0"
+description = "Godly OS — Celestial Browser Operating System"
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+"wasmer/static-web-server" = "^1"
+
+[[commands]]
+name = "serve"
+module = "wasmer/static-web-server:webc"
+runner = "wasi"
+
+[fs]
+public = "dist"

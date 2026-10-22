@@ -2,10 +2,15 @@
  * Universal Asset URL Resolver
  * Resolves static assets correctly across:
  * - GitHub Pages with subpath (e.g. /Godly-OS-Workspac---Github/)
- * - Custom domains / Wasmer / Cloudflare Pages (root /)
+ * - Custom domains / Wasmer.io edge deployment (root /)
  * - Local development Vite dev server
- * - jsDelivr / CDNs
+ * - jsDelivr CDN links & SVG embedded bootloaders
+ * - about:srcdoc sandboxed frames
  */
+
+const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
+const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
+
 export function getAssetUrl(path: string | undefined | null): string {
   if (!path) return '';
 
@@ -13,7 +18,7 @@ export function getAssetUrl(path: string | undefined | null): string {
     return path;
   }
 
-  // If path contains internal assets/ or local-games/, extract relative path to repair any stored duplicated subpaths
+  // Extract relative path if string contains known internal subpaths
   const internalFolders = [
     'assets/',
     'local-games/',
@@ -46,13 +51,38 @@ export function getAssetUrl(path: string | undefined | null): string {
   const [basePath, query] = target.split('?');
   let cleanPath = basePath.startsWith('/') ? basePath.slice(1) : basePath;
 
-  // Prevent duplicating repo subpath if path already contains it (from storage or nested calls)
+  // Prevent duplicating repo subpath if path already contains it
   const repoName = 'Godly-OS-Workspac---Github';
   while (cleanPath.startsWith(`${repoName}/`)) {
     cleanPath = cleanPath.slice(repoName.length + 1);
   }
 
-  // If document.baseURI is set (e.g. GitHub Pages or SVG iframe loader with <base href="...">), resolve against it
+  // Detect jsDelivr context
+  const isJsDelivr =
+    (typeof window !== 'undefined' && window.location.hostname === 'cdn.jsdelivr.net') ||
+    (typeof document !== 'undefined' && document.baseURI && document.baseURI.includes('cdn.jsdelivr.net'));
+
+  if (isJsDelivr) {
+    // When on jsDelivr, all build output lives under /dist/
+    const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
+    const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
+    return query ? `${url}?${query}` : url;
+  }
+
+  // Detect about:srcdoc sandboxed frame
+  const isSrcDoc =
+    typeof window !== 'undefined' &&
+    (window.location.href.startsWith('about:') ||
+      window.location.pathname === 'srcdoc' ||
+      window.location.pathname.includes('/srcdoc'));
+
+  if (isSrcDoc) {
+    // Fall back to dedicated GitHub Pages mirror for stable HTTPS resolution
+    const url = `${GITHUB_PAGES_ORIGIN}/${cleanPath}`;
+    return query ? `${url}?${query}` : url;
+  }
+
+  // If document.baseURI is set to a valid HTTP(S) URL, resolve against it
   if (typeof document !== 'undefined' && document.baseURI && !document.baseURI.startsWith('about:')) {
     try {
       const url = new URL(cleanPath, document.baseURI).href;
@@ -64,17 +94,13 @@ export function getAssetUrl(path: string | undefined | null): string {
 
   if (typeof window !== 'undefined') {
     const pathname = window.location.pathname;
-    const segments = pathname.split('/').filter(Boolean);
-
-    // If the last segment is an html file or file with extension, pop it
-    if (segments.length > 0 && segments[segments.length - 1].includes('.')) {
-      segments.pop();
-    }
+    const segments = pathname
+      .split('/')
+      .filter((s) => Boolean(s) && s !== 'srcdoc' && !s.includes('.'));
 
     if (segments.length > 0) {
       // Subpath deployment (e.g. GitHub Pages: /Godly-OS-Workspac---Github/)
       const subpath = segments.join('/');
-      // Avoid duplicating subpath if cleanPath already starts with it
       if (!cleanPath.startsWith(subpath)) {
         resolved = `/${subpath}/${cleanPath}`;
       } else {

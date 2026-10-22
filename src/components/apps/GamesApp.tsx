@@ -23,6 +23,7 @@ import {
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 import { encodeUvUrl } from '../../utils/uvProxy';
+import { fetchGameHtml } from '../../utils/gameLoader';
 import { getAssetUrl } from '../../utils/assetHelper';
 
 declare global {
@@ -485,28 +486,11 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setVaultHtmlContent(null);
     setVaultRefreshKey((k) => k + 1);
 
-    const fullUrl = getAssetUrl(game.url);
     try {
-      const res = await fetch(fullUrl);
-      if (res.ok) {
-        let html = await res.text();
-        // Unwrap Google Module CDATA if wrapped
-        if (html.includes('<![CDATA[')) {
-          const start = html.indexOf('<![CDATA[');
-          const end = html.lastIndexOf(']]>');
-          if (start !== -1 && end !== -1) {
-            html = html.substring(start + 9, end);
-          }
-        }
-        if (!html.includes('<base ') && !html.includes('<BASE ')) {
-          const baseHref = fullUrl.substring(0, fullUrl.lastIndexOf('/') + 1);
-          html = `<base href="${baseHref}">\n` + html;
-        }
-        setVaultHtmlContent(html);
-      } else {
-        setVaultHtmlContent(null);
-      }
-    } catch {
+      const html = await fetchGameHtml(game.url);
+      setVaultHtmlContent(html);
+    } catch (err) {
+      console.error('Failed to load vault game:', err);
       setVaultHtmlContent(null);
     } finally {
       setVaultLoadingGame(false);
@@ -521,21 +505,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setGnRefreshKey((k) => k + 1);
 
     try {
-      const res = await fetch(game.url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      let html = await res.text();
-      // Unwrap Google Module CDATA if wrapped
-      if (html.includes('<![CDATA[')) {
-        const start = html.indexOf('<![CDATA[');
-        const end = html.lastIndexOf(']]>');
-        if (start !== -1 && end !== -1) {
-          html = html.substring(start + 9, end);
-        }
-      }
-      if (!html.includes('<base ') && !html.includes('<BASE ')) {
-        const baseHref = game.url.substring(0, game.url.lastIndexOf('/') + 1);
-        html = `<base href="${baseHref}">\n` + html;
-      }
+      const html = await fetchGameHtml(game.url);
       setGnHtmlContent(html);
     } catch (err) {
       console.warn('Direct fetch failed, trying UV-Static 2.0 proxy:', err);
@@ -545,13 +515,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         const html = await proxyRes.text();
         setGnHtmlContent(html);
       } catch (proxyErr) {
-        try {
-          const localRes = await fetch(`/os-proxy?url=${encodeURIComponent(game.url)}`);
-          const html = await localRes.text();
-          setGnHtmlContent(html);
-        } catch (localErr) {
-          console.error('Failed to load game HTML:', localErr);
-        }
+        console.error('Failed to load game HTML:', proxyErr);
       }
     } finally {
       setGnLoadingGame(false);
@@ -817,15 +781,31 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                       <span className="text-[11px] font-mono text-white/40 mt-1">Initializing Canvas &amp; WebGL Engine</span>
                     </div>
                   )}
-                  <iframe
-                    ref={gameFrameRef}
-                    key={vaultRefreshKey}
-                    srcDoc={vaultHtmlContent || undefined}
-                    src={!vaultHtmlContent && !vaultLoadingGame ? getAssetUrl(activeVaultGame.url) : undefined}
-                    title={activeVaultGame.title}
-                    className="w-full h-full border-0 bg-black"
-                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
-                  />
+                  {vaultHtmlContent ? (
+                    <iframe
+                      ref={gameFrameRef}
+                      key={vaultRefreshKey}
+                      srcDoc={vaultHtmlContent}
+                      title={activeVaultGame.title}
+                      className="w-full h-full border-0 bg-black"
+                      allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
+                    />
+                  ) : !vaultLoadingGame ? (
+                    <div className="flex flex-col items-center justify-center text-center p-6 bg-[#07070d]">
+                      <Gamepad2 size={36} className="text-white/20 mb-3" />
+                      <span className="text-sm font-semibold text-white/90">Could not initialize game canvas</span>
+                      <span className="text-xs text-white/40 mt-1 max-w-sm">
+                        The game asset could not be loaded from CDN mirrors.
+                      </span>
+                      <button
+                        onClick={() => handleLaunchVaultGame(activeVaultGame)}
+                        className="mt-4 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white flex items-center gap-1.5 transition-all"
+                      >
+                        <RotateCcw size={13} />
+                        <span>Retry Loading</span>
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : (

@@ -142,13 +142,17 @@ export function getActiveWispUrl(): string {
 
 export function getBasePrefix(): string {
   if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'cdn.jsdelivr.net') {
+      return '';
+    }
     if (window.__uv$config?.loc) {
       return window.__uv$config.loc.replace(/\/$/, '');
     }
     const path = window.location.pathname;
     const parts = path.split('/').filter(Boolean);
-    // If running under GitHub Pages subpath e.g. /Godly-OS-Workspac---Github/
-    if (parts.length > 0 && !['uv', 'assets', 'local-games', 'epoxy', 'baremux', 'index.html'].includes(parts[0])) {
+    // Ignore internal asset directories, SVG loaders, and srcdoc contexts
+    const ignored = ['uv', 'assets', 'local-games', 'epoxy', 'baremux', 'index.html', 'index.svg', 'srcdoc', 'gh'];
+    if (parts.length > 0 && !ignored.includes(parts[0])) {
       return '/' + parts[0];
     }
   }

@@ -30,6 +30,7 @@ import {
   encodeScramjetUrl 
 } from '../../utils/scramjetProxy';
 import { getAssetUrl } from '../../utils/assetHelper';
+import { fetchGameHtml } from '../../utils/gameLoader';
 
 import { useOS } from '../../context/OSContext';
 
@@ -123,22 +124,8 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
 
     // 1. Direct local game stream (fetched and unwrapped via srcDoc)
     if (currentUrl.startsWith('/local-games/') || currentUrl.includes('/local-games/')) {
-      const fullUrl = getAssetUrl(currentUrl);
-      fetch(fullUrl)
-        .then((res) => (res.ok ? res.text() : Promise.reject(new Error(`HTTP ${res.status}`))))
-        .then((text) => {
-          let html = text;
-          if (html.includes('<![CDATA[')) {
-            const start = html.indexOf('<![CDATA[');
-            const end = html.lastIndexOf(']]>');
-            if (start !== -1 && end !== -1) {
-              html = html.substring(start + 9, end);
-            }
-          }
-          if (!html.includes('<base ') && !html.includes('<BASE ')) {
-            const baseHref = fullUrl.substring(0, fullUrl.lastIndexOf('/') + 1);
-            html = `<base href="${baseHref}">\n` + html;
-          }
+      fetchGameHtml(currentUrl)
+        .then((html) => {
           if (mounted) {
             setLocalGameSrcDoc(html);
             setIframeSrc('');
@@ -146,10 +133,10 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
             setIframeLoaded(true);
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('Failed to load local game in ServiceWorkerAppView:', err);
           if (mounted) {
             setLocalGameSrcDoc(null);
-            setIframeSrc(fullUrl);
             setLoading(false);
             setIframeLoaded(true);
           }

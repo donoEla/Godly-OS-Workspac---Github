@@ -38,6 +38,7 @@ dist/assets/*
 !dist/.nojekyll
 !dist/wasmer.toml
 !dist/wasmer.json
+!dist/.wasmerignore
 dist-ssr
 *.local
 .agents/

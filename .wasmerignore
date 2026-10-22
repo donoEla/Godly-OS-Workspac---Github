@@ -1,0 +1,20 @@
+# Wasmer Deployment Exclusions
+# Excludes heavy developer dependencies, source directories, and caches
+# to keep Wasmer builder memory usage minimal and well below the 1.5GB ceiling.
+node_modules/
+.git/
+.agents/
+.github/
+src/
+public/
+dist-ssr/
+*.log
+*.tsbuildinfo
+*.zip
+*.tar.gz
+.oxlintrc.json
+postcss.config.js
+tailwind.config.js
+vite.config.ts
+tsconfig*.json
+test_*.js

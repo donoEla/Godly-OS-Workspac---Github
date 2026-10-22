@@ -23,25 +23,25 @@ Godly OS is fully configured for zero-configuration, global edge deployment via 
 
 ## How to Deploy to Wasmer Edge
 
-### Option A: Deploy from Project Root (Recommended)
-1. Build the latest bundle:
-   ```bash
-   npm run build
-   ```
-2. Deploy directly:
-   ```bash
-   wasmer deploy
-   ```
+### Option A: Deploy from the `dist/` Directory (Fastest & Recommended)
+> [!TIP]
+> Deploying from `dist/` is the cleanest approach because it contains **only** the compiled production assets (no `node_modules`, no source files). This avoids Wasmer's builder memory limits and deploys in seconds.
 
-### Option B: Deploy from the `dist/` Directory
 ```bash
 cd dist
 wasmer deploy
 ```
 
-### Option C: Deploy from the Documents static archive
+### Option B: Deploy from the Documents Static Archive
 ```bash
 cd "/home/dono/Documents/godlyOS-static/wasmer"
+wasmer deploy
+```
+
+### Option C: Deploy from Project Root
+A `.wasmerignore` file is included in the project root to exclude `node_modules/`, `public/`, and `src/`, preventing the builder memory limit error (`Build used too much memory: reached 1239 MB of 1536 MB`).
+
+```bash
 wasmer deploy
 ```
 

@@ -180,11 +180,11 @@ const CATEGORIES = [
 ];
 
 interface GamesAppProps {
-  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'retro';
+  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin';
 }
 
 export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
-  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'retro'>(initialTab || 'vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin'>(initialTab || 'vault');
   
   // Zen GS state (1,700+ CloudFront CDN games)
   const [activeZenGame, setActiveZenGame] = useState<ZenGSGameSelection | null>(null);
@@ -262,18 +262,29 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     };
   }, []);
 
+  const luminInitializedRef = useRef(false);
+
   // Lumin SDK initialization
-  const initLuminSDK = useCallback(() => {
+  const initLuminSDK = useCallback((force = false) => {
+    if (luminInitializedRef.current && !force) {
+      setLuminStatus('ready');
+      return;
+    }
     setLuminStatus('loading');
 
     const tryInit = () => {
+      const container = document.getElementById('games-container');
+      if (!container) return false;
+
       if (window.Lumin && typeof window.Lumin.init === 'function') {
         try {
           window.Lumin.init({ container: '#games-container', theme: 'dark' });
+          luminInitializedRef.current = true;
           setLuminStatus('ready');
           return true;
         } catch (err) {
           console.warn('Lumin initialization error:', err);
+          luminInitializedRef.current = true;
           setLuminStatus('ready');
           return true;
         }
@@ -309,11 +320,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
   }, []);
 
+  // Pre-initialize Lumin on component mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      initLuminSDK();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [initLuminSDK]);
+
   useEffect(() => {
     if (activeTab === 'lumin') {
       const timeout = setTimeout(() => {
         initLuminSDK();
-      }, 100);
+      }, 50);
       return () => clearTimeout(timeout);
     }
   }, [activeTab, initLuminSDK]);
@@ -541,7 +560,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
                 {activeTab === 'lumin' && 'Lumin Engine'}
-                {activeTab === 'retro' && 'Retro Engine'}
               </span>
             </div>
             <p className="text-[10px] text-white/40 tracking-tight">
@@ -672,30 +690,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               <Zap size={13} />
               Lumin SDK
             </button>
-
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('retro');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'retro'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <RotateCcw size={13} />
-              Retro Classics
-            </button>
           </div>
         </div>
       </div>
@@ -777,8 +771,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     src={getAssetUrl(activeVaultGame.url)}
                     title={activeVaultGame.title}
                     className="w-full h-full border-0 bg-black"
-                    allow="autoplay; fullscreen; gamepad; focus-without-user-activation *"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals allow-downloads"
+                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
                   />
                 </div>
               </div>
@@ -1110,8 +1103,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     src={!gnHtmlContent && !gnLoadingGame ? encodeUvUrl(activeGnGame.url) : undefined}
                     title={activeGnGame.title}
                     className="w-full h-full border-0 bg-black"
-                    allow="autoplay; fullscreen; gamepad; focus-without-user-activation *; camera; microphone; accelerometer; gyroscope"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals allow-downloads"
+                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; camera; microphone; accelerometer; gyroscope"
                   />
                 </div>
               </div>
@@ -1522,12 +1514,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         {/* =========================================================================
             TAB 4: LUMIN GAMES SDK
            ========================================================================= */}
-        {activeTab === 'lumin' && (
-          <div className="w-full h-full flex flex-col relative overflow-y-auto">
+        <div className={`w-full h-full flex flex-col relative ${activeTab === 'lumin' ? 'flex' : 'hidden'}`}>
+          {/* Scrollable Lumin games container */}
+          <div className="flex-1 w-full overflow-y-auto overflow-x-hidden custom-scrollbar min-h-0 relative p-4">
             <div
               id="games-container"
               ref={luminContainerRef}
-              className="w-full h-full flex-1 min-h-[480px] p-4 relative text-white"
+              className="w-full text-white min-h-[420px]"
+              style={{ minHeight: '100%', height: 'auto', overflowY: 'visible' }}
             >
               {luminStatus === 'loading' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/70 backdrop-blur-md z-10">
@@ -1544,630 +1538,28 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="px-5 py-2.5 bg-black/60 backdrop-blur-xl border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Lumin Engine Active (#games-container)</span>
-              </div>
-              <div className="flex items-center gap-3 font-mono">
-                <span>Theme: Dark</span>
-                <span>Container: #games-container</span>
-                <button
-                  onClick={() => {
-                    sound.playClick();
-                    initLuminSDK();
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all flex items-center gap-1.5"
-                >
-                  <RotateCcw size={12} /> Reload SDK
-                </button>
-              </div>
+          <div className="px-5 py-2.5 bg-black/60 backdrop-blur-xl border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 flex-shrink-0 z-10">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Lumin Engine Active (#games-container)</span>
+            </div>
+            <div className="flex items-center gap-3 font-mono">
+              <span>Theme: Dark</span>
+              <span>Container: #games-container</span>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  initLuminSDK(true);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all flex items-center gap-1.5"
+              >
+                <RotateCcw size={12} /> Reload SDK
+              </button>
             </div>
           </div>
-        )}
-
-        {/* =========================================================================
-            TAB 5: RETRO CLASSICS (2048, Snake, Minesweeper)
-           ========================================================================= */}
-        {activeTab === 'retro' && (
-          <div className="flex-1 h-full overflow-y-auto p-6 flex items-center justify-center">
-            <RetroClassics />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-/* ─── Retro Classics Subcomponent ─── */
-const RetroClassics: React.FC = () => {
-  const [game, setGame] = useState<'2048' | 'snake' | 'mines'>('2048');
-
-  return (
-    <div className="flex flex-col items-center w-full max-w-xl py-2">
-      <div 
-        className="flex gap-2 mb-6 p-1.5 rounded-2xl border border-white/[0.08] shadow-2xl backdrop-blur-xl"
-        style={{ background: 'rgba(8, 8, 14, 0.85)' }}
-      >
-        {[
-          { id: '2048', name: '2048 Puzzle', icon: '🔢' },
-          { id: 'snake', name: 'Cyber Snake', icon: '🐍' },
-          { id: 'mines', name: 'Minesweeper', icon: '💣' },
-        ].map((g) => (
-          <button
-            key={g.id}
-            onClick={() => {
-              sound.playClick();
-              setGame(g.id as any);
-            }}
-            className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
-            style={
-              game === g.id
-                ? {
-                    background: 'var(--accent)',
-                    color: '#ffffff',
-                    boxShadow: '0 4px 16px var(--accent-glow)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                  }
-                : {
-                    color: 'rgba(255, 255, 255, 0.55)',
-                    background: 'transparent',
-                  }
-            }
-          >
-            <span>{g.icon}</span>
-            <span>{g.name}</span>
-          </button>
-        ))}
-      </div>
-
-      {game === '2048' && <Playable2048 />}
-      {game === 'snake' && <PlayableSnake />}
-      {game === 'mines' && <PlayableMines />}
-    </div>
-  );
-};
-
-/* =========================================================================
-   1. PLAYABLE 2048
-   ========================================================================= */
-const Playable2048: React.FC = () => {
-  const createEmptyBoard = () => Array(4).fill(null).map(() => Array(4).fill(0));
-
-  const addRandomTile = (currentBoard: number[][]): number[][] => {
-    const emptyCells: { r: number; c: number }[] = [];
-    currentBoard.forEach((row, r) => {
-      row.forEach((val, c) => {
-        if (val === 0) emptyCells.push({ r, c });
-      });
-    });
-
-    if (emptyCells.length === 0) return currentBoard;
-
-    const chosen = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    const newBoard = currentBoard.map((row) => [...row]);
-    newBoard[chosen.r][chosen.c] = Math.random() < 0.9 ? 2 : 4;
-    return newBoard;
-  };
-
-  const [board, setBoard] = useState<number[][]>(() => {
-    let b = createEmptyBoard();
-    b = addRandomTile(b);
-    b = addRandomTile(b);
-    return b;
-  });
-
-  const [score, setScore] = useState(0);
-  const [bestScore, setBestScore] = useState(() => {
-    try {
-      return parseInt(localStorage.getItem('godly_2048_best') || '0', 10);
-    } catch {
-      return 0;
-    }
-  });
-  const [gameOver, setGameOver] = useState(false);
-
-  const restart = () => {
-    sound.playClick();
-    let b = createEmptyBoard();
-    b = addRandomTile(b);
-    b = addRandomTile(b);
-    setBoard(b);
-    setScore(0);
-    setGameOver(false);
-  };
-
-  const slideRow = (row: number[]): { newRow: number[]; scoreDelta: number; changed: boolean } => {
-    const nonZero = row.filter((v) => v !== 0);
-    const merged: number[] = [];
-    let scoreDelta = 0;
-    let i = 0;
-
-    while (i < nonZero.length) {
-      if (i + 1 < nonZero.length && nonZero[i] === nonZero[i + 1]) {
-        const sum = nonZero[i] * 2;
-        merged.push(sum);
-        scoreDelta += sum;
-        i += 2;
-      } else {
-        merged.push(nonZero[i]);
-        i++;
-      }
-    }
-
-    while (merged.length < 4) merged.push(0);
-
-    const changed = merged.some((val, idx) => val !== row[idx]);
-    return { newRow: merged, scoreDelta, changed };
-  };
-
-  const move = useCallback((direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN') => {
-    if (gameOver) return;
-
-    let current = board.map((r) => [...r]);
-    let totalScoreDelta = 0;
-    let anyChanged = false;
-
-    if (direction === 'LEFT') {
-      for (let r = 0; r < 4; r++) {
-        const { newRow, scoreDelta, changed } = slideRow(current[r]);
-        current[r] = newRow;
-        totalScoreDelta += scoreDelta;
-        if (changed) anyChanged = true;
-      }
-    } else if (direction === 'RIGHT') {
-      for (let r = 0; r < 4; r++) {
-        const reversed = [...current[r]].reverse();
-        const { newRow, scoreDelta, changed } = slideRow(reversed);
-        current[r] = newRow.reverse();
-        totalScoreDelta += scoreDelta;
-        if (changed) anyChanged = true;
-      }
-    } else if (direction === 'UP') {
-      for (let c = 0; c < 4; c++) {
-        const col = [current[0][c], current[1][c], current[2][c], current[3][c]];
-        const { newRow, scoreDelta, changed } = slideRow(col);
-        for (let r = 0; r < 4; r++) current[r][c] = newRow[r];
-        totalScoreDelta += scoreDelta;
-        if (changed) anyChanged = true;
-      }
-    } else if (direction === 'DOWN') {
-      for (let c = 0; c < 4; c++) {
-        const col = [current[3][c], current[2][c], current[1][c], current[0][c]];
-        const { newRow, scoreDelta, changed } = slideRow(col);
-        for (let r = 0; r < 4; r++) current[3 - r][c] = newRow[r];
-        totalScoreDelta += scoreDelta;
-        if (changed) anyChanged = true;
-      }
-    }
-
-    if (anyChanged) {
-      sound.playClick();
-      const updatedBoard = addRandomTile(current);
-      setBoard(updatedBoard);
-      const nextScore = score + totalScoreDelta;
-      setScore(nextScore);
-      if (nextScore > bestScore) {
-        setBestScore(nextScore);
-        try {
-          localStorage.setItem('godly_2048_best', nextScore.toString());
-        } catch {}
-      }
-    }
-  }, [board, gameOver, score, bestScore]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); move('LEFT'); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); move('RIGHT'); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); move('UP'); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); move('DOWN'); }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [move]);
-
-  const getTileColor = (val: number) => {
-    switch (val) {
-      case 2: return 'bg-white/10 text-white';
-      case 4: return 'bg-white/20 text-white font-bold';
-      case 8: return 'bg-amber-600/80 text-white font-bold shadow-md shadow-amber-600/30';
-      case 16: return 'bg-orange-600 text-white font-bold shadow-md shadow-orange-600/30';
-      case 32: return 'bg-rose-600 text-white font-bold shadow-md shadow-rose-600/30';
-      case 64: return 'bg-pink-600 text-white font-black shadow-lg shadow-pink-600/40';
-      case 128: return 'bg-purple-600 text-white font-black shadow-lg shadow-purple-600/50';
-      case 256: return 'bg-indigo-600 text-white font-black shadow-xl shadow-indigo-600/50';
-      case 512: return 'bg-cyan-600 text-white font-black shadow-xl shadow-cyan-600/50';
-      case 1024: return 'bg-teal-500 text-white font-black shadow-xl shadow-teal-500/60';
-      case 2048: return 'bg-emerald-500 text-white font-black shadow-2xl shadow-emerald-500/80 animate-pulse';
-      default: return 'bg-purple-900 text-white font-black';
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-      <div className="flex items-center justify-between w-full">
-        <div>
-          <h3 className="text-xl font-black text-white tracking-tight">2048</h3>
-          <p className="text-[11px] text-slate-400">Join numbers to reach the 2048 tile!</p>
         </div>
-        <div className="flex gap-2">
-          <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center">
-            <span className="text-[9px] uppercase font-mono text-slate-400 block">Score</span>
-            <span className="text-sm font-bold text-white font-mono">{score}</span>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center">
-            <span className="text-[9px] uppercase font-mono text-amber-400 block">Best</span>
-            <span className="text-sm font-bold text-amber-300 font-mono">{bestScore}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2.5 p-3 rounded-2xl bg-black/60 border border-white/10 shadow-2xl w-full aspect-square">
-        {board.map((row, r) =>
-          row.map((val, c) => (
-            <div
-              key={`${r}-${c}`}
-              className={`rounded-xl flex items-center justify-center text-lg transition-all duration-100 ${
-                val === 0 ? 'bg-white/[0.03]' : getTileColor(val)
-              }`}
-            >
-              {val !== 0 && val}
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="flex items-center justify-between w-full pt-1">
-        <span className="text-[11px] text-slate-500 font-mono">Use Arrow Keys or Swipe</span>
-        <button
-          onClick={restart}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all border border-white/10"
-        >
-          <RotateCcw size={13} />
-          Reset Game
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/* =========================================================================
-   2. PLAYABLE SNAKE
-   ========================================================================= */
-const PlayableSnake: React.FC = () => {
-  const GRID_SIZE = 16;
-  const [snake, setSnake] = useState<{ x: number; y: number }[]>([
-    { x: 8, y: 8 },
-    { x: 8, y: 9 },
-    { x: 8, y: 10 },
-  ]);
-  const [food, setFood] = useState<{ x: number; y: number }>({ x: 4, y: 4 });
-  const [dir, setDir] = useState<{ x: number; y: number }>({ x: 0, y: -1 });
-  const [isPaused, setIsPaused] = useState(false);
-  const [score, setScore] = useState(0);
-  const [isDead, setIsDead] = useState(false);
-
-  const reset = () => {
-    sound.playClick();
-    setSnake([
-      { x: 8, y: 8 },
-      { x: 8, y: 9 },
-      { x: 8, y: 10 },
-    ]);
-    setFood({ x: 4, y: 4 });
-    setDir({ x: 0, y: -1 });
-    setScore(0);
-    setIsDead(false);
-    setIsPaused(false);
-  };
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp' && dir.y === 0) { e.preventDefault(); setDir({ x: 0, y: -1 }); }
-      else if (e.key === 'ArrowDown' && dir.y === 0) { e.preventDefault(); setDir({ x: 0, y: 1 }); }
-      else if (e.key === 'ArrowLeft' && dir.x === 0) { e.preventDefault(); setDir({ x: -1, y: 0 }); }
-      else if (e.key === 'ArrowRight' && dir.x === 0) { e.preventDefault(); setDir({ x: 1, y: 0 }); }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [dir]);
-
-  useEffect(() => {
-    if (isPaused || isDead) return;
-
-    const timer = setInterval(() => {
-      setSnake((prev) => {
-        const head = { x: prev[0].x + dir.x, y: prev[0].y + dir.y };
-
-        if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
-          setIsDead(true);
-          return prev;
-        }
-
-        if (prev.some((seg) => seg.x === head.x && seg.y === head.y)) {
-          setIsDead(true);
-          return prev;
-        }
-
-        const newSnake = [head, ...prev];
-
-        if (head.x === food.x && head.y === food.y) {
-          sound.playClick();
-          setScore((s) => s + 10);
-          setFood({
-            x: Math.floor(Math.random() * GRID_SIZE),
-            y: Math.floor(Math.random() * GRID_SIZE),
-          });
-        } else {
-          newSnake.pop();
-        }
-
-        return newSnake;
-      });
-    }, 120);
-
-    return () => clearInterval(timer);
-  }, [dir, food, isPaused, isDead]);
-
-  return (
-    <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-      <div className="flex items-center justify-between w-full">
-        <div>
-          <h3 className="text-xl font-black text-white tracking-tight">Cyber Snake</h3>
-          <p className="text-[11px] text-slate-400">Eat quantum orbs to expand.</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center">
-          <span className="text-[9px] uppercase font-mono text-emerald-400 block">Score</span>
-          <span className="text-sm font-bold text-white font-mono">{score}</span>
-        </div>
-      </div>
-
-      <div 
-        className="grid gap-[1px] p-2 rounded-2xl bg-black/70 border border-white/10 shadow-2xl w-full aspect-square"
-        style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, idx) => {
-          const x = idx % GRID_SIZE;
-          const y = Math.floor(idx / GRID_SIZE);
-          const isHead = snake[0].x === x && snake[0].y === y;
-          const isBody = snake.slice(1).some((seg) => seg.x === x && seg.y === y);
-          const isFood = food.x === x && food.y === y;
-
-          return (
-            <div
-              key={idx}
-              className={`rounded-[2px] transition-colors ${
-                isHead
-                  ? 'bg-emerald-400 shadow-sm shadow-emerald-400'
-                  : isBody
-                  ? 'bg-emerald-600/80'
-                  : isFood
-                  ? 'bg-rose-500 rounded-full animate-ping'
-                  : 'bg-white/[0.02]'
-              }`}
-            />
-          );
-        })}
-      </div>
-
-      <div className="flex items-center justify-between w-full pt-1">
-        <span className="text-[11px] text-slate-500 font-mono">
-          {isDead ? 'Game Over!' : 'Arrow keys to maneuver'}
-        </span>
-        <button
-          onClick={reset}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all border border-white/10"
-        >
-          <RotateCcw size={13} />
-          {isDead ? 'Play Again' : 'Restart'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/* =========================================================================
-   3. PLAYABLE MINESWEEPER
-   ========================================================================= */
-const PlayableMines: React.FC = () => {
-  const ROWS = 9;
-  const COLS = 9;
-  const MINES = 10;
-
-  interface Cell {
-    r: number;
-    c: number;
-    isMine: boolean;
-    revealed: boolean;
-    flagged: boolean;
-    neighborMines: number;
-  }
-
-  const createBoard = (): Cell[][] => {
-    let board: Cell[][] = [];
-    for (let r = 0; r < ROWS; r++) {
-      board[r] = [];
-      for (let c = 0; c < COLS; c++) {
-        board[r][c] = {
-          r,
-          c,
-          isMine: false,
-          revealed: false,
-          flagged: false,
-          neighborMines: 0,
-        };
-      }
-    }
-
-    let placed = 0;
-    while (placed < MINES) {
-      const rr = Math.floor(Math.random() * ROWS);
-      const cc = Math.floor(Math.random() * COLS);
-      if (!board[rr][cc].isMine) {
-        board[rr][cc].isMine = true;
-        placed++;
-      }
-    }
-
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (!board[r][c].isMine) {
-          let count = 0;
-          for (let dr = -1; dr <= 1; dr++) {
-            for (let dc = -1; dc <= 1; dc++) {
-              const nr = r + dr;
-              const nc = c + dc;
-              if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc].isMine) {
-                count++;
-              }
-            }
-          }
-          board[r][c].neighborMines = count;
-        }
-      }
-    }
-    return board;
-  };
-
-  const [board, setBoard] = useState<Cell[][]>(() => createBoard());
-  const [gameOver, setGameOver] = useState(false);
-  const [won, setWon] = useState(false);
-
-  const reset = () => {
-    sound.playClick();
-    setBoard(createBoard());
-    setGameOver(false);
-    setWon(false);
-  };
-
-  const revealCell = (r: number, c: number) => {
-    if (gameOver || won) return;
-    const current = board.map((row) => row.map((cell) => ({ ...cell })));
-    const target = current[r][c];
-
-    if (target.flagged || target.revealed) return;
-
-    if (target.isMine) {
-      sound.playClose();
-      current.forEach((row) =>
-        row.forEach((cell) => {
-          if (cell.isMine) cell.revealed = true;
-        })
-      );
-      setBoard(current);
-      setGameOver(true);
-      return;
-    }
-
-    sound.playClick();
-    const queue: [number, number][] = [[r, c]];
-    target.revealed = true;
-
-    while (queue.length > 0) {
-      const [currR, currC] = queue.shift()!;
-      const cell = current[currR][currC];
-
-      if (cell.neighborMines === 0) {
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
-            const nr = currR + dr;
-            const nc = currC + dc;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-              const neighbor = current[nr][nc];
-              if (!neighbor.revealed && !neighbor.flagged && !neighbor.isMine) {
-                neighbor.revealed = true;
-                if (neighbor.neighborMines === 0) {
-                  queue.push([nr, nc]);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    let unrevealedSafe = 0;
-    current.forEach((row) =>
-      row.forEach((cell) => {
-        if (!cell.isMine && !cell.revealed) unrevealedSafe++;
-      })
-    );
-
-    if (unrevealedSafe === 0) {
-      setWon(true);
-    }
-
-    setBoard(current);
-  };
-
-  const toggleFlag = (e: React.MouseEvent, r: number, c: number) => {
-    e.preventDefault();
-    if (gameOver || won) return;
-    sound.playClick();
-    const current = board.map((row) => row.map((cell) => ({ ...cell })));
-    const target = current[r][c];
-    if (!target.revealed) {
-      target.flagged = !target.flagged;
-      setBoard(current);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-      <div className="flex items-center justify-between w-full">
-        <div>
-          <h3 className="text-xl font-black text-white tracking-tight">Minesweeper</h3>
-          <p className="text-[11px] text-slate-400">Uncover safe squares. Right click to flag.</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center">
-          <span className="text-[9px] uppercase font-mono text-rose-400 block">Mines</span>
-          <span className="text-sm font-bold text-white font-mono">{MINES}</span>
-        </div>
-      </div>
-
-      <div 
-        className="grid gap-1 p-2 rounded-2xl bg-black/70 border border-white/10 shadow-2xl w-full aspect-square"
-        style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
-      >
-        {board.map((row, r) =>
-          row.map((cell, c) => (
-            <button
-              key={`${r}-${c}`}
-              onClick={() => revealCell(r, c)}
-              onContextMenu={(e) => toggleFlag(e, r, c)}
-              className={`rounded-md flex items-center justify-center font-bold text-xs transition-all ${
-                cell.revealed
-                  ? cell.isMine
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-white/10 text-white'
-                  : 'bg-white/5 hover:bg-white/15 border border-white/5 active:scale-95'
-              }`}
-            >
-              {cell.revealed ? (
-                cell.isMine ? '💣' : cell.neighborMines > 0 ? cell.neighborMines : ''
-              ) : cell.flagged ? (
-                '🚩'
-              ) : (
-                ''
-              )}
-            </button>
-          ))
-        )}
-      </div>
-
-      <div className="flex items-center justify-between w-full pt-1">
-        <span className="text-[11px] font-mono" style={{ color: gameOver ? '#f87171' : won ? '#34d399' : '#94a3b8' }}>
-          {gameOver ? '💥 Detonated! Game over.' : won ? '🎉 You cleared all mines!' : 'Left click = dig, Right click = flag'}
-        </span>
-        <button
-          onClick={reset}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all border border-white/10"
-        >
-          <RotateCcw size={13} />
-          Reset
-        </button>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import {
   Heading
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { useAppSettings } from '../../utils/appSettings';
 
 interface OpenTab {
   id: string;
@@ -31,6 +32,7 @@ interface OpenTab {
 
 export const NotesApp: React.FC = () => {
   const { fileSystem, createFile, updateFileContent, addNotification } = useOS();
+  const [appSettings] = useAppSettings();
 
   const docFiles = fileSystem.filter(
     (f) => f.type === 'file' && (f.extension === 'md' || f.extension === 'txt' || f.extension === 'json')
@@ -286,15 +288,32 @@ export const NotesApp: React.FC = () => {
         {/* Editor Body */}
         <div className="flex-1 flex overflow-hidden">
           {(viewMode === 'editor' || viewMode === 'split') && (
-            <textarea
-              value={activeTab.content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              className={`flex-1 h-full bg-transparent p-6 text-sm text-slate-200 outline-none resize-none font-mono leading-relaxed selection:bg-purple-600/40 ${
-                viewMode === 'split' ? 'border-r border-white/10 w-1/2' : 'w-full'
-              }`}
-              placeholder="Start drafting in Markdown..."
-              spellCheck={false}
-            />
+            <div className={`flex h-full ${viewMode === 'split' ? 'border-r border-white/10 w-1/2' : 'w-full'}`}>
+              {appSettings.notes.showLineNumbers && (
+                <div 
+                  className="py-6 px-3 bg-black/25 text-white/20 select-none text-right font-mono border-r border-white/5 overflow-hidden shrink-0"
+                  style={{ fontSize: `${appSettings.notes.fontSize}px`, lineHeight: 1.625 }}
+                >
+                  {activeTab.content.split('\n').map((_, i) => (
+                    <div key={i}>{i + 1}</div>
+                  ))}
+                </div>
+              )}
+              <textarea
+                value={activeTab.content}
+                onChange={(e) => handleContentChange(e.target.value)}
+                style={{
+                  fontFamily: appSettings.notes.fontFamily,
+                  fontSize: `${appSettings.notes.fontSize}px`,
+                  lineHeight: 1.625,
+                  whiteSpace: appSettings.notes.wordWrap ? 'pre-wrap' : 'pre',
+                  tabSize: appSettings.notes.tabSize,
+                }}
+                className="flex-1 h-full bg-transparent p-6 text-slate-200 outline-none resize-none leading-relaxed selection:bg-purple-600/40"
+                placeholder="Start drafting in Markdown..."
+                spellCheck={false}
+              />
+            </div>
           )}
 
           {(viewMode === 'preview' || viewMode === 'split') && (

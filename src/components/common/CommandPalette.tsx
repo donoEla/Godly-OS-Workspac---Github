@@ -69,8 +69,9 @@ export const CommandPalette: React.FC = () => {
 
     // 1. Applications
     const apps: { id: AppId; name: string; desc: string; icon: string }[] = [
-      { id: 'zen', name: 'Zen Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: '/assets/icons/zen.jpg' },
+      { id: 'zen', name: 'Godly Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: '/assets/icons/zen.jpg' },
       { id: 'app-store', name: 'Godly Store', desc: 'Browse games, proxies & dev utilities', icon: '/assets/icons/app-store.jpg' },
+      { id: 'extensions', name: 'Desktop Extensions Hub', desc: 'Genie minimize, physics, particle trails & custom mods', icon: '/assets/icons/app-store.jpg' },
       { id: 'terminal', name: 'Terminal', desc: 'Interactive Godly OS command shell & network tools', icon: '/assets/icons/terminal.jpg' },
       { id: 'notes', name: 'Notes Studio', desc: 'Rich markdown and code notepad', icon: '/assets/icons/notes.jpg' },
       { id: 'spotify', name: 'Spotify Ambient', desc: 'Web audio harmonic synthesizer player', icon: '/assets/icons/spotify.jpg' },

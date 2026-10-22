@@ -3,6 +3,7 @@ import { useOS } from '../../context/OSContext';
 import { AppId } from '../../types/os';
 import { sound } from '../../utils/sound';
 import { Terminal, Sparkles, RefreshCw, Layers, ShieldCheck, Play } from 'lucide-react';
+import { useAppSettings } from '../../utils/appSettings';
 
 interface HistoryLine {
   id: string;
@@ -22,6 +23,8 @@ export const TerminalApp: React.FC = () => {
     updateSettings,
     panicCloak
   } = useOS();
+
+  const [appSettings] = useAppSettings();
 
   const [currentPath, setCurrentPath] = useState<string>('/home/god');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>('documents');
@@ -348,11 +351,18 @@ PID  USER     PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
     return () => clearInterval(interval);
   }, [isMatrixMode]);
 
+  const themeColorClass = 
+    appSettings.terminal.theme === 'matrix' ? 'text-emerald-400' :
+    appSettings.terminal.theme === 'amber' ? 'text-amber-400' :
+    appSettings.terminal.theme === 'cyberpunk' ? 'text-cyan-300' :
+    'text-[#e2e8f0]';
+
   return (
     <div
       ref={containerRef}
       onClick={handleContainerClick}
-      className="relative flex flex-col h-full w-full bg-[var(--window-glass)] backdrop-blur-2xl text-[#e2e8f0] font-mono text-[13px] leading-relaxed select-text"
+      style={{ fontSize: `${appSettings.terminal.fontSize}px` }}
+      className={`relative flex flex-col h-full w-full bg-[var(--window-glass)] backdrop-blur-2xl font-mono leading-relaxed select-text ${themeColorClass}`}
     >
       {/* Top Tab Bar & Quick Action Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-black/40 backdrop-blur-xl border-b border-white/10 shrink-0 select-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">

@@ -595,3 +595,14 @@ input[type=range]::-moz-range-thumb {
   }
 }
 
+/* ─── Lumin Games Container & Scrolling Override ─── */
+#games-container {
+  min-height: 100% !important;
+  height: auto !important;
+  overflow-y: visible !important;
+  display: block !important;
+}
+
+#games-container * {
+  box-sizing: border-box;
+}

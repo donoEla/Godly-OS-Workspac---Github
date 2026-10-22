@@ -3,6 +3,7 @@ import React from 'react';
 export type AppId =
   | 'app-store'
   | 'calculator'
+  | 'extensions'
   | 'file-manager'
   | 'games'
   | 'notes'
@@ -62,6 +63,7 @@ export interface WindowInstance {
   isSnapped?: SnapRegion;
   prevBounds?: { x: number; y: number; width: number; height: number };
   zIndex: number;
+  initialTab?: any;
 }
 
 export interface Wallpaper {

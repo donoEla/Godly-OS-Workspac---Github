@@ -123,26 +123,31 @@ export const DesktopContextMenu: React.FC = () => {
         icon={<FolderPlus size={13} className="text-amber-400" />}
         label="New Folder"
         onClick={() => handleAction(() => {
-          const folderName = prompt('Folder name:', 'New Folder');
-          if (folderName) {
-            createFolder('desktop', folderName);
-            addNotification('Folder Created', `"${folderName}" added to Desktop`, 'success');
-          }
+          const folderName = `Folder ${Date.now().toString().slice(-4)}`;
+          createFolder('desktop', folderName);
+          addNotification('Folder Created', `"${folderName}" added to Desktop`, 'success');
         })}
       />
       <MenuItem
         icon={<FilePlus size={13} className="text-violet-400" />}
         label="New Note"
         onClick={() => handleAction(() => {
-          const fileName = prompt('Note name:', 'Note.txt');
-          if (fileName) {
-            createFile('desktop', fileName, 'Created from Desktop context menu');
-            addNotification('Note Created', `"${fileName}" added to Desktop`, 'success');
-          }
+          const fileName = `Note-${Date.now().toString().slice(-4)}.txt`;
+          createFile('desktop', fileName, 'Created from Desktop context menu');
+          addNotification('Note Created', `"${fileName}" added to Desktop`, 'success');
         })}
       />
 
       <MenuDivider />
+
+      <MenuItem
+        icon={<RotateCw size={13} className="text-cyan-400" />}
+        label="Align to Grid / Auto Arrange"
+        onClick={() => handleAction(() => {
+          window.dispatchEvent(new CustomEvent('godly-reset-desktop-grid'));
+          addNotification('Desktop Grid', 'Desktop icons aligned and snapped to grid.', 'success');
+        })}
+      />
 
       <MenuItem
         icon={<Terminal size={13} className="text-emerald-400" />}

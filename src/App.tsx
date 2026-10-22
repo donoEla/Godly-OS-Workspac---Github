@@ -1,5 +1,6 @@
 import React from 'react';
 import { OSProvider } from './context/OSContext';
+import { ExtensionsProvider } from './context/ExtensionsContext';
 import { Desktop } from './components/desktop/Desktop';
 import { WindowManager } from './components/window/WindowManager';
 import { Taskbar } from './components/taskbar/Taskbar';
@@ -75,7 +76,9 @@ export default function App() {
 
   return (
     <OSProvider>
-      <GodlyOS />
+      <ExtensionsProvider>
+        <GodlyOS />
+      </ExtensionsProvider>
     </OSProvider>
   );
 }

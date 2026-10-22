@@ -14,6 +14,7 @@ import { SettingsApp } from '../apps/SettingsApp';
 import { SpotifyApp } from '../apps/SpotifyApp';
 import { TerminalApp } from '../apps/TerminalApp';
 import { ZenBrowserApp } from '../apps/ZenBrowserApp';
+import { ExtensionsStoreApp } from '../apps/ExtensionsStoreApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -22,10 +23,20 @@ export const WindowManager: React.FC = () => {
 
   const renderAppContent = (win: any) => {
     if (win.appId === 'zen') {
-      return <ZenBrowserApp initialUrl={win.customUrl} />;
+      return (
+        <ZenBrowserApp
+          initialUrl={win.customUrl}
+          windowId={win.id}
+          initialTab={win.initialTab}
+        />
+      );
     }
 
-    if (win.appId === 'games' || win.appId === 'lumin' || win.appId === 'gnmath' || win.appId === 'zengs' || win.customUrl === 'lumin' || win.customUrl === 'gnmath' || win.customUrl === 'zengs' || win.customUrl === 'vault' || win.customUrl === 'nowgg' || win.customUrl === 'retro') {
+    if (win.appId === 'extensions') {
+      return <ExtensionsStoreApp />;
+    }
+
+    if (win.appId === 'games' || win.appId === 'lumin' || win.appId === 'gnmath' || win.appId === 'zengs' || win.customUrl === 'lumin' || win.customUrl === 'gnmath' || win.customUrl === 'zengs' || win.customUrl === 'vault' || win.customUrl === 'nowgg') {
       const tab =
         win.appId === 'lumin' || win.customUrl === 'lumin'
           ? 'lumin'
@@ -33,7 +44,7 @@ export const WindowManager: React.FC = () => {
           ? 'gnmath'
           : win.appId === 'zengs' || win.customUrl === 'zengs'
           ? 'zengs'
-          : win.customUrl === 'vault' || win.customUrl === 'nowgg' || win.customUrl === 'retro'
+          : win.customUrl === 'vault' || win.customUrl === 'nowgg'
           ? (win.customUrl as any)
           : undefined;
       return <GamesApp initialTab={tab} />;
@@ -75,7 +86,7 @@ export const WindowManager: React.FC = () => {
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
       {/* NautilusOS-grade Snapping Preview Ghost */}
       <SnapOverlay />
 

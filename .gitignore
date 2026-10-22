@@ -17,18 +17,28 @@ dist/*
 !dist/gn_math_games.json
 !dist/local_games.json
 !dist/sw.js
+!dist/bareworker.js
 !dist/assets/
 dist/assets/*
 !dist/assets/index.js
 !dist/assets/index.css
 !dist/assets/icons/
 !dist/assets/backgrounds/
+!dist/assets/browser-backgrounds/
 !dist/uv/
 !dist/baremux/
 !dist/epoxy/
 !dist/local-games/
+!dist/js/
+!dist/libcurl/
+!dist/scramjet/
+!dist/scramjet-engine/
+!dist/scramjet-transport/
+!dist/transport/
+!dist/.nojekyll
 dist-ssr
 *.local
+.agents/
 
 # Editor directories and files
 .vscode/*

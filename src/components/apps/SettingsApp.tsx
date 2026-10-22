@@ -21,15 +21,21 @@ import {
   Server,
   Globe,
   Radio,
-  Zap
+  Zap,
+  Calculator,
+  FileText,
+  Terminal,
+  Gamepad2
 } from 'lucide-react';
 import { WALLPAPERS, ACCENT_CONFIGS, CLOAK_PRESETS } from '../../constants/assets';
 import { AccentColor } from '../../types/os';
 import { sound } from '../../utils/sound';
 import { getActiveWispUrl, setActiveWispUrl, WISP_ENDPOINTS } from '../../utils/uvProxy';
 import { getAssetUrl } from '../../utils/assetHelper';
+import { useAppSettings } from '../../utils/appSettings';
 
-type SettingsSection = 'wallpapers' | 'appearance' | 'proxy' | 'desktop' | 'stealth' | 'display' | 'sound' | 'performance' | 'about';
+type SettingsSection = 'wallpapers' | 'appearance' | 'app-settings' | 'proxy' | 'desktop' | 'stealth' | 'display' | 'sound' | 'performance' | 'about';
+type AppSettingsSubtab = 'calculator' | 'notes' | 'zen' | 'terminal' | 'games';
 
 export const SettingsApp: React.FC = () => {
   const { 
@@ -44,6 +50,8 @@ export const SettingsApp: React.FC = () => {
     panicCloak
   } = useOS();
 
+  const [appSettings, updateAppSettings] = useAppSettings();
+  const [activeAppSubtab, setActiveAppSubtab] = useState<AppSettingsSubtab>('calculator');
   const [activeSection, setActiveSection] = useState<SettingsSection>('wallpapers');
   const [selectedWallpaperCategory, setSelectedWallpaperCategory] = useState<string>('All');
   const [wallpaperSearch, setWallpaperSearch] = useState<string>('');
@@ -79,6 +87,7 @@ export const SettingsApp: React.FC = () => {
           {[
             { id: 'wallpapers', name: 'Wallpapers', icon: ImageIcon },
             { id: 'appearance', name: 'Colors & Theme', icon: Palette },
+            { id: 'app-settings', name: 'Built-in Apps', icon: Sliders },
             { id: 'proxy', name: 'Wisp Proxy Server', icon: Server },
             { id: 'desktop', name: 'Window & Physics', icon: LayoutGrid },
             { id: 'stealth', name: 'Stealth & Cloaking', icon: Shield },
@@ -297,6 +306,432 @@ export const SettingsApp: React.FC = () => {
           </div>
         )}
 
+        {/* Built-in Applications Settings Section */}
+        {activeSection === 'app-settings' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>Built-in App Preferences</span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30 font-bold">
+                  5 Core Apps
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">Configure custom defaults, rendering options, and engine behaviors for each native application.</p>
+            </div>
+
+            {/* Subtab Navigator */}
+            <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/10 gap-1 overflow-x-auto">
+              {[
+                { id: 'calculator', name: 'Calculator Pro', icon: Calculator },
+                { id: 'notes', name: 'Notes Studio', icon: FileText },
+                { id: 'zen', name: 'Godly Browser', icon: Globe },
+                { id: 'terminal', name: 'Starship Terminal', icon: Terminal },
+                { id: 'games', name: 'Games Vault', icon: Gamepad2 },
+              ].map((sub) => {
+                const Icon = sub.icon;
+                const isCur = activeAppSubtab === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveAppSubtab(sub.id as AppSettingsSubtab);
+                    }}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                      isCur
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={14} />
+                    <span>{sub.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 1. Calculator Pro Settings */}
+            {activeAppSubtab === 'calculator' && (
+              <div className="space-y-4">
+                {/* Angle Mode */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Default Trigonometric Angle Mode</span>
+                    <span className="text-[11px] text-slate-400">Trigonometric calculations (sin, cos, tan) calculate in radians or degrees.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1">
+                    <button
+                      onClick={() => updateAppSettings({ calculator: { ...appSettings.calculator, angleMode: 'rad' } })}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all ${
+                        appSettings.calculator.angleMode === 'rad' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      RAD (Radians)
+                    </button>
+                    <button
+                      onClick={() => updateAppSettings({ calculator: { ...appSettings.calculator, angleMode: 'deg' } })}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all ${
+                        appSettings.calculator.angleMode === 'deg' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      DEG (Degrees)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Default Mode on Launch */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Initial Calculator Mode</span>
+                    <span className="text-[11px] text-slate-400">Layout view displayed when opening Calculator Pro.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1">
+                    {(['standard', 'scientific', 'graphing'] as const).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => updateAppSettings({ calculator: { ...appSettings.calculator, defaultMode: m } })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+                          appSettings.calculator.defaultMode === m ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Decimal Precision */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Floating Point Precision</span>
+                    <span className="text-[11px] text-slate-400">Maximum decimal places displayed for scientific results.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1 font-mono text-xs">
+                    {[2, 4, 8, 12].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => updateAppSettings({ calculator: { ...appSettings.calculator, precision: p } })}
+                        className={`px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+                          appSettings.calculator.precision === p ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {p} Dec
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Audio Clicks */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Tactile Keypress Audio</span>
+                    <span className="text-[11px] text-slate-400">Play responsive synthesized mechanical click audio on keypad presses.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ calculator: { ...appSettings.calculator, soundEnabled: !appSettings.calculator.soundEnabled } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.calculator.soundEnabled ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.calculator.soundEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. Notes Studio Settings */}
+            {activeAppSubtab === 'notes' && (
+              <div className="space-y-4">
+                {/* Font Family */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Editor Typography</span>
+                    <span className="text-[11px] text-slate-400">Font face for text and markdown composition.</span>
+                  </div>
+                  <select
+                    value={appSettings.notes.fontFamily}
+                    onChange={(e) => updateAppSettings({ notes: { ...appSettings.notes, fontFamily: e.target.value } })}
+                    className="bg-[#121624] border border-white/10 text-white rounded-xl px-3 py-1.5 text-xs outline-none"
+                  >
+                    <option value="Inter, system-ui, sans-serif">Inter (Modern Sans)</option>
+                    <option value="'JetBrains Mono', monospace">JetBrains Mono (Developer)</option>
+                    <option value="'Fira Code', monospace">Fira Code (Ligatures)</option>
+                    <option value="Cinzel, serif">Cinzel (Celestial Serif)</option>
+                  </select>
+                </div>
+
+                {/* Font Size */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Font Size</span>
+                    <span className="text-[11px] text-slate-400">Editor text scaling in pixels.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1 font-mono text-xs">
+                    {[12, 14, 16, 18].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => updateAppSettings({ notes: { ...appSettings.notes, fontSize: size } })}
+                        className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                          appSettings.notes.fontSize === size ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {size}px
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Show Line Numbers */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Show Line Numbers</span>
+                    <span className="text-[11px] text-slate-400">Display margin line count numbering in editor pane.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ notes: { ...appSettings.notes, showLineNumbers: !appSettings.notes.showLineNumbers } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.notes.showLineNumbers ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.notes.showLineNumbers ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Word Wrap */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Soft Word Wrapping</span>
+                    <span className="text-[11px] text-slate-400">Wrap long lines naturally to window edge without horizontal scrolling.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ notes: { ...appSettings.notes, wordWrap: !appSettings.notes.wordWrap } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.notes.wordWrap ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.notes.wordWrap ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Zen Browser Settings */}
+            {activeAppSubtab === 'zen' && (
+              <div className="space-y-4">
+                {/* Default Search Engine */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Default Search Engine</span>
+                    <span className="text-[11px] text-slate-400">Default query engine for omnibar searches and new tab speed dials.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1">
+                    {[
+                      { id: 'duckduckgo', name: 'DuckDuckGo', desc: 'Privacy' },
+                      { id: 'brave', name: 'Brave', desc: 'Independent' },
+                      { id: 'google', name: 'Google', desc: 'Global' },
+                    ].map((eng) => (
+                      <button
+                        key={eng.id}
+                        onClick={() => updateAppSettings({ zen: { ...appSettings.zen, defaultSearchEngine: eng.id as any } })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          appSettings.zen.defaultSearchEngine === eng.id ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {eng.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Compact Mode Default */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Compact Mode by Default</span>
+                    <span className="text-[11px] text-slate-400">Auto-hide vertical sidebar and toolbar until hovering near the window edge.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ zen: { ...appSettings.zen, compactModeDefault: !appSettings.zen.compactModeDefault } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.zen.compactModeDefault ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.zen.compactModeDefault ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Zen Glance */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Zen Glance (Floating Peek Preview)</span>
+                    <span className="text-[11px] text-slate-400">Alt-click or eye icon to inspect links in a floating overlay modal without losing position.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ zen: { ...appSettings.zen, glanceEnabled: !appSettings.zen.glanceEnabled } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.zen.glanceEnabled ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.zen.glanceEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 4. Terminal Settings */}
+            {activeAppSubtab === 'terminal' && (
+              <div className="space-y-4">
+                {/* Terminal Theme */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Terminal Color Scheme</span>
+                    <span className="text-[11px] text-slate-400">Palette and phosphor styling for bash prompt and shell output.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1">
+                    {[
+                      { id: 'obsidian', name: 'Obsidian' },
+                      { id: 'matrix', name: 'Matrix' },
+                      { id: 'cyberpunk', name: 'Cyberpunk' },
+                      { id: 'amber', name: 'Amber CRT' },
+                    ].map((th) => (
+                      <button
+                        key={th.id}
+                        onClick={() => updateAppSettings({ terminal: { ...appSettings.terminal, theme: th.id as any } })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+                          appSettings.terminal.theme === th.id ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {th.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Font Size */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Terminal Font Size</span>
+                    <span className="text-[11px] text-slate-400">Font size for virtual shell buffer.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1 font-mono text-xs">
+                    {[12, 13, 14, 16].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => updateAppSettings({ terminal: { ...appSettings.terminal, fontSize: s } })}
+                        className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                          appSettings.terminal.fontSize === s ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {s}px
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cursor Style */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Shell Cursor Style</span>
+                    <span className="text-[11px] text-slate-400">Blinking prompt indicator style.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1 font-mono text-xs">
+                    {[
+                      { id: 'block', name: '█ Block' },
+                      { id: 'underline', name: '_ Underline' },
+                      { id: 'bar', name: '| Bar' },
+                    ].map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => updateAppSettings({ terminal: { ...appSettings.terminal, cursorStyle: c.id as any } })}
+                        className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                          appSettings.terminal.cursorStyle === c.id ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. Arcade & Games Settings */}
+            {activeAppSubtab === 'games' && (
+              <div className="space-y-4">
+                {/* Proxy Backend */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Cloud Game Proxy Backend</span>
+                    <span className="text-[11px] text-slate-400">Tunnel engine for routing nowgg.fun and web arcade assets.</span>
+                  </div>
+                  <div className="flex bg-black/40 border border-white/10 rounded-xl p-1 gap-1">
+                    {[
+                      { id: 'wisp', name: 'Wisp WebSocket' },
+                      { id: 'direct', name: 'UltraViolet Direct' },
+                      { id: 'scramjet', name: 'Scramjet Engine' },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => updateAppSettings({ games: { ...appSettings.games, proxyBackend: p.id as any } })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          appSettings.games.proxyBackend === p.id ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Show FPS */}
+                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                  <div>
+                    <span className="text-xs font-semibold text-white block">Real-time Performance HUD</span>
+                    <span className="text-[11px] text-slate-400">Display framerate (FPS) and compositor latency overlay in arcade sessions.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAppSettings({ games: { ...appSettings.games, showFps: !appSettings.games.showFps } })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      appSettings.games.showFps ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        appSettings.games.showFps ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Desktop & Window Snapping Section */}
         {activeSection === 'desktop' && (
           <div className="space-y-6">
@@ -404,11 +839,11 @@ export const SettingsApp: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-white">Proxy Architecture</span>
                 <span className="text-[10px] font-mono text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">
-                  Ultraviolet 2.0 + BareMux 2.1 + Libcurl WASM
+                  Scramjet Static v2.0 + SW Bridge + Ultraviolet 2.0
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                When you launch cloud games (nowgg.fun), streaming (StreamFlix, Octave), or web libraries (GNMath), the browser connects through your selected Wisp WebSocket endpoint. This ensures scripts run at native speed without direct iframe blocking.
+                Godly OS features a unified multi-engine proxy stack: <b>Scramjet Static v2.0</b> (MercuryWorkshop WASM rewriter), <b>Service Worker Bridge</b> (root sw.js &amp; bareworker.js), and <b>Ultraviolet 2.0</b>. Select any engine per-tab or per-app, backed by high-speed WebSocket Wisp relays like Anura Pro.
               </p>
             </div>
 

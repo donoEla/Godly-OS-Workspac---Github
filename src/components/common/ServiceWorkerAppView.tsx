@@ -19,15 +19,21 @@ import { sound } from '../../utils/sound';
 import { 
   initUvProxy, 
   encodeUvUrl, 
+  initSwBridgeProxy,
+  encodeSwBridgeUrl,
   getActiveWispUrl, 
   setActiveWispUrl, 
   WISP_ENDPOINTS 
 } from '../../utils/uvProxy';
+import { 
+  initScramjetProxy, 
+  encodeScramjetUrl 
+} from '../../utils/scramjetProxy';
 import { getAssetUrl } from '../../utils/assetHelper';
 
 import { useOS } from '../../context/OSContext';
 
-export type ProxyTunnelMode = 'uv' | 'direct' | 'local';
+export type ProxyTunnelMode = 'scramjet' | 'uv' | 'sw' | 'direct' | 'local';
 
 interface ServiceWorkerAppViewProps {
   url: string;
@@ -69,7 +75,20 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
   const loadTimerRef = useRef<number | null>(null);
   const timeoutTimerRef = useRef<number | null>(null);
 
-  const isStreamFlix = appName.toLowerCase().includes('streamflix') || currentUrl.includes('streamflix');
+  const MOVIES_MIRRORS = [
+    'https://1337x.to/',
+    'https://1337x.st/',
+    'https://x1337x.ws/',
+    'https://x1337x.eu/',
+    'https://x1337x.se/',
+    'https://x1337x.cc/',
+  ];
+
+  const isMovies =
+    appName.toLowerCase().includes('movies') ||
+    appName.toLowerCase().includes('streamflix') ||
+    currentUrl.includes('1337x') ||
+    currentUrl.includes('streamflix');
   const isOctave = appName.toLowerCase().includes('octave') || currentUrl.includes('octave');
 
   // Realistic dynamic ping simulation
@@ -121,7 +140,53 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
       return;
     }
 
-    // 4. UV-Static 2.0 (Epoxy + Wisp WebSocket) - Primary default
+    // 4. Scramjet Static v2.0 (Fast WASM + BareWorker / Wisp)
+    if (tunnelMode === 'scramjet') {
+      async function setupScramjet() {
+        try {
+          await initScramjetProxy(activeWisp);
+          if (mounted) {
+            setIframeSrc(encodeScramjetUrl(currentUrl));
+          }
+        } catch (err) {
+          console.warn('[Scramjet Static] Proxy init error:', err);
+          if (mounted) {
+            setIframeSrc(encodeScramjetUrl(currentUrl));
+          }
+        }
+      }
+      setupScramjet();
+      return () => {
+        mounted = false;
+        if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+        if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+      };
+    }
+
+    // 5. Root Service Worker Bridge (sw.js & bareworker.js)
+    if (tunnelMode === 'sw') {
+      async function setupSwBridge() {
+        try {
+          await initSwBridgeProxy();
+          if (mounted) {
+            setIframeSrc(encodeSwBridgeUrl(currentUrl));
+          }
+        } catch (err) {
+          console.warn('[SW Bridge] Proxy init error:', err);
+          if (mounted) {
+            setIframeSrc(encodeSwBridgeUrl(currentUrl));
+          }
+        }
+      }
+      setupSwBridge();
+      return () => {
+        mounted = false;
+        if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+        if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+      };
+    }
+
+    // 6. UV-Static 2.0 (Epoxy + Wisp WebSocket)
     async function setupUvStatic() {
       try {
         await initUvProxy();
@@ -165,6 +230,10 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
         iframeRef.current.src = `/os-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`;
       } else if (tunnelMode === 'direct') {
         iframeRef.current.src = `${currentUrl}${currentUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+      } else if (tunnelMode === 'scramjet') {
+        iframeRef.current.src = encodeScramjetUrl(currentUrl);
+      } else if (tunnelMode === 'sw') {
+        iframeRef.current.src = encodeSwBridgeUrl(currentUrl);
       } else {
         iframeRef.current.src = encodeUvUrl(currentUrl);
       }
@@ -184,6 +253,10 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
       setIframeSrc(`/os-proxy?url=${encodeURIComponent(currentUrl)}&_t=${Date.now()}`);
     } else if (mode === 'direct') {
       setIframeSrc(currentUrl);
+    } else if (mode === 'scramjet') {
+      setIframeSrc(encodeScramjetUrl(currentUrl));
+    } else if (mode === 'sw') {
+      setIframeSrc(encodeSwBridgeUrl(currentUrl));
     } else {
       setIframeSrc(encodeUvUrl(currentUrl));
     }
@@ -218,12 +291,19 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
     handleReload();
   };
 
-  // Toggle StreamFlix mirror
-  const handleToggleStreamFlixMirror = () => {
+  // Cycle Movies / 1337x mirror
+  const handleCycleMoviesMirror = () => {
     sound.playClick();
-    const next = currentUrl.includes('watch.streamflix.one')
-      ? 'https://streamflix.one/'
-      : 'https://watch.streamflix.one/';
+    const curr = currentUrl.toLowerCase();
+    const currentIndex = MOVIES_MIRRORS.findIndex((m) => {
+      try {
+        return curr.includes(new URL(m).hostname);
+      } catch {
+        return false;
+      }
+    });
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % MOVIES_MIRRORS.length : 0;
+    const next = MOVIES_MIRRORS[nextIndex];
     setCurrentUrl(next);
     setUrlInput(next);
   };
@@ -259,7 +339,11 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
                 setShowWispMenu(false);
               }}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-mono transition-all ${
-                tunnelMode === 'uv'
+                tunnelMode === 'scramjet'
+                  ? 'bg-violet-500/15 border-violet-500/35 text-violet-300 hover:bg-violet-500/25'
+                  : tunnelMode === 'sw'
+                  ? 'bg-teal-500/15 border-teal-500/35 text-teal-300 hover:bg-teal-500/25'
+                  : tunnelMode === 'uv'
                   ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300 hover:bg-emerald-500/25'
                   : tunnelMode === 'direct'
                   ? 'bg-blue-500/15 border-blue-500/35 text-blue-300 hover:bg-blue-500/25'
@@ -267,19 +351,66 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
               }`}
               title="Select Proxy / Tunnel routing mode"
             >
-              <ShieldCheck size={12} className={tunnelMode === 'uv' ? 'text-emerald-400' : tunnelMode === 'direct' ? 'text-blue-400' : 'text-amber-400'} />
+              <ShieldCheck size={12} className={
+                tunnelMode === 'scramjet' ? 'text-violet-400' :
+                tunnelMode === 'sw' ? 'text-teal-400' :
+                tunnelMode === 'uv' ? 'text-emerald-400' :
+                tunnelMode === 'direct' ? 'text-blue-400' : 'text-amber-400'
+              } />
               <span className="hidden sm:inline font-semibold">
-                {tunnelMode === 'uv' ? 'UV-Static 2.0 (Epoxy)' : tunnelMode === 'direct' ? 'Direct Embed' : 'Local Proxy'}
+                {tunnelMode === 'scramjet' ? 'Scramjet v2.0' :
+                 tunnelMode === 'sw' ? 'SW Bridge (sw.js)' :
+                 tunnelMode === 'uv' ? 'UV-Static 2.0' :
+                 tunnelMode === 'direct' ? 'Direct Embed' : 'Local Proxy'}
               </span>
               <ChevronDown size={10} className="opacity-70" />
             </button>
 
             {showModeMenu && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 rounded-2xl bg-[#10121d]/95 backdrop-blur-2xl border border-white/15 shadow-2xl p-1.5 z-50 flex flex-col gap-1">
+              <div className="absolute top-full left-0 mt-1.5 w-64 rounded-2xl bg-[#10121d]/95 backdrop-blur-2xl border border-white/15 shadow-2xl p-1.5 z-50 flex flex-col gap-1">
                 <div className="px-2.5 py-1 text-[10px] font-mono uppercase text-slate-400 font-bold tracking-wider border-b border-white/10">
                   Select Routing Pipeline
                 </div>
+
+                {/* Scramjet Static Option */}
+                <button
+                  onClick={() => handleSetTunnelMode('scramjet')}
+                  className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
+                    tunnelMode === 'scramjet'
+                      ? 'bg-violet-500/20 text-violet-200 border border-violet-500/40 font-semibold'
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">Scramjet Static v2.0</span>
+                      <span className="text-[9px] bg-violet-500/20 text-violet-300 px-1 rounded font-mono">WASM ⚡</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">High-speed WASM engine + BareWorker Wisp</div>
+                  </div>
+                  {tunnelMode === 'scramjet' && <Check size={14} className="text-violet-400 flex-shrink-0" />}
+                </button>
+
+                {/* Service Worker Bridge Option */}
+                <button
+                  onClick={() => handleSetTunnelMode('sw')}
+                  className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
+                    tunnelMode === 'sw'
+                      ? 'bg-teal-500/20 text-teal-200 border border-teal-500/40 font-semibold'
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">Service Worker Bridge</span>
+                      <span className="text-[9px] bg-teal-500/20 text-teal-300 px-1 rounded font-mono">sw.js</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Root sw.js + bareworker.js tunnel</div>
+                  </div>
+                  {tunnelMode === 'sw' && <Check size={14} className="text-teal-400 flex-shrink-0" />}
+                </button>
                 
+                {/* Ultraviolet Proxy Option */}
                 <button
                   onClick={() => handleSetTunnelMode('uv')}
                   className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
@@ -291,13 +422,14 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium">UV-Static 2.0</span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1 rounded">Epoxy Wasm</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1 rounded font-mono">Epoxy</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">High-speed client-side Wisp proxy</div>
+                    <div className="text-[10px] text-slate-400">Ultraviolet with Epoxy Wisp transport</div>
                   </div>
                   {tunnelMode === 'uv' && <Check size={14} className="text-emerald-400 flex-shrink-0" />}
                 </button>
 
+                {/* Direct Sandbox Option */}
                 <button
                   onClick={() => handleSetTunnelMode('direct')}
                   className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
@@ -313,6 +445,7 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
                   {tunnelMode === 'direct' && <Check size={14} className="text-blue-400 flex-shrink-0" />}
                 </button>
 
+                {/* Local Proxy Option */}
                 <button
                   onClick={() => handleSetTunnelMode('local')}
                   className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
@@ -331,8 +464,8 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
             )}
           </div>
 
-          {/* Wisp Server Selector Dropdown (When in UV mode) */}
-          {tunnelMode === 'uv' && (
+          {/* Wisp Server Selector Dropdown (When proxy modes active) */}
+          {(tunnelMode === 'scramjet' || tunnelMode === 'sw' || tunnelMode === 'uv') && (
             <div className="relative">
               <button
                 onClick={() => {
@@ -406,17 +539,25 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
 
         {/* Right Action Buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* StreamFlix Mirror Toggle */}
-          {isStreamFlix && (
+          {/* Movies 1337x Mirror Toggle */}
+          {isMovies && (
             <button
-              onClick={handleToggleStreamFlixMirror}
-              className="px-2 py-1 rounded-xl bg-red-600/20 hover:bg-red-600/35 border border-red-500/30 text-red-200 text-xs font-mono font-medium transition-all flex items-center gap-1"
-              title="Toggle StreamFlix Domain Mirror"
+              onClick={handleCycleMoviesMirror}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-xs font-mono font-medium transition-all flex items-center gap-1.5 shadow-sm"
+              title="Cycle 1337x Mirrors (1337x.to, 1337x.st, x1337x.ws, x1337x.eu, x1337x.se, x1337x.cc)"
             >
-              <Film size={11} className="text-red-400" />
-              <span className="hidden sm:inline">
-                {currentUrl.includes('watch.streamflix.one') ? 'Mirror: watch' : 'Mirror: main'}
+              <Film size={12} className="text-amber-400" />
+              <span className="hidden sm:inline font-semibold text-white">Mirror:</span>
+              <span className="text-amber-300">
+                {(() => {
+                  try {
+                    return new URL(currentUrl).hostname.replace('www.', '');
+                  } catch {
+                    return '1337x.to';
+                  }
+                })()}
               </span>
+              <span className="text-[10px] text-amber-400/80">↺</span>
             </button>
           )}
 
@@ -526,6 +667,37 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
                 ✕
               </button>
             </div>
+            {isMovies && (
+              <div className="mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="text-[11px] font-semibold text-amber-300 mb-1.5 flex items-center gap-1.5 font-mono">
+                  <Film size={12} className="text-amber-400" />
+                  1337x Official Mirror Cluster:
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {MOVIES_MIRRORS.map((mirror) => {
+                    const host = new URL(mirror).hostname;
+                    const isActive = currentUrl.includes(host);
+                    return (
+                      <button
+                        key={mirror}
+                        onClick={() => {
+                          sound.playClick();
+                          setCurrentUrl(mirror);
+                          setUrlInput(mirror);
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[10.5px] font-mono font-medium transition-all text-center truncate ${
+                          isActive
+                            ? 'bg-amber-500 text-black font-bold shadow-sm'
+                            : 'bg-white/5 hover:bg-white/10 text-white/80 border border-white/5'
+                        }`}
+                      >
+                        {host}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
               Black screen? If your current hosting environment (e.g. Wasmer or another web proxy) restricts nested Service Workers, use 1-click fallback:
             </p>
@@ -549,13 +721,13 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
               <button
                 onClick={() => {
                   sound.playClick();
-                  openApp('zen', 'Zen Browser', currentUrl);
+                  openApp('zen', 'Godly Browser', currentUrl);
                 }}
                 className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-200 font-mono text-[11px] font-semibold transition-all"
-                title="Open inside the new Zen Browser with search engines"
+                title="Open inside the new Godly Browser with search engines"
               >
                 <Globe size={12} className="text-emerald-400" />
-                Zen Browser
+                Godly Browser
               </button>
               <button
                 onClick={() => {
@@ -577,7 +749,10 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
       <div className="px-3 py-1 bg-[#0b0c14]/90 backdrop-blur-xl border-t border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400 font-mono flex-shrink-0">
         <div className="flex items-center gap-2 truncate">
           <span className="text-purple-400 font-semibold">
-            {tunnelMode === 'uv' ? 'UV-Static 2.0:' : tunnelMode === 'direct' ? 'Direct Sandbox:' : 'Local Proxy:'}
+            {tunnelMode === 'scramjet' ? 'Scramjet v2.0:' :
+             tunnelMode === 'sw' ? 'SW Bridge (sw.js):' :
+             tunnelMode === 'uv' ? 'UV-Static 2.0:' :
+             tunnelMode === 'direct' ? 'Direct Sandbox:' : 'Local Proxy:'}
           </span>
           <span className="truncate text-slate-300">{currentUrl}</span>
         </div>
@@ -588,7 +763,15 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
           </span>
           <span className="text-slate-600">•</span>
           <span className="text-slate-400">
-            {tunnelMode === 'uv' ? `Epoxy Wasm Relay: ${activeWisp.replace('wss://', '').replace('/', '')}` : tunnelMode === 'direct' ? 'Direct Embed' : 'Local SW Bridge'}
+            {tunnelMode === 'scramjet'
+              ? `Scramjet WASM + libcurl (${activeWisp.replace('wss://', '').replace('/', '')})`
+              : tunnelMode === 'sw'
+              ? `Root sw.js + bareworker.js (${activeWisp.replace('wss://', '').replace('/', '')})`
+              : tunnelMode === 'uv'
+              ? `Epoxy Wasm Relay: ${activeWisp.replace('wss://', '').replace('/', '')}`
+              : tunnelMode === 'direct'
+              ? 'Direct Embed'
+              : 'Local Node Proxy'}
           </span>
         </div>
       </div>

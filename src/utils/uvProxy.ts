@@ -104,9 +104,11 @@ export interface WispEndpoint {
 }
 
 export const WISP_ENDPOINTS: WispEndpoint[] = [
+  { id: 'anura', name: 'Anura Pro High-Speed (Ultra Fast ⚡)', url: 'wss://anura.pro/wisp/', region: 'Global Fast ⚡' },
   { id: 'mercury', name: 'Mercury Workshop (Official)', url: 'wss://wisp.mercurywork.shop/', region: 'Global Fast (101 Active)' },
   { id: 'flow', name: 'Flow Works Wisp', url: 'wss://wisp.flow-works.me/', region: 'Global Fast' },
   { id: 'phantom', name: 'Phantom Fun Wisp', url: 'wss://phantom.fun/wisp/', region: 'US/EU' },
+  { id: 'anura-mw', name: 'Mercury Anura Relay', url: 'wss://anura.mercurywork.shop/wisp/', region: 'Failover' },
 ];
 
 const DEFAULT_WISP = WISP_ENDPOINTS[0].url;
@@ -125,7 +127,6 @@ export function getActiveWispUrl(): string {
         saved.includes('codd70') ||
         saved.includes('tar.black') ||
         saved.includes('unblocker.cc') ||
-        saved.includes('anura.pro') ||
         saved.includes('ruby.flamz') ||
         saved.includes('nebula.squid') ||
         saved.includes('tomp.app'))
@@ -310,3 +311,126 @@ export function decodeUvUrl(encodedPath: string): string {
   } catch {}
   return encodedPath;
 }
+
+// ── Root Service Worker Bridge (sw.js & bareworker.js) ─────────────────────────
+let isSwBridgeReady = false;
+let isSwBridgeInitializing = false;
+
+export async function initSwBridgeProxy(): Promise<boolean> {
+  if (isSwBridgeReady && isServiceWorkerActive()) return true;
+  if (isSwBridgeInitializing) {
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (isSwBridgeReady) {
+          clearInterval(check);
+          resolve(true);
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(check);
+        resolve(isSwBridgeReady);
+      }, 3500);
+    });
+  }
+
+  isSwBridgeInitializing = true;
+  const base = getBasePrefix();
+
+  try {
+    // 1. Register root sw.js
+    if ('serviceWorker' in navigator) {
+      try {
+        const swPath = `${base}/sw.js`;
+        const swScope = `${base}/`;
+        const reg = await navigator.serviceWorker.register(swPath, {
+          scope: swScope,
+        });
+        console.log('[Godly SW Bridge] Root Service Worker (sw.js) registered:', reg.scope);
+
+        if (reg.installing) {
+          await new Promise<void>((resolve) => {
+            const worker = reg.installing;
+            if (!worker) return resolve();
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'activated') resolve();
+            });
+            setTimeout(resolve, 1500);
+          });
+        }
+      } catch (swErr) {
+        console.warn('[Godly SW Bridge] SW registration note:', swErr);
+      }
+    }
+
+    // 2. Initialize BareMux using /bareworker.js
+    if (window.BareMux) {
+      const workerPath = `${base}/bareworker.js`;
+      const conn = new window.BareMux.BareMuxConnection(workerPath);
+      const wisp = getActiveWispUrl();
+      const epoxyPath = `${base}/epoxy/index.mjs`;
+
+      try {
+        await conn.setTransport(epoxyPath, [{ wisp }]);
+        console.log('[Godly SW Bridge] BareMux connected to /bareworker.js with Epoxy transport to:', wisp);
+      } catch {
+        try {
+          const curlPath = `${base}/scramjet-transport/libcurl.mjs`;
+          await conn.setTransport(curlPath, [{ wisp }]);
+          console.log('[Godly SW Bridge] BareMux connected to /bareworker.js with Libcurl transport to:', wisp);
+        } catch (curlErr) {
+          console.warn('[Godly SW Bridge] Libcurl fallback note:', curlErr);
+        }
+      }
+      isSwBridgeReady = true;
+      isSwBridgeInitializing = false;
+      return true;
+    }
+    isSwBridgeInitializing = false;
+    return false;
+  } catch (err) {
+    console.warn('[Godly SW Bridge] Init error:', err);
+    isSwBridgeInitializing = false;
+    return false;
+  }
+}
+
+export function encodeSwBridgeUrl(rawUrl: string): string {
+  let url = rawUrl.trim();
+  if (url.includes('now.gg')) {
+    url = url.replace(/now\.gg/g, 'nowgg.fun');
+  }
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  const base = getBasePrefix();
+  const prefix = `${base}/sw-service/`;
+
+  try {
+    if (window.__uv$config && typeof window.__uv$config.encodeUrl === 'function') {
+      return prefix + window.__uv$config.encodeUrl(url);
+    }
+    if (window.Ultraviolet?.codec?.xor?.encode) {
+      return prefix + window.Ultraviolet.codec.xor.encode(url);
+    }
+  } catch (e) {
+    console.warn('[Godly SW Bridge] Encoder fallback invoked', e);
+  }
+
+  return prefix + fallbackXorEncode(url);
+}
+
+export function decodeSwBridgeUrl(encodedPath: string): string {
+  try {
+    const stripped = encodedPath.replace(/^\/sw-service\//, '');
+    if (window.__uv$config && typeof window.__uv$config.decodeUrl === 'function') {
+      return window.__uv$config.decodeUrl(stripped);
+    }
+    if (window.Ultraviolet?.codec?.xor?.decode) {
+      return window.Ultraviolet.codec.xor.decode(stripped);
+    }
+  } catch {}
+  return encodedPath;
+}
+

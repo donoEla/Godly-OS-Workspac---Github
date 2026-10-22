@@ -28,6 +28,13 @@ interface OSContextType {
   activeWindowId: string | null;
   openApp: (appId: AppId, customTitle?: string, customUrl?: string, customIcon?: string) => void;
   openWebApp: (title: string, url: string, icon?: string) => void;
+  openNewBrowserWindow: (options?: {
+    tab?: any;
+    customUrl?: string;
+    position?: { x: number; y: number };
+    snapRegion?: SnapRegion;
+    sourceWindowId?: string;
+  }) => string;
   closeWindow: (id: string) => void;
   minimizeWindow: (id: string) => void;
   maximizeWindow: (id: string) => void;
@@ -91,7 +98,7 @@ interface OSContextType {
 
   // File System
   fileSystem: FileItem[];
-  createFile: (parentId: string | null, name: string, content?: string, extension?: string) => FileItem;
+  createFile: (parentId: string | null, name: string, content?: string, extension?: string, imageUrl?: string) => FileItem;
   createFolder: (parentId: string | null, name: string) => FileItem;
   deleteFileItem: (id: string) => void;
   updateFileContent: (id: string, content: string) => void;
@@ -117,22 +124,24 @@ const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
-  { id: 'zen-browser', name: 'Zen Browser', icon: getAssetUrl('assets/icons/zen.jpg'), category: 'Productivity', appId: 'zen' },
+  { id: 'zen-browser', name: 'Godly Browser', icon: getAssetUrl('assets/icons/zen.jpg'), category: 'Productivity', appId: 'zen' },
   { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
   { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
-  { id: 'streamflix', name: 'StreamFlix Cinema', icon: getAssetUrl('assets/icons/streamflix.png?v=3'), category: 'Media', url: 'https://watch.streamflix.one/' },
+  { id: 'movies', name: 'Movies', icon: getAssetUrl('assets/icons/movies.png'), category: 'Media', url: 'https://1337x.to/' },
   { id: 'games-arcade', name: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'games' },
   { id: 'terminal', name: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'terminal' },
   { id: 'notes-studio', name: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), category: 'Productivity', appId: 'notes' },
   { id: 'calculator-pro', name: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), category: 'Utilities', appId: 'calculator' },
   { id: 'file-manager', name: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), category: 'System', appId: 'file-manager' },
   { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
+  { id: 'extensions-hub', name: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'extensions' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
 const APP_META: Record<AppId, { title: string; icon: string; width: number; height: number }> = {
   'app-store': { title: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), width: 920, height: 640 },
   'calculator': { title: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), width: 440, height: 600 },
+  'extensions': { title: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), width: 980, height: 640 },
   'file-manager': { title: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), width: 880, height: 580 },
   'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 860, height: 640 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
@@ -140,7 +149,7 @@ const APP_META: Record<AppId, { title: string; icon: string; width: number; heig
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
   'terminal': { title: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), width: 780, height: 520 },
   'web-app': { title: 'Web App', icon: getAssetUrl('assets/icons/settings.jpg'), width: 960, height: 660 },
-  'zen': { title: 'Zen Browser', icon: getAssetUrl('assets/icons/zen.jpg'), width: 1040, height: 700 },
+  'zen': { title: 'Godly Browser', icon: getAssetUrl('assets/icons/zen.jpg'), width: 1060, height: 720 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -164,7 +173,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   // Windows state
   const [windows, setWindows] = useState<WindowInstance[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
-  const [highestZ, setHighestZ] = useState<number>(10);
+  const [highestZ, setHighestZ] = useState<number>(100);
 
   // Installed Apps State (synced to localStorage with automatic version reconciliation)
   const [installedApps, setInstalledApps] = useState<InstalledApp[]>(() => {
@@ -172,11 +181,15 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
       
-      if (saved && version === '3.4') {
+      if (saved && version === '3.6') {
         const list: InstalledApp[] = JSON.parse(saved);
         return list
           .filter((a: any) => a.id !== 'gnmath-leonard')
           .map((app) => {
+            if (app.id === 'streamflix' || app.id === 'movies') {
+              const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
+              if (def) return def;
+            }
             const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === app.id);
             if (def) {
               return { ...app, icon: def.icon, name: def.name, url: def.url };
@@ -185,7 +198,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           });
       }
       // Migrate old storage: force update default icons and set version
-      localStorage.setItem('godly_apps_version', '3.4');
+      localStorage.setItem('godly_apps_version', '3.6');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
@@ -198,13 +211,27 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setInstalledApps((prev) => {
       let changed = false;
       let updated = prev.map((app) => {
+        if (app.id === 'streamflix') {
+          changed = true;
+          const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
+          if (def) return def;
+        }
         const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === app.id);
-        if (def && app.icon !== def.icon) {
+        if (def && (app.icon !== def.icon || app.name !== def.name || app.url !== def.url)) {
           changed = true;
           return { ...app, icon: def.icon, name: def.name, url: def.url };
         }
         return app;
       });
+
+      // Ensure Movies app is present
+      if (!updated.some((a) => a.id === 'movies')) {
+        const moviesDef = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
+        if (moviesDef) {
+          updated = [...updated, moviesDef];
+          changed = true;
+        }
+      }
 
       // Ensure Zen Browser is present
       if (!updated.some((a) => a.id === 'zen-browser')) {
@@ -218,7 +245,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       if (changed) {
         try {
           localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-          localStorage.setItem('godly_apps_version', '3.4');
+          localStorage.setItem('godly_apps_version', '3.6');
         } catch {}
         return updated;
       }
@@ -580,6 +607,108 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     openApp('web-app', title, url, icon);
   }, [openApp]);
 
+  const openNewBrowserWindow = useCallback((options?: {
+    tab?: any;
+    customUrl?: string;
+    position?: { x: number; y: number };
+    snapRegion?: SnapRegion;
+    sourceWindowId?: string;
+  }) => {
+    const meta = APP_META['zen'];
+    const newZ = highestZ + 1;
+    setHighestZ(newZ);
+
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    const taskbarOffset = settings.taskbarPosition === 'top' ? 52 : 0;
+    const availH = screenH - 52;
+    let w = Math.min(meta.width, screenW - 40);
+    let h = Math.min(meta.height, availH - 40);
+
+    let x = Math.max(20, Math.min(screenW - w - 20, (screenW - w) / 2 + (windows.length % 5) * 32));
+    let y = Math.max(20, Math.min(availH - h - 20, (availH - h) / 2 - 20 + taskbarOffset + (windows.length % 5) * 32));
+    let snap: SnapRegion = options?.snapRegion || 'none';
+
+    // Handle Split-Screen side by side
+    if (options?.snapRegion === 'left') {
+      const halfW = Math.floor(screenW / 2);
+      x = 0;
+      y = taskbarOffset;
+      w = halfW;
+      h = availH;
+      snap = 'left';
+    } else if (options?.snapRegion === 'right') {
+      const halfW = Math.floor(screenW / 2);
+      x = halfW;
+      y = taskbarOffset;
+      w = screenW - halfW;
+      h = availH;
+      snap = 'right';
+    } else if (options?.position) {
+      x = Math.max(20, Math.min(screenW - w - 20, options.position.x - 140));
+      y = Math.max(20, Math.min(availH - h - 20, options.position.y - 40));
+    }
+
+    const newWindow: WindowInstance = {
+      id: `win-zen-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      appId: 'zen',
+      title: options?.tab?.title ? `Godly Browser — ${options.tab.title}` : 'Godly Browser',
+      icon: meta.icon,
+      customUrl: options?.customUrl || options?.tab?.url,
+      initialTab: options?.tab,
+      x,
+      y,
+      width: w,
+      height: h,
+      isMinimized: false,
+      isMaximized: false,
+      isSnapped: snap,
+      zIndex: newZ,
+    };
+
+    setWindows((prev) => {
+      let updated = prev;
+      if (options?.snapRegion === 'left' && options.sourceWindowId) {
+        const halfW = Math.floor(screenW / 2);
+        updated = updated.map((wItem) =>
+          wItem.id === options.sourceWindowId
+            ? {
+                ...wItem,
+                isMaximized: false,
+                isSnapped: 'right',
+                prevBounds: wItem.prevBounds || { x: wItem.x, y: wItem.y, width: wItem.width, height: wItem.height },
+                x: halfW,
+                y: taskbarOffset,
+                width: screenW - halfW,
+                height: availH,
+              }
+            : wItem
+        );
+      } else if (options?.snapRegion === 'right' && options.sourceWindowId) {
+        const halfW = Math.floor(screenW / 2);
+        updated = updated.map((wItem) =>
+          wItem.id === options.sourceWindowId
+            ? {
+                ...wItem,
+                isMaximized: false,
+                isSnapped: 'left',
+                prevBounds: wItem.prevBounds || { x: wItem.x, y: wItem.y, width: wItem.width, height: wItem.height },
+                x: 0,
+                y: taskbarOffset,
+                width: halfW,
+                height: availH,
+              }
+            : wItem
+        );
+      }
+      return [...updated, newWindow];
+    });
+
+    setActiveWindowId(newWindow.id);
+    sound.playOpen();
+    return newWindow.id;
+  }, [highestZ, windows.length, settings.taskbarPosition]);
+
   const installApp = useCallback((app: InstalledApp) => {
     setInstalledApps((prev) => {
       if (prev.some((a) => a.id === app.id)) return prev;
@@ -707,16 +836,21 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, [maximizeWindow, focusWindow, settings.taskbarPosition]);
 
   // File System methods
-  const createFile = useCallback((parentId: string | null, name: string, content: string = '', extension: string = 'txt'): FileItem => {
+  const createFile = useCallback((parentId: string | null, name: string, content: string = '', extension: string = 'txt', imageUrl?: string): FileItem => {
+    const ext = extension || (name.includes('.') ? name.split('.').pop() || 'txt' : 'txt');
+    const computedSize = imageUrl 
+      ? `${Math.max(1, Math.round((imageUrl.length * 0.75) / 1024))} KB`
+      : `${Math.max(1, Math.round(content.length / 1024 * 10) / 10)} KB`;
     const newItem: FileItem = {
       id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      name: name.includes('.') ? name : `${name}.${extension}`,
+      name: name.includes('.') ? name : `${name}.${ext}`,
       parentId,
       type: 'file',
-      extension,
-      size: `${Math.max(1, Math.round(content.length / 1024 * 10) / 10)} KB`,
+      extension: ext,
+      size: computedSize,
       updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
       content,
+      imageUrl,
     };
     setFileSystem((prev) => [...prev, newItem]);
     sound.playClick();
@@ -770,6 +904,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         activeWindowId,
         openApp,
         openWebApp,
+        openNewBrowserWindow,
         closeWindow,
         minimizeWindow,
         maximizeWindow,

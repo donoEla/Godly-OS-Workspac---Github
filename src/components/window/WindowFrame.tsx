@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Minus, Square, X, Copy } from 'lucide-react';
 import { WindowInstance } from '../../types/os';
 import { useOS } from '../../context/OSContext';
+import { useExtensions } from '../../context/ExtensionsContext';
 import { getAssetUrl } from '../../utils/assetHelper';
 
 interface WindowFrameProps {
@@ -25,6 +26,21 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
   const isFocused = activeWindowId === win.id;
   const isMax = win.isMaximized;
 
+  const { isExtensionEnabled } = useExtensions();
+  const [isGenieMinimizing, setIsGenieMinimizing] = useState(false);
+
+  const handleMinimize = () => {
+    if (isExtensionEnabled('mac-genie-minimizer')) {
+      setIsGenieMinimizing(true);
+      setTimeout(() => {
+        minimizeWindow(win.id);
+        setIsGenieMinimizing(false);
+      }, 420);
+    } else {
+      minimizeWindow(win.id);
+    }
+  };
+
   const windowRef = useRef<HTMLDivElement>(null);
 
   // Position and bounds tracking
@@ -39,7 +55,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         if (isMax) {
           windowRef.current.style.transform = 'translate3d(0px, 0px, 0px)';
           windowRef.current.style.width     = '100vw';
-          windowRef.current.style.height    = 'calc(100vh - 58px)';
+          windowRef.current.style.height    = '100vh';
         } else {
           windowRef.current.style.transform = `translate3d(${win.x}px, ${win.y}px, 0px)`;
           windowRef.current.style.width     = `${win.width}px`;
@@ -200,8 +216,10 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
     <div
       ref={windowRef}
       onPointerDown={() => focusWindow(win.id)}
-      className={`flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
-        isMax ? 'rounded-none' : 'rounded-[18px]'
+      className={`window-frame-container flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
+        isMax || (win.isSnapped && win.isSnapped !== 'none') ? 'rounded-none' : 'rounded-[18px]'
+      } ${isGenieMinimizing ? 'genie-minimizing' : ''} ${
+        isFocused && isExtensionEnabled('cyberpunk-rgb-aura') ? 'window-focused-glow' : ''
       }`}
       style={{
         position:  'absolute',
@@ -209,7 +227,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         left:      0,
         transform: isMax ? 'translate3d(0px, 0px, 0px)' : `translate3d(${win.x}px, ${win.y}px, 0px)`,
         width:     isMax ? '100vw'  : `${win.width}px`,
-        height:    isMax ? 'calc(100vh - 58px)' : `${win.height}px`,
+        height:    isMax ? '100vh'  : `${win.height}px`,
         zIndex:    win.zIndex,
         willChange: isInteracting ? 'transform, width, height' : 'auto',
         background: isFocused ? 'rgba(8,8,14,0.88)' : 'rgba(8,8,14,0.80)',
@@ -246,7 +264,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
             <X size={7} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
           </button>
           <button
-            onClick={() => minimizeWindow(win.id)}
+            onClick={handleMinimize}
             className="w-3 h-3 rounded-full traffic-light-min flex items-center justify-center transition-all hover:scale-110 active:scale-90"
             title="Minimize"
           >

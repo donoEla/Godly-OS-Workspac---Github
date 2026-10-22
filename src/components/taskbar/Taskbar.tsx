@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOS } from '../../context/OSContext';
 import {
   Wifi,
@@ -20,8 +20,9 @@ interface PinnedTaskbarItem {
 }
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
-  { id: 'zen',          name: 'Zen Browser',  icon: getAssetUrl('assets/icons/zen.jpg') },
+  { id: 'zen',          name: 'Godly Browser',  icon: getAssetUrl('assets/icons/zen.jpg') },
   { id: 'app-store',    name: 'Godly Store',  icon: getAssetUrl('assets/icons/app-store.jpg') },
+  { id: 'extensions',   name: 'Extensions',   icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'terminal',     name: 'Terminal',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'notes',        name: 'Notes',        icon: getAssetUrl('assets/icons/notes.jpg') },
   { id: 'spotify',      name: 'Music',        icon: getAssetUrl('assets/icons/spotify.jpg') },
@@ -54,6 +55,68 @@ export const Taskbar: React.FC = () => {
 
   const [time, setTime] = useState(new Date());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Auto-hide dock when app is fullscreened
+  const [isNativeFs, setIsNativeFs] = useState(
+    () => typeof document !== 'undefined' && Boolean(document.fullscreenElement)
+  );
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsNativeFs(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const activeWindow = windows.find((w) => w.id === activeWindowId);
+  const isAppFullscreen =
+    isNativeFs ||
+    Boolean(activeWindow && activeWindow.isMaximized && !activeWindow.isMinimized);
+
+  const [isDockHidden, setIsDockHidden] = useState(false);
+  const [isHoveringDock, setIsHoveringDock] = useState(false);
+  const hideTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+
+    if (!isAppFullscreen) {
+      setIsDockHidden(false);
+      return;
+    }
+
+    if (
+      isHoveringDock ||
+      startMenuOpen ||
+      quickSettingsOpen ||
+      calendarOpen ||
+      notificationCenterOpen
+    ) {
+      setIsDockHidden(false);
+      return;
+    }
+
+    hideTimerRef.current = window.setTimeout(() => {
+      setIsDockHidden(true);
+    }, 3000);
+
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, [
+    isAppFullscreen,
+    isHoveringDock,
+    startMenuOpen,
+    quickSettingsOpen,
+    calendarOpen,
+    notificationCenterOpen,
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -114,10 +177,31 @@ export const Taskbar: React.FC = () => {
   const isTop = settings.taskbarPosition === 'top';
 
   return (
-    <footer
-      onClick={(e) => e.stopPropagation()}
-      className={`fixed ${isTop ? 'top-2.5' : 'bottom-2.5'} left-1/2 -translate-x-1/2 z-50 select-none`}
-    >
+    <>
+      {/* Edge Hover Sensor to reveal dock when hidden in fullscreen */}
+      {isAppFullscreen && (
+        <div
+          onMouseEnter={() => setIsHoveringDock(true)}
+          className={`fixed ${isTop ? 'top-0' : 'bottom-0'} left-0 right-0 h-5 z-40 pointer-events-auto`}
+        />
+      )}
+
+      <footer
+        onClick={(e) => e.stopPropagation()}
+        onMouseEnter={() => setIsHoveringDock(true)}
+        onMouseLeave={() => setIsHoveringDock(false)}
+        className={`fixed ${isTop ? 'top-2.5' : 'bottom-2.5'} left-1/2 z-50 select-none transition-all duration-300 ease-out`}
+        style={{
+          transform:
+            isDockHidden && isAppFullscreen
+              ? isTop
+                ? 'translate(-50%, -160%)'
+                : 'translate(-50%, 160%)'
+              : 'translate(-50%, 0px)',
+          opacity: isDockHidden && isAppFullscreen ? 0 : 1,
+          pointerEvents: isDockHidden && isAppFullscreen ? 'none' : 'auto',
+        }}
+      >
       {/* Ambient glow beneath dock */}
       <div
         className="absolute inset-x-4 -bottom-3 h-8 rounded-full pointer-events-none"
@@ -317,5 +401,6 @@ export const Taskbar: React.FC = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };

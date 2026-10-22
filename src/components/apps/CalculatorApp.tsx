@@ -1,16 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Delete, RotateCcw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { useAppSettings } from '../../utils/appSettings';
 
 type Mode = 'standard' | 'scientific' | 'graphing';
 
 export const CalculatorApp: React.FC = () => {
-  const [mode, setMode] = useState<Mode>('scientific');
+  const [appSettings] = useAppSettings();
+  const [mode, setMode] = useState<Mode>(() => appSettings.calculator.defaultMode);
   const [display, setDisplay] = useState('0');
   const [formula, setFormula] = useState('');
-  const [isRad, setIsRad] = useState(true);
+  const [isRad, setIsRad] = useState(() => appSettings.calculator.angleMode === 'rad');
   const [memory, setMemory] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIsRad(appSettings.calculator.angleMode === 'rad');
+  }, [appSettings.calculator.angleMode]);
+
+  const playHaptic = () => {
+    if (appSettings.calculator.soundEnabled) {
+      sound.playClick();
+    }
+  };
 
   // Graphing mode state
   const [graphFunc, setGraphFunc] = useState('sin(x) * 2');
@@ -18,12 +30,12 @@ export const CalculatorApp: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const handleNum = (num: string) => {
-    sound.playClick();
+    playHaptic();
     setDisplay((prev) => (prev === '0' || prev === 'Error' ? num : prev + num));
   };
 
   const handleOp = (op: string) => {
-    sound.playClick();
+    playHaptic();
     setFormula((prev) => `${prev} ${display} ${op}`);
     setDisplay('0');
   };
@@ -87,7 +99,8 @@ export const CalculatorApp: React.FC = () => {
         default:
           res = val;
       }
-      const rounded = Math.round(res * 100000000) / 100000000;
+      const factor = Math.pow(10, appSettings.calculator.precision || 8);
+      const rounded = Math.round(res * factor) / factor;
       setDisplay(String(rounded));
       setHistory((prev) => [`${funcName}(${val}) = ${rounded}`, ...prev.slice(0, 8)]);
     } catch {
@@ -96,7 +109,7 @@ export const CalculatorApp: React.FC = () => {
   };
 
   const handleEqual = () => {
-    sound.playClick();
+    playHaptic();
     try {
       let fullExpr = `${formula} ${display}`
         .replace(/×/g, '*')
@@ -105,7 +118,8 @@ export const CalculatorApp: React.FC = () => {
 
       const sanitized = fullExpr.replace(/[^0-9+\-*/().]/g, '');
       const result = Function(`"use strict"; return (${sanitized})`)();
-      const rounded = Math.round(result * 100000000) / 100000000;
+      const factor = Math.pow(10, appSettings.calculator.precision || 8);
+      const rounded = Math.round(result * factor) / factor;
       setDisplay(String(rounded));
       setHistory((prev) => [`${formula} ${display} = ${rounded}`, ...prev.slice(0, 8)]);
       setFormula('');

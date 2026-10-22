@@ -200,6 +200,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [page, setPage] = useState<number>(1);
   const [activeVaultGame, setActiveVaultGame] = useState<LocalGame | null>(null);
   const [vaultRefreshKey, setVaultRefreshKey] = useState<number>(0);
+  const [vaultHtmlContent, setVaultHtmlContent] = useState<string | null>(null);
+  const [vaultLoadingGame, setVaultLoadingGame] = useState<boolean>(false);
   const gameFrameRef = useRef<HTMLIFrameElement>(null);
 
   // GN-Math state (840 games with integrated cards)
@@ -476,10 +478,39 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     return matchCat && matchSearch;
   });
 
-  const handleLaunchVaultGame = (game: LocalGame) => {
+  const handleLaunchVaultGame = async (game: LocalGame) => {
     sound.playOpen();
     setActiveVaultGame(game);
+    setVaultLoadingGame(true);
+    setVaultHtmlContent(null);
     setVaultRefreshKey((k) => k + 1);
+
+    const fullUrl = getAssetUrl(game.url);
+    try {
+      const res = await fetch(fullUrl);
+      if (res.ok) {
+        let html = await res.text();
+        // Unwrap Google Module CDATA if wrapped
+        if (html.includes('<![CDATA[')) {
+          const start = html.indexOf('<![CDATA[');
+          const end = html.lastIndexOf(']]>');
+          if (start !== -1 && end !== -1) {
+            html = html.substring(start + 9, end);
+          }
+        }
+        if (!html.includes('<base ') && !html.includes('<BASE ')) {
+          const baseHref = fullUrl.substring(0, fullUrl.lastIndexOf('/') + 1);
+          html = `<base href="${baseHref}">\n` + html;
+        }
+        setVaultHtmlContent(html);
+      } else {
+        setVaultHtmlContent(null);
+      }
+    } catch {
+      setVaultHtmlContent(null);
+    } finally {
+      setVaultLoadingGame(false);
+    }
   };
 
   const handleLaunchGnGame = async (game: GNMathGame) => {
@@ -493,6 +524,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       const res = await fetch(game.url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       let html = await res.text();
+      // Unwrap Google Module CDATA if wrapped
+      if (html.includes('<![CDATA[')) {
+        const start = html.indexOf('<![CDATA[');
+        const end = html.lastIndexOf(']]>');
+        if (start !== -1 && end !== -1) {
+          html = html.substring(start + 9, end);
+        }
+      }
       if (!html.includes('<base ') && !html.includes('<BASE ')) {
         const baseHref = game.url.substring(0, game.url.lastIndexOf('/') + 1);
         html = `<base href="${baseHref}">\n` + html;
@@ -754,7 +793,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <button
                       onClick={() => {
                         sound.playClick();
-                        window.open(getAssetUrl(activeVaultGame.url), '_blank');
+                        if (vaultHtmlContent) {
+                          const blob = new Blob([vaultHtmlContent], { type: 'text/html; charset=utf-8' });
+                          const blobUrl = URL.createObjectURL(blob);
+                          window.open(blobUrl, '_blank');
+                        } else {
+                          window.open(getAssetUrl(activeVaultGame.url), '_blank');
+                        }
                       }}
                       className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
                       title="Popout Window"
@@ -765,10 +810,18 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 </div>
 
                 <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center">
+                  {vaultLoadingGame && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07070d] z-20">
+                      <div className="w-10 h-10 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin mb-3" />
+                      <span className="text-xs font-mono text-white/80 font-bold">Launching {activeVaultGame.title}...</span>
+                      <span className="text-[11px] font-mono text-white/40 mt-1">Initializing Canvas &amp; WebGL Engine</span>
+                    </div>
+                  )}
                   <iframe
                     ref={gameFrameRef}
                     key={vaultRefreshKey}
-                    src={getAssetUrl(activeVaultGame.url)}
+                    srcDoc={vaultHtmlContent || undefined}
+                    src={!vaultHtmlContent && !vaultLoadingGame ? getAssetUrl(activeVaultGame.url) : undefined}
                     title={activeVaultGame.title}
                     className="w-full h-full border-0 bg-black"
                     allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"

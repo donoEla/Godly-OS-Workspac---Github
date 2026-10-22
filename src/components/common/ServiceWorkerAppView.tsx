@@ -61,6 +61,7 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
   const [currentUrl, setCurrentUrl] = useState<string>(initialUrl);
   const [urlInput, setUrlInput] = useState<string>(initialUrl);
   const [iframeSrc, setIframeSrc] = useState<string>('');
+  const [localGameSrcDoc, setLocalGameSrcDoc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [showTroubleshoot, setShowTroubleshoot] = useState(false);
@@ -120,13 +121,44 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
       }
     }, 4500);
 
-    // 1. Direct local game stream
+    // 1. Direct local game stream (fetched and unwrapped via srcDoc)
     if (currentUrl.startsWith('/local-games/') || currentUrl.includes('/local-games/')) {
-      setIframeSrc(getAssetUrl(currentUrl));
-      setLoading(false);
-      setIframeLoaded(true);
-      return;
+      const fullUrl = getAssetUrl(currentUrl);
+      fetch(fullUrl)
+        .then((res) => (res.ok ? res.text() : Promise.reject(new Error(`HTTP ${res.status}`))))
+        .then((text) => {
+          let html = text;
+          if (html.includes('<![CDATA[')) {
+            const start = html.indexOf('<![CDATA[');
+            const end = html.lastIndexOf(']]>');
+            if (start !== -1 && end !== -1) {
+              html = html.substring(start + 9, end);
+            }
+          }
+          if (!html.includes('<base ') && !html.includes('<BASE ')) {
+            const baseHref = fullUrl.substring(0, fullUrl.lastIndexOf('/') + 1);
+            html = `<base href="${baseHref}">\n` + html;
+          }
+          if (mounted) {
+            setLocalGameSrcDoc(html);
+            setIframeSrc('');
+            setLoading(false);
+            setIframeLoaded(true);
+          }
+        })
+        .catch(() => {
+          if (mounted) {
+            setLocalGameSrcDoc(null);
+            setIframeSrc(fullUrl);
+            setLoading(false);
+            setIframeLoaded(true);
+          }
+        });
+      return () => {
+        mounted = false;
+      };
     }
+    setLocalGameSrcDoc(null);
 
     // 2. Direct embed mode (no service worker proxying)
     if (tunnelMode === 'direct') {
@@ -600,7 +632,13 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
           <button
             onClick={() => {
               sound.playClick();
-              window.open(currentUrl, '_blank');
+              if (localGameSrcDoc) {
+                const blob = new Blob([localGameSrcDoc], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                window.open(blobUrl, '_blank');
+              } else {
+                window.open(currentUrl, '_blank');
+              }
             }}
             className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-slate-300 hover:text-white transition-all"
             title="Open destination in new tab"
@@ -640,11 +678,12 @@ export const ServiceWorkerAppView: React.FC<ServiceWorkerAppViewProps> = ({
           </div>
         )}
 
-        {/* Ultraviolet / Direct Frame */}
-        {iframeSrc && (
+        {/* Ultraviolet / Direct / Local Game Frame */}
+        {(iframeSrc || localGameSrcDoc) && (
           <iframe
             ref={iframeRef}
-            src={iframeSrc}
+            src={iframeSrc || undefined}
+            srcDoc={localGameSrcDoc || undefined}
             onLoad={handleIframeLoad}
             className="w-full h-full border-none block bg-transparent"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"

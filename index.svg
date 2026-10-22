@@ -86,39 +86,15 @@
               }
             }
 
-            try {
-              const href = window.location.href.split('?')[0].split('#')[0];
-              const baseUrl = href.substring(0, href.lastIndexOf('/') + 1);
-              const distBase = baseUrl.endsWith('/dist/') ? baseUrl : baseUrl + 'dist/';
-              const distHtmlUrl = distBase + 'index.html';
+            status.textContent = 'Launching celestial operating system...';
+            const mirrorUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
 
-              status.textContent = 'Streaming Godly OS distribution bundle...';
-              const res = await fetch(distHtmlUrl, { cache: 'no-cache' });
-              if (res.ok) {
-                let html = await res.text();
-                const baseTag = '<base href="' + distBase + '">';
-                if (html.includes('<head>')) {
-                  html = html.replace('<head>', '<head>' + baseTag);
-                } else {
-                  html = baseTag + html;
-                }
-                frame.onload = () => {
-                  setTimeout(dismiss, 350);
-                };
-                frame.srcdoc = html;
-                setTimeout(dismiss, 2500);
-                return;
-              }
-            } catch (e) {
-              console.warn('Direct jsDelivr fetch failed:', e);
-            }
-
-            status.textContent = 'Connecting to mirror...';
             frame.onload = () => {
-              setTimeout(dismiss, 400);
+              setTimeout(dismiss, 350);
             };
-            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
-            setTimeout(dismiss, 3000);
+
+            frame.src = mirrorUrl;
+            setTimeout(dismiss, 2000);
           })();
         ]]></script>
       </body>

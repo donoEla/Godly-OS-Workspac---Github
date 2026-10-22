@@ -216,7 +216,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
     <div
       ref={windowRef}
       onPointerDown={() => focusWindow(win.id)}
-      className={`window-frame-container flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
+      className={`window-frame-container ${isInteracting ? 'is-interacting' : ''} flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
         isMax || (win.isSnapped && win.isSnapped !== 'none') ? 'rounded-none' : 'rounded-[18px]'
       } ${isGenieMinimizing ? 'genie-minimizing' : ''} ${
         isFocused && isExtensionEnabled('cyberpunk-rgb-aura') ? 'window-focused-glow' : ''

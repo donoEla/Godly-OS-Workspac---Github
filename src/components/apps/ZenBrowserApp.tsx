@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useOS } from '../../context/OSContext';
+import { useExtensions } from '../../context/ExtensionsContext';
 import {
   Search,
   Globe,
@@ -130,8 +131,10 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
   windowId,
   initialTab,
 }) => {
-  const { openNewBrowserWindow } = useOS();
+  const { openNewBrowserWindow, openApp } = useOS();
+  const { extensions, toggleExtension } = useExtensions();
   const [appSettings] = useAppSettings();
+  const [showExtensionsMenu, setShowExtensionsMenu] = useState(false);
 
   // Search Engine Preference
   const [selectedEngine, setSelectedEngine] = useState<SearchEngineId>(() => {
@@ -821,11 +824,16 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                 </button>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 relative">
                 <button
-                  onClick={() => sound.playClick()}
-                  className="p-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
-                  title="Extensions"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowExtensionsMenu(!showExtensionsMenu);
+                  }}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    showExtensionsMenu ? 'bg-purple-600/30 text-purple-300' : 'hover:bg-white/10 hover:text-white'
+                  }`}
+                  title="Zen Extensions"
                 >
                   <Puzzle size={14} />
                 </button>
@@ -836,6 +844,65 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                 >
                   <Plus size={14} />
                 </button>
+
+                {/* Quick Extensions Dropdown */}
+                {showExtensionsMenu && (
+                  <div className="absolute top-full left-0 mt-2 w-72 bg-[#0c0c16]/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                        <Puzzle size={13} className="text-purple-400" />
+                        <span>Zen Extensions</span>
+                      </div>
+                      <span className="text-[10px] text-white/40 font-mono">
+                        {extensions.filter((e) => e.enabled).length} active
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                      {extensions.map((ext) => (
+                        <div
+                          key={ext.id}
+                          className="flex items-center justify-between p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] transition-all"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <span className="text-base select-none">{ext.icon}</span>
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium text-white/90 truncate">{ext.name}</div>
+                              <div className="text-[10px] text-white/40 truncate">{ext.category}</div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              sound.playClick();
+                              toggleExtension(ext.id);
+                            }}
+                            className={`w-9 h-5 rounded-full transition-colors relative flex-shrink-0 ${
+                              ext.enabled ? 'bg-purple-600' : 'bg-white/15'
+                            }`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 ${
+                                ext.enabled ? 'translate-x-4.5' : 'translate-x-0.75'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        sound.playOpen();
+                        openApp('extensions');
+                        setShowExtensionsMenu(false);
+                      }}
+                      className="w-full mt-2.5 py-1.5 px-3 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <span>Open Extensions Hub</span>
+                      <ExternalLink size={11} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

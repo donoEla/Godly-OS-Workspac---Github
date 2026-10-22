@@ -15,13 +15,14 @@ export const BUILTIN_EXTENSIONS: DesktopExtension[] = [
     isBuiltIn: true,
     customCss: `
       .genie-minimizing {
-        animation: macGenieWarp 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) forwards !important;
+        animation: macGenieWarp 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) forwards !important;
         transform-origin: bottom center !important;
+        pointer-events: none !important;
       }
       @keyframes macGenieWarp {
-        0% { transform: scale(1) translate3d(0, 0, 0); opacity: 1; filter: blur(0px); }
-        45% { transform: scale(0.7, 0.4) translate3d(0, 180px, 0); opacity: 0.9; filter: blur(1px); }
-        100% { transform: scale(0.05, 0.05) translate3d(0, 480px, 0); opacity: 0; filter: blur(3px); }
+        0% { opacity: 1; filter: blur(0px); }
+        45% { opacity: 0.85; filter: blur(1px); }
+        100% { opacity: 0; filter: blur(3px); transform: translateY(380px) scale(0.08, 0.04) !important; }
       }
     `,
     tags: ['macOS', 'Fluid', 'Window Motion']
@@ -37,7 +38,7 @@ export const BUILTIN_EXTENSIONS: DesktopExtension[] = [
     enabled: true,
     isBuiltIn: true,
     customCss: `
-      .window-frame-container {
+      .window-frame-container:not(.is-interacting) {
         transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease !important;
       }
       .dock-item, .traffic-light-btn, .action-pill {
@@ -202,7 +203,39 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       .map((e) => `/* Extension: ${e.name} */\n${e.customCss}`)
       .join('\n\n');
 
-    styleTag.innerHTML = cssContent;
+    styleTag.textContent = cssContent;
+  }, [extensions]);
+
+  // Execute Custom JS dynamically for all enabled extensions safely
+  useEffect(() => {
+    const activeWithJs = extensions.filter((e) => e.enabled && e.customJs && e.customJs.trim());
+    const cleanups: Array<() => void> = [];
+
+    activeWithJs.forEach((ext) => {
+      try {
+        const runner = new Function('extension', 'window', 'document', `
+          try {
+            ${ext.customJs}
+          } catch (err) {
+            console.error('[Extension Runtime Error: ${ext.name}]', err);
+          }
+        `);
+        const cleanup = runner(ext, window, document);
+        if (typeof cleanup === 'function') {
+          cleanups.push(cleanup);
+        }
+      } catch (err) {
+        console.error('[Extension Compile Error: ' + ext.name + ']', err);
+      }
+    });
+
+    return () => {
+      cleanups.forEach((c) => {
+        try {
+          c();
+        } catch {}
+      });
+    };
   }, [extensions]);
 
   // Particle Cursor Trail Effect (when enabled)

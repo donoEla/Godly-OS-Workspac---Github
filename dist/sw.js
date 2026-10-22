@@ -55,31 +55,35 @@ async function handleRequest(event) {
     return fetch(event.request);
   }
 
-  const pathname = url.pathname;
+  const baseLoc = self.__uv$config?.loc || '';
+  const relPath = baseLoc && pathname.startsWith(baseLoc)
+    ? pathname.slice(baseLoc.length)
+    : pathname;
 
   // Passthrough for Godly OS core assets, code, transports, and dev server files
   if (
-    pathname.startsWith('/assets/') ||
-    pathname.startsWith('/src/') ||
-    pathname.startsWith('/@') ||
-    pathname.startsWith('/node_modules/') ||
-    pathname.startsWith('/scramjet-engine/') ||
-    pathname.startsWith('/scramjet-transport/') ||
-    pathname.startsWith('/transport/') ||
-    pathname.startsWith('/epoxy/') ||
-    pathname.startsWith('/libcurl/') ||
-    pathname.startsWith('/baremux/') ||
-    pathname.startsWith('/local-games/') ||
-    pathname.startsWith('/os-proxy') ||
-    pathname === '/bareworker.js' ||
-    pathname === '/sw.js' ||
-    pathname === '/favicon.svg' ||
-    pathname === '/icons.svg' ||
-    pathname === '/index.svg' ||
-    pathname === '/gn_math_games.json' ||
-    pathname === '/local_games.json' ||
-    pathname === '/' ||
-    pathname === '/index.html'
+    relPath.startsWith('/assets/') ||
+    relPath.startsWith('/src/') ||
+    relPath.startsWith('/@') ||
+    relPath.startsWith('/node_modules/') ||
+    relPath.startsWith('/scramjet-engine/') ||
+    relPath.startsWith('/scramjet-transport/') ||
+    relPath.startsWith('/transport/') ||
+    relPath.startsWith('/epoxy/') ||
+    relPath.startsWith('/libcurl/') ||
+    relPath.startsWith('/baremux/') ||
+    relPath.startsWith('/local-games/') ||
+    relPath.startsWith('/os-proxy') ||
+    relPath === '/bareworker.js' ||
+    relPath === '/sw.js' ||
+    relPath === '/favicon.svg' ||
+    relPath === '/icons.svg' ||
+    relPath === '/index.svg' ||
+    relPath === '/gn_math_games.json' ||
+    relPath === '/local_games.json' ||
+    relPath === '/' ||
+    relPath === '/index.html' ||
+    relPath === ''
   ) {
     return fetch(event.request);
   }

@@ -41,64 +41,78 @@ export const DEFAULT_WORKSPACES: Workspace[] = [
   { id: 'dev', name: 'Dev/Terminal', icon: '💻', color: '#10b981' },
 ];
 
-export const DEFAULT_WIDGETS: DesktopWidget[] = [
-  {
-    id: 'widget-clock',
-    type: 'clock',
-    title: 'Astronomical Chronometer',
-    x: 40,
-    y: 40,
-    width: 220,
-    height: 140,
-    isLocked: false,
-    isVisible: true,
-  },
-  {
-    id: 'widget-weather',
-    type: 'weather',
-    title: 'Global Weather Radar',
-    x: 280,
-    y: 40,
-    width: 260,
-    height: 140,
-    isLocked: false,
-    isVisible: true,
-  },
-  {
-    id: 'widget-system',
-    type: 'system',
-    title: 'Resource Monitor',
-    x: 560,
-    y: 40,
-    width: 240,
-    height: 140,
-    isLocked: false,
-    isVisible: true,
-  },
-  {
-    id: 'widget-notes',
-    type: 'notes',
-    title: 'Quick Scratchpad',
-    x: 40,
-    y: 200,
-    width: 260,
-    height: 200,
-    isLocked: false,
-    isVisible: false,
-    data: { text: 'Godly OS — Redefining the browser operating system.' },
-  },
-  {
-    id: 'widget-media',
-    type: 'media',
-    title: 'Aura Media Controller',
-    x: 320,
-    y: 200,
-    width: 260,
-    height: 160,
-    isLocked: false,
-    isVisible: false,
-  },
-];
+export const getDefaultWidgets = (): DesktopWidget[] => {
+  const isBrowser = typeof window !== 'undefined';
+  const screenWidth = isBrowser ? window.innerWidth : 1280;
+  const rightX = Math.max(680, screenWidth - 320);
+
+  return [
+    {
+      id: 'widget-clock',
+      type: 'clock',
+      title: 'Astronomical Chronometer',
+      x: rightX,
+      y: 28,
+      width: 290,
+      height: 154,
+      isLocked: false,
+      isVisible: true,
+    },
+    {
+      id: 'widget-weather',
+      type: 'weather',
+      title: 'Global Weather Radar',
+      x: rightX,
+      y: 196,
+      width: 290,
+      height: 154,
+      isLocked: false,
+      isVisible: true,
+    },
+    {
+      id: 'widget-system',
+      type: 'system',
+      title: 'Resource Telemetry HUD',
+      x: rightX,
+      y: 364,
+      width: 290,
+      height: 160,
+      isLocked: false,
+      isVisible: true,
+    },
+    {
+      id: 'widget-notes',
+      type: 'notes',
+      title: 'Quick Scratchpad & Tasks',
+      x: rightX,
+      y: 538,
+      width: 290,
+      height: 190,
+      isLocked: false,
+      isVisible: false,
+      data: {
+        text: 'Godly OS — Redefining the browser operating system.',
+        tasks: [
+          { id: '1', text: 'Explore WebVM x86 Terminal', done: true },
+          { id: '2', text: 'Configure custom glass theme', done: false }
+        ]
+      },
+    },
+    {
+      id: 'widget-media',
+      type: 'media',
+      title: 'Aura Media Controller',
+      x: rightX,
+      y: 538,
+      width: 290,
+      height: 160,
+      isLocked: false,
+      isVisible: false,
+    },
+  ];
+};
+
+export const DEFAULT_WIDGETS: DesktopWidget[] = getDefaultWidgets();
 
 export const BUILTIN_THEME_PRESETS: ThemePreset[] = [
   {
@@ -349,11 +363,16 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   });
 
-  // Desktop Widgets state
+  // Desktop Widgets state with versioned layout migration to avoid icon overlap
   const [widgets, setWidgets] = useState<DesktopWidget[]>(() => {
     try {
-      const saved = localStorage.getItem('godly_desktop_widgets');
-      return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
+      const v = localStorage.getItem('godly_widgets_v4');
+      if (v) {
+        const saved = localStorage.getItem('godly_desktop_widgets');
+        if (saved) return JSON.parse(saved);
+      }
+      localStorage.setItem('godly_widgets_v4', 'true');
+      return getDefaultWidgets();
     } catch {
       return DEFAULT_WIDGETS;
     }

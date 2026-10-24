@@ -212,6 +212,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
 
   if (win.isMinimized) return null;
 
+  const isRgbGlow = isFocused && isExtensionEnabled('cyberpunk-rgb-aura');
+
   return (
     <div
       ref={windowRef}
@@ -219,7 +221,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
       className={`window-frame-container ${isInteracting ? 'is-interacting' : ''} flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
         isMax || (win.isSnapped && win.isSnapped !== 'none') ? 'rounded-none' : 'rounded-[18px]'
       } ${isGenieMinimizing ? 'genie-minimizing' : ''} ${
-        isFocused && isExtensionEnabled('cyberpunk-rgb-aura') ? 'window-focused-glow' : ''
+        isRgbGlow ? 'window-focused-glow' : ''
       }`}
       style={{
         position:  'absolute',
@@ -233,8 +235,12 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         background: isFocused ? 'rgba(8,8,14,0.88)' : 'rgba(8,8,14,0.80)',
         backdropFilter: 'blur(52px) saturate(180%)',
         WebkitBackdropFilter: 'blur(52px) saturate(180%)',
-        border: `1px solid ${isFocused ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
-        boxShadow: isFocused
+        border: isRgbGlow
+          ? '1.5px solid rgba(236, 72, 153, 0.8)'
+          : `1px solid ${isFocused ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: isRgbGlow
+          ? '0 0 35px rgba(168, 85, 247, 0.65), 0 0 70px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(236, 72, 153, 0.7), 0 32px 80px rgba(0,0,0,0.85)'
+          : isFocused
           ? '0 32px 80px rgba(0,0,0,0.85), 0 0 32px rgba(139,92,246,0.20), inset 0 1px 0 rgba(255,255,255,0.09)'
           : '0 20px 60px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06)',
       }}
@@ -258,21 +264,21 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         >
           <button
             onClick={() => closeWindow(win.id)}
-            className="w-3 h-3 rounded-full traffic-light-close flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+            className="w-3 h-3 rounded-full traffic-light-btn traffic-light-close flex items-center justify-center transition-all hover:scale-110 active:scale-90"
             title="Close"
           >
             <X size={7} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
           </button>
           <button
             onClick={handleMinimize}
-            className="w-3 h-3 rounded-full traffic-light-min flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+            className="w-3 h-3 rounded-full traffic-light-btn traffic-light-min flex items-center justify-center transition-all hover:scale-110 active:scale-90"
             title="Minimize"
           >
             <Minus size={7} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
           </button>
           <button
             onClick={() => maximizeWindow(win.id)}
-            className="w-3 h-3 rounded-full traffic-light-max flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+            className="w-3 h-3 rounded-full traffic-light-btn traffic-light-max flex items-center justify-center transition-all hover:scale-110 active:scale-90"
             title={isMax ? 'Restore' : 'Maximize'}
           >
             {isMax ? (

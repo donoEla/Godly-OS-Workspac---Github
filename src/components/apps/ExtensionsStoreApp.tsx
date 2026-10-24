@@ -254,7 +254,15 @@ export const ExtensionsStoreApp: React.FC = () => {
 
                 {/* Toggle Switch */}
                 <button
-                  onClick={() => toggleExtension(ext.id)}
+                  onClick={() => {
+                    toggleExtension(ext.id);
+                    const willBe = !ext.enabled;
+                    addNotification(
+                      willBe ? 'Extension Activated' : 'Extension Disabled',
+                      `${ext.name} is now ${willBe ? 'active and applied to your desktop' : 'disabled'}.`,
+                      willBe ? 'success' : 'info'
+                    );
+                  }}
                   className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
                     ext.enabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-white/15'
                   }`}

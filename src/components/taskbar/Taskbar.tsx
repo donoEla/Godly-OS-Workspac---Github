@@ -275,7 +275,7 @@ export const Taskbar: React.FC = () => {
                 onClick={() => handleAppClick(item.id)}
                 onMouseEnter={() => setHoveredId(item.id)}
                 onMouseLeave={() => setHoveredId(null)}
-                className={`group relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:-translate-y-0.5 hover:scale-110 ${
+                className={`dock-item group relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 active:scale-90 hover:-translate-y-0.5 hover:scale-110 ${
                   isActive
                     ? 'bg-white/[0.10]'
                     : isHovered

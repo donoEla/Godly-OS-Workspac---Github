@@ -1,6 +1,6 @@
 import React from 'react';
 import { OSProvider } from './context/OSContext';
-import { ExtensionsProvider } from './context/ExtensionsContext';
+import { ExtensionsProvider, useExtensions } from './context/ExtensionsContext';
 import { Desktop } from './components/desktop/Desktop';
 import { WindowManager } from './components/window/WindowManager';
 import { Taskbar } from './components/taskbar/Taskbar';
@@ -13,6 +13,8 @@ import { CommandPalette } from './components/common/CommandPalette';
 import { OnboardingTutorial } from './components/common/OnboardingTutorial';
 
 function GodlyOS() {
+  const { isExtensionEnabled } = useExtensions();
+
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-black select-none font-sans">
       {/* 1. Desktop Wallpaper & Icons */}
@@ -38,6 +40,20 @@ function GodlyOS() {
 
       {/* 7. Interactive Feature Showcase & First-Time Onboarding Tour */}
       <OnboardingTutorial />
+
+      {/* 8. Retro CRT Scanline Shimmer Extension Overlay */}
+      {isExtensionEnabled('crt-scanline-shimmer') && (
+        <div
+          id="godly-crt-overlay"
+          className="pointer-events-none fixed inset-0 z-[999999] opacity-80 select-none"
+          style={{
+            background:
+              'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04))',
+            backgroundSize: '100% 3px, 6px 100%',
+            boxShadow: 'inset 0 0 100px rgba(0, 0, 0, 0.65)',
+          }}
+        />
+      )}
     </main>
   );
 }

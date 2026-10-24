@@ -240,22 +240,23 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Particle Cursor Trail Effect (when enabled)
   useEffect(() => {
-    const trailExt = extensions.find((e) => e.id === 'celestial-cursor-trail' && e.enabled);
-    if (!trailExt) return;
+    const isTrailEnabled = extensions.some((e) => e.id === 'celestial-cursor-trail' && e.enabled);
+    if (!isTrailEnabled) return;
 
     const particles: HTMLDivElement[] = [];
-    const maxParticles = 18;
+    const maxParticles = 24;
 
-    const handlePointerMove = (e: PointerEvent) => {
+    const handlePointerMove = (e: MouseEvent) => {
       const p = document.createElement('div');
-      p.className = 'pointer-events-none fixed z-[999999] rounded-full';
-      p.style.width = '6px';
-      p.style.height = '6px';
+      p.className = 'pointer-events-none fixed rounded-full';
+      p.style.zIndex = '9999999';
+      p.style.width = '7px';
+      p.style.height = '7px';
       p.style.left = `${e.clientX}px`;
       p.style.top = `${e.clientY}px`;
-      p.style.background = 'radial-gradient(circle, #c084fc 20%, #7e22ce 80%)';
-      p.style.boxShadow = '0 0 8px #a855f7, 0 0 16px #6366f1';
-      p.style.transition = 'transform 0.6s ease-out, opacity 0.6s ease-out';
+      p.style.background = 'radial-gradient(circle, #f472b6 0%, #c084fc 40%, #8b5cf6 100%)';
+      p.style.boxShadow = '0 0 10px #ec4899, 0 0 20px #a855f7';
+      p.style.transition = 'transform 0.55s ease-out, opacity 0.55s ease-out';
       p.style.opacity = '1';
       p.style.transform = 'translate(-50%, -50%) scale(1)';
 
@@ -263,7 +264,7 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       particles.push(p);
 
       requestAnimationFrame(() => {
-        p.style.transform = `translate(-50%, -50%) translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 - 10}px) scale(0)`;
+        p.style.transform = `translate(-50%, -50%) translate(${(Math.random() - 0.5) * 22}px, ${(Math.random() - 0.5) * 22}px) scale(0)`;
         p.style.opacity = '0';
       });
 
@@ -271,7 +272,7 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         p.remove();
         const idx = particles.indexOf(p);
         if (idx >= 0) particles.splice(idx, 1);
-      }, 600);
+      }, 550);
 
       if (particles.length > maxParticles) {
         const old = particles.shift();
@@ -279,9 +280,9 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('mousemove', handlePointerMove, { passive: true });
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('mousemove', handlePointerMove);
       particles.forEach((p) => p.remove());
     };
   }, [extensions]);

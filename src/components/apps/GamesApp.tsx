@@ -225,41 +225,67 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [luminStatus, setLuminStatus] = useState<'loading' | 'ready' | 'fallback'>('loading');
   const luminContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Load Game Vault games once on mount
+  // Load Game Vault games once on mount with multi-mirror resilience
   useEffect(() => {
     let mounted = true;
-    fetch(getAssetUrl('local_games.json'))
-      .then((res) => res.json())
-      .then((data: LocalGame[]) => {
-        if (mounted) {
-          setVaultGames(data);
-          setVaultLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load local games vault:', err);
-        if (mounted) setVaultLoading(false);
-      });
+    const vaultMirrors = [
+      getAssetUrl('local_games.json'),
+      'https://donoela.github.io/Godly-OS-Workspac---Github/local_games.json',
+      'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/local_games.json',
+      'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/public/local_games.json',
+      'https://raw.githubusercontent.com/donoEla/Godly-OS-Workspac---Github/main/public/local_games.json',
+    ];
+
+    async function loadVault() {
+      for (const url of vaultMirrors) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data: LocalGame[] = await res.json();
+            if (mounted && Array.isArray(data) && data.length > 0) {
+              setVaultGames(data);
+              setVaultLoading(false);
+              return;
+            }
+          }
+        } catch {}
+      }
+      if (mounted) setVaultLoading(false);
+    }
+    loadVault();
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Load GN-Math games once on mount
+  // Load GN-Math games once on mount with multi-mirror resilience
   useEffect(() => {
     let mounted = true;
-    fetch(getAssetUrl('gn_math_games.json'))
-      .then((res) => res.json())
-      .then((data: GNMathGame[]) => {
-        if (mounted) {
-          setGnMathGames(data);
-          setGnLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load GN-Math games:', err);
-        if (mounted) setGnLoading(false);
-      });
+    const gnMirrors = [
+      getAssetUrl('gn_math_games.json'),
+      'https://donoela.github.io/Godly-OS-Workspac---Github/gn_math_games.json',
+      'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/gn_math_games.json',
+      'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/public/gn_math_games.json',
+      'https://raw.githubusercontent.com/donoEla/Godly-OS-Workspac---Github/main/public/gn_math_games.json',
+    ];
+
+    async function loadGnMath() {
+      for (const url of gnMirrors) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data: GNMathGame[] = await res.json();
+            if (mounted && Array.isArray(data) && data.length > 0) {
+              setGnMathGames(data);
+              setGnLoading(false);
+              return;
+            }
+          }
+        } catch {}
+      }
+      if (mounted) setGnLoading(false);
+    }
+    loadGnMath();
     return () => {
       mounted = false;
     };

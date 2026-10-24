@@ -4,10 +4,19 @@
 // 2. Service Worker Bridge (sw.js & bareworker.js)
 // 3. Ultraviolet Proxy (uv/sw.js + Epoxy)
 
-importScripts('./scramjet-engine/scramjet-all.js');
-importScripts('./uv/uv.bundle.js');
-importScripts('./uv/uv.config.js');
-importScripts('./uv/uv.sw.js');
+try {
+  importScripts('./scramjet-engine/scramjet-all.js');
+} catch (e) {
+  console.warn('[Godly SW] scramjet-all.js import:', e);
+}
+
+try {
+  importScripts('./uv/uv.bundle.js');
+  importScripts('./uv/uv.config.js');
+  importScripts('./uv/uv.sw.js');
+} catch (e) {
+  console.warn('[Godly SW] UV scripts import:', e);
+}
 
 let scramjet = null;
 let uv = null;
@@ -50,80 +59,86 @@ self.addEventListener('activate', (event) => {
 });
 
 async function handleRequest(event) {
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) {
+  try {
+    const url = new URL(event.request.url);
+    if (url.origin !== self.location.origin) {
+      return fetch(event.request);
+    }
+
+    const pathname = url.pathname;
+    const baseLoc = self.__uv$config?.loc || '';
+    const relPath = baseLoc && pathname.startsWith(baseLoc)
+      ? pathname.slice(baseLoc.length)
+      : pathname;
+
+    // Passthrough for Godly OS core assets, code, transports, and dev server files
+    if (
+      relPath.startsWith('/assets/') ||
+      relPath.startsWith('/src/') ||
+      relPath.startsWith('/@') ||
+      relPath.startsWith('/node_modules/') ||
+      relPath.startsWith('/scramjet-engine/') ||
+      relPath.startsWith('/scramjet-transport/') ||
+      relPath.startsWith('/transport/') ||
+      relPath.startsWith('/epoxy/') ||
+      relPath.startsWith('/libcurl/') ||
+      relPath.startsWith('/baremux/') ||
+      relPath.startsWith('/local-games/') ||
+      relPath.startsWith('/os-proxy') ||
+      relPath === '/bareworker.js' ||
+      relPath === '/sw.js' ||
+      relPath === '/favicon.svg' ||
+      relPath === '/icons.svg' ||
+      relPath === '/index.svg' ||
+      relPath === '/gn_math_games.json' ||
+      relPath === '/local_games.json' ||
+      relPath === '/' ||
+      relPath === '/index.html' ||
+      relPath === ''
+    ) {
+      return fetch(event.request);
+    }
+
+    // 1. Scramjet Route Check
+    if (scramjet) {
+      try {
+        await scramjet.loadConfig();
+        if (scramjet.config && scramjet.route(event)) {
+          return await scramjet.fetch(event);
+        }
+      } catch (err) {
+        console.warn('[Godly SW] Scramjet route error:', err);
+      }
+    }
+
+    // 2. Service Worker Bridge Route Check (/sw-service/)
+    if (swBridge) {
+      try {
+        if (swBridge.route(event)) {
+          return await swBridge.fetch(event);
+        }
+      } catch (err) {
+        console.warn('[Godly SW] SW Bridge route error:', err);
+      }
+    }
+
+    // 3. Ultraviolet Route Check (/uv/service/)
+    if (uv) {
+      try {
+        if (uv.route(event)) {
+          return await uv.fetch(event);
+        }
+      } catch (err) {
+        console.warn('[Godly SW] UV route error:', err);
+      }
+    }
+
+    // Fallback to network
+    return fetch(event.request);
+  } catch (err) {
+    console.error('[Godly SW] handleRequest unhandled error, falling back to network:', err);
     return fetch(event.request);
   }
-
-  const baseLoc = self.__uv$config?.loc || '';
-  const relPath = baseLoc && pathname.startsWith(baseLoc)
-    ? pathname.slice(baseLoc.length)
-    : pathname;
-
-  // Passthrough for Godly OS core assets, code, transports, and dev server files
-  if (
-    relPath.startsWith('/assets/') ||
-    relPath.startsWith('/src/') ||
-    relPath.startsWith('/@') ||
-    relPath.startsWith('/node_modules/') ||
-    relPath.startsWith('/scramjet-engine/') ||
-    relPath.startsWith('/scramjet-transport/') ||
-    relPath.startsWith('/transport/') ||
-    relPath.startsWith('/epoxy/') ||
-    relPath.startsWith('/libcurl/') ||
-    relPath.startsWith('/baremux/') ||
-    relPath.startsWith('/local-games/') ||
-    relPath.startsWith('/os-proxy') ||
-    relPath === '/bareworker.js' ||
-    relPath === '/sw.js' ||
-    relPath === '/favicon.svg' ||
-    relPath === '/icons.svg' ||
-    relPath === '/index.svg' ||
-    relPath === '/gn_math_games.json' ||
-    relPath === '/local_games.json' ||
-    relPath === '/' ||
-    relPath === '/index.html' ||
-    relPath === ''
-  ) {
-    return fetch(event.request);
-  }
-
-  // 1. Scramjet Route Check
-  if (scramjet) {
-    try {
-      await scramjet.loadConfig();
-      if (scramjet.config && scramjet.route(event)) {
-        return await scramjet.fetch(event);
-      }
-    } catch (err) {
-      console.warn('[Godly SW] Scramjet route error:', err);
-    }
-  }
-
-  // 2. Service Worker Bridge Route Check (/sw-service/)
-  if (swBridge) {
-    try {
-      if (swBridge.route(event)) {
-        return await swBridge.fetch(event);
-      }
-    } catch (err) {
-      console.warn('[Godly SW] SW Bridge route error:', err);
-    }
-  }
-
-  // 3. Ultraviolet Route Check (/uv/service/)
-  if (uv) {
-    try {
-      if (uv.route(event)) {
-        return await uv.fetch(event);
-      }
-    } catch (err) {
-      console.warn('[Godly SW] UV route error:', err);
-    }
-  }
-
-  // Fallback to network
-  return fetch(event.request);
 }
 
 self.addEventListener('fetch', (event) => {

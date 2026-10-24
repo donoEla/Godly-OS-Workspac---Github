@@ -3,10 +3,53 @@ import { getAssetUrl } from './assetHelper';
 /**
  * Universal Game HTML Fetcher & Sanitizer
  * Fetches HTML5/WebGL games from multiple fallback CDN mirrors,
+ * handles external URLs (GN-Math) with CORS proxy fallbacks,
  * unwraps Google Module CDATA wrappers, injects absolute <base>,
  * and returns clean HTML for native srcDoc iframe execution.
  */
 export async function fetchGameHtml(rawUrl: string): Promise<string> {
+  // Case A: External URL (e.g. GN-Math or external CDN game)
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    let rawContent: string | null = null;
+    let successfulBase: string = rawUrl.substring(0, rawUrl.lastIndexOf('/') + 1);
+
+    // 1. Direct fetch
+    try {
+      const res = await fetch(rawUrl);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.trim().length > 0 && !text.includes('Failed to resolve the requested file')) {
+          rawContent = text;
+        }
+      }
+    } catch {}
+
+    // 2. CORS Proxy Fallbacks if direct fetch is blocked
+    if (!rawContent) {
+      const corsProxies = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+        `https://corsproxy.io/?url=${encodeURIComponent(rawUrl)}`,
+      ];
+      for (const pUrl of corsProxies) {
+        try {
+          const res = await fetch(pUrl);
+          if (res.ok) {
+            const text = await res.text();
+            if (text && text.trim().length > 0) {
+              rawContent = text;
+              break;
+            }
+          }
+        } catch {}
+      }
+    }
+
+    if (rawContent) {
+      return sanitizeGameHtml(rawContent, successfulBase);
+    }
+  }
+
+  // Case B: Local Game Path (e.g. /local-games/1/cl1.html)
   const cleanPath = rawUrl.startsWith('/') ? rawUrl.slice(1) : rawUrl;
   const rel = cleanPath.startsWith('local-games/')
     ? cleanPath
@@ -15,9 +58,11 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
   // Candidate mirror URLs in priority order
   const candidates: string[] = [
     getAssetUrl(rawUrl),
+    getAssetUrl(rel),
     `https://donoela.github.io/Godly-OS-Workspac---Github/${rel}`,
     `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/${rel}`,
     `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/public/${rel}`,
+    `https://raw.githubusercontent.com/donoEla/Godly-OS-Workspac---Github/main/public/${rel}`,
     `https://raw.githubusercontent.com/donoEla/Godly-OS-Workspac---Github/main/dist/${rel}`,
   ];
 
@@ -30,7 +75,7 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
       const res = await fetch(url);
       if (res.ok) {
         const text = await res.text();
-        if (text && text.trim().length > 0 && !text.includes('Failed to resolve the requested file')) {
+        if (text && text.trim().length > 0 && !text.includes('Failed to resolve the requested file') && !text.includes('Cannot find module')) {
           rawContent = text;
           successfulBase = url.substring(0, url.lastIndexOf('/') + 1);
           break;
@@ -43,7 +88,11 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
     throw new Error(`Failed to load game assets for: ${rawUrl}`);
   }
 
-  let html = rawContent;
+  return sanitizeGameHtml(rawContent, successfulBase);
+}
+
+function sanitizeGameHtml(raw: string, successfulBase: string): string {
+  let html = raw;
 
   // 1. Unwrap Google Sites / Module CDATA container
   if (html.includes('<![CDATA[')) {
@@ -63,7 +112,7 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
     .replace(/<\/Content>/gi, '')
     .trim();
 
-  // 3. Inject base tag for relative scripts, images, audio, and wasm resolution
+  // 3. Inject base tag for relative scripts, images, audio, and wasm resolution if not already present
   if (!html.includes('<base ') && !html.includes('<BASE ') && successfulBase) {
     if (html.includes('<head>')) {
       html = html.replace('<head>', `<head>\n<base href="${successfulBase}">\n`);

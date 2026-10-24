@@ -87,29 +87,44 @@
             }
 
             status.textContent = 'Launching celestial operating system...';
-            let mirrorUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
-            try {
-              const loc = window.location.href;
-              if (loc.includes('cdn.jsdelivr.net')) {
-                if (loc.includes('/dist/')) {
-                  mirrorUrl = loc.replace(/\/dist\/index\.svg.*$/, '/dist/index.html');
-                } else {
-                  mirrorUrl = loc.replace(/\/index\.svg.*$/, '/dist/index.html');
-                }
-              }
-            } catch (e) {}
 
             frame.onload = () => {
               setTimeout(dismiss, 350);
             };
 
-            frame.onerror = () => {
-              if (frame.src !== 'https://donoela.github.io/Godly-OS-Workspac---Github/') {
-                frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
-              }
-            };
+            const loc = window.location.href;
+            const isJsDelivr = loc.includes('cdn.jsdelivr.net');
 
-            frame.src = mirrorUrl;
+            if (isJsDelivr) {
+              status.textContent = 'Streaming jsDelivr CDN distribution bundle...';
+              try {
+                let baseHref = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/';
+                const match = loc.match(/(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?)/i);
+                if (match) {
+                  baseHref = match[1] + '/dist/';
+                }
+                const htmlUrl = baseHref + 'index.html';
+
+                const res = await fetch(htmlUrl);
+                if (res.ok) {
+                  let html = await res.text();
+                  if (!html.includes('<base ')) {
+                    html = html.replace('<head>', '<head>\n    <base href="' + baseHref + '">');
+                  }
+                  // Rewrite relative ./ paths to absolute jsDelivr CDN endpoints
+                  html = html.replace(/(src|href)=["']\.\/([^"']+)["']/gi, '$1="' + baseHref + '$2"');
+
+                  frame.srcdoc = html;
+                  setTimeout(dismiss, 1200);
+                  return;
+                }
+              } catch (err) {
+                console.warn('jsDelivr inline load fallback:', err);
+              }
+            }
+
+            status.textContent = 'Connecting to mirror server...';
+            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
             setTimeout(dismiss, 2500);
           })();
         ]]></script>

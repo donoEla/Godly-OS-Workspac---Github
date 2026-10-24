@@ -148,6 +148,14 @@ export const DesktopContextMenu: React.FC = () => {
           addNotification('Desktop Grid', 'Desktop icons aligned and snapped to grid.', 'success');
         })}
       />
+      <MenuItem
+        icon={<Sparkles size={13} className="text-purple-400" />}
+        label="Desktop Widgets Deck"
+        shortcut="W"
+        onClick={() => handleAction(() => {
+          window.dispatchEvent(new CustomEvent('godly-toggle-widget-deck'));
+        })}
+      />
 
       <MenuItem
         icon={<Terminal size={13} className="text-emerald-400" />}

@@ -70,16 +70,21 @@
         <div id="godly-splash">
           <div class="spin-ring"></div>
           <div class="os-title">Godly OS — Divine Edition</div>
-          <div class="os-status" id="godly-status">Streaming Godly OS distribution bundle...</div>
+          <div class="os-status" id="godly-status">Initializing celestial environment...</div>
+          <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_blank" style="display:none; margin-top:18px; padding:10px 20px; background:linear-gradient(135deg, #7c3aed, #4f46e5); color:#ffffff; border-radius:10px; text-decoration:none; font-size:12px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 4px 16px rgba(124,58,237,0.4); pointer-events:auto; transition:transform 0.2s ease;">Open Direct Live Mirror ↗</a>
         </div>
         <iframe id="godly-viewport" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; cross-origin-isolated" allowfullscreen="true"></iframe>
         <script><![CDATA[
-          (async function () {
+          (function () {
             const status = document.getElementById('godly-status');
             const splash = document.getElementById('godly-splash');
             const frame = document.getElementById('godly-viewport');
+            const fallbackBtn = document.getElementById('godly-fallback-btn');
 
+            let dismissed = false;
             function dismiss() {
+              if (dismissed) return;
+              dismissed = true;
               if (splash) {
                 splash.style.opacity = '0';
                 setTimeout(() => { splash.style.display = 'none'; }, 450);
@@ -93,39 +98,35 @@
             };
 
             const loc = window.location.href;
+            const origin = window.location.origin || '';
             const isJsDelivr = loc.includes('cdn.jsdelivr.net');
+            const isWasmer = loc.includes('wasmer.app') || loc.includes('wasmer.io');
 
-            if (isJsDelivr) {
-              status.textContent = 'Streaming jsDelivr CDN distribution bundle...';
-              try {
-                let baseHref = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/';
-                const match = loc.match(/(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?)/i);
-                if (match) {
-                  baseHref = match[1] + '/dist/';
-                }
-                const htmlUrl = baseHref + 'index.html';
-
-                const res = await fetch(htmlUrl);
-                if (res.ok) {
-                  let html = await res.text();
-                  if (!html.includes('<base ')) {
-                    html = html.replace('<head>', '<head>\n    <base href="' + baseHref + '">');
-                  }
-                  // Rewrite relative ./ paths to absolute jsDelivr CDN endpoints
-                  html = html.replace(/(src|href)=["']\.\/([^"']+)["']/gi, '$1="' + baseHref + '$2"');
-
-                  frame.srcdoc = html;
-                  setTimeout(dismiss, 1200);
-                  return;
-                }
-              } catch (err) {
-                console.warn('jsDelivr inline load fallback:', err);
-              }
+            // Robust target resolution:
+            // 1. If running on Wasmer, load /dist/ from the same Wasmer origin.
+            // 2. If running on same domain over HTTP(S) and not jsDelivr, load ./dist/ relative.
+            // 3. If running on jsDelivr or external host, load production bundle at donoela.github.io/Godly-OS-Workspac---Github/dist/
+            let targetUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/dist/';
+            if (isWasmer && origin && origin !== 'null') {
+              targetUrl = origin + '/dist/';
+            } else if (!isJsDelivr && origin && origin !== 'null' && window.location.protocol.startsWith('http')) {
+              targetUrl = './dist/';
             }
 
-            status.textContent = 'Connecting to mirror server...';
-            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
-            setTimeout(dismiss, 2500);
+            if (fallbackBtn) {
+              fallbackBtn.href = targetUrl;
+            }
+
+            status.textContent = 'Connecting to production runtime (' + (isJsDelivr ? 'jsDelivr bridge' : 'direct mirror') + ')...';
+            frame.src = targetUrl;
+
+            // Failsafe: if frame takes longer than 4.5s (e.g. cross-origin framing restriction), reveal one-click launcher
+            setTimeout(() => {
+              if (!dismissed && fallbackBtn) {
+                status.textContent = 'If environment blocks framing, launch directly:';
+                fallbackBtn.style.display = 'inline-block';
+              }
+            }, 4500);
           })();
         ]]></script>
       </body>

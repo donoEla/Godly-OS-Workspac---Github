@@ -48,6 +48,8 @@ import {
 import { useAppSettings } from '../../utils/appSettings';
 import { GODLY_BROWSER_BACKGROUNDS, BrowserBackground } from '../../constants/browserAssets';
 import { BrandFavicon } from '../common/BrandFavicons';
+import { ZenProxySuiteModal } from '../browser/ZenProxySuiteModal';
+import { adBlockShield } from '../../utils/adBlocker';
 
 export interface ZenTab {
   id: string;
@@ -230,14 +232,24 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const [showEngineMenu, setShowEngineMenu] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [showProxySuite, setShowProxySuite] = useState(false);
 
-  const [bookmarks] = useState<ZenBookmark[]>(() => {
+  const [bookmarks, setBookmarks] = useState<ZenBookmark[]>(() => {
     try {
       const saved = localStorage.getItem('godly_zen_bookmarks');
       if (saved) return JSON.parse(saved);
       return DEFAULT_BOOKMARKS;
     } catch {
       return DEFAULT_BOOKMARKS;
+    }
+  });
+
+  const [historyEntries, setHistoryEntries] = useState<any[]>(() => {
+    try {
+      const s = localStorage.getItem('godly_zen_history');
+      return s ? JSON.parse(s) : [];
+    } catch {
+      return [];
     }
   });
 
@@ -1203,7 +1215,17 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
             {/* Minimal Controls Bar for Proxied Tab View */}
             <div className="px-3 py-1.5 bg-[#0b0c14]/90 border-b border-white/10 flex items-center justify-between text-xs z-20">
               <div className="flex items-center gap-2 truncate">
-                <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setShowProxySuite(true);
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-purple-500/30 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-[11px] font-semibold transition-all shrink-0 active:scale-95 shadow-sm"
+                  title="Wisp Latency Benchmark, AdBlock & AES-256 Sync"
+                >
+                  <ShieldCheck size={12} className="text-emerald-400" />
+                  <span>Privacy Shield & Suite</span>
+                </button>
                 <span className="truncate text-slate-300 font-mono text-[11px]">
                   {activeTab.url}
                 </span>
@@ -1911,6 +1933,26 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
           </div>,
           document.body
         )}
+      <ZenProxySuiteModal
+        isOpen={showProxySuite}
+        onClose={() => setShowProxySuite(false)}
+        activeWisp={activeWisp}
+        onWispChange={(url) => {
+          setActiveWisp(url);
+          handleReloadTab();
+        }}
+        currentHost={(() => {
+          try {
+            return activeTab?.url ? new URL(activeTab.url).hostname : 'godly-browser';
+          } catch {
+            return 'godly-browser';
+          }
+        })()}
+        bookmarks={bookmarks}
+        history={historyEntries}
+        onRestoreBookmarks={(b) => setBookmarks(b)}
+        onRestoreHistory={(h) => setHistoryEntries(h)}
+      />
     </div>
   );
 };

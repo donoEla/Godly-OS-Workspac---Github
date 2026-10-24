@@ -25,7 +25,8 @@ import {
   Calculator,
   FileText,
   Terminal,
-  Gamepad2
+  Gamepad2,
+  Upload
 } from 'lucide-react';
 import { WALLPAPERS, ACCENT_CONFIGS, CLOAK_PRESETS } from '../../constants/assets';
 import { AccentColor } from '../../types/os';
@@ -47,7 +48,10 @@ export const SettingsApp: React.FC = () => {
     addNotification,
     applyCloak,
     openAboutBlankCloak,
-    panicCloak
+    panicCloak,
+    openApp,
+    widgets,
+    toggleWidgetVisibility,
   } = useOS();
 
   const [appSettings, updateAppSettings] = useAppSettings();
@@ -57,6 +61,19 @@ export const SettingsApp: React.FC = () => {
   const [wallpaperSearch, setWallpaperSearch] = useState<string>('');
   const [currentWisp, setCurrentWisp] = useState<string>(() => getActiveWispUrl());
   const [customWispInput, setCustomWispInput] = useState<string>('');
+  const [soundUploadMsg, setSoundUploadMsg] = useState<string>('');
+
+  const handleSoundpackZipUpload = async (file: File) => {
+    try {
+      setSoundUploadMsg('Extracting soundpack ZIP...');
+      const loaded = await sound.loadCustomZip(file);
+      updateSettings({ soundTheme: 'custom' });
+      setSoundUploadMsg(`Activated custom soundpack! Loaded: ${loaded.join(', ')}`);
+      sound.playEvent('notification');
+    } catch (err) {
+      setSoundUploadMsg('Failed to extract soundpack: ' + String(err));
+    }
+  };
 
   const wallpaperCategories = ['All', 'Dark', 'Abstract', 'Landscape', 'Cyber', 'Minimal'];
 
@@ -147,7 +164,7 @@ export const SettingsApp: React.FC = () => {
                     {WALLPAPERS.length} Wallpapers
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400">Select any authentic wallpaper from your local filesystem.</p>
+                <p className="text-xs text-slate-400">Select static luxury wallpapers or high-performance WebGL live simulations.</p>
               </div>
 
               {/* Wallpaper search input */}
@@ -159,6 +176,46 @@ export const SettingsApp: React.FC = () => {
                   placeholder="Filter wallpapers..."
                   className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all backdrop-blur-md"
                 />
+              </div>
+            </div>
+
+            {/* 4a. Dynamic Live Wallpapers Engine */}
+            <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-purple-400" />
+                  <span className="text-xs font-bold text-white tracking-wide">Dynamic Live Wallpapers (WebGL / 60 FPS Canvas)</span>
+                </div>
+                <span className="text-[10px] text-white/50">Active: {settings.liveWallpaper || 'none'}</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {[
+                  { id: 'none', name: 'Static Image', desc: 'Default HD wallpaper' },
+                  { id: 'fluid', name: 'Fluid Simulation', desc: 'Velocity field WebGL' },
+                  { id: 'matrix', name: 'Matrix Rain', desc: 'Digital falling code' },
+                  { id: 'starfield', name: 'Starfield 3D', desc: 'Deep warp speed' },
+                  { id: 'visualizer', name: 'Audio Reactive', desc: 'Frequency waveform' },
+                ].map((item) => {
+                  const isActive = (settings.liveWallpaper || 'none') === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        updateSettings({ liveWallpaper: item.id as any });
+                        sound.playSnap();
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        isActive
+                          ? 'border-purple-400 bg-purple-500/20 text-white shadow-lg'
+                          : 'border-white/5 bg-black/40 text-white/70 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{item.name}</div>
+                      <div className="text-[10px] text-white/40 mt-0.5">{item.desc}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -735,16 +792,81 @@ export const SettingsApp: React.FC = () => {
         {/* Desktop & Window Snapping Section */}
         {activeSection === 'desktop' && (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-white">Window Snapping & Desktop Physics</h3>
-              <p className="text-xs text-slate-400">NautilusOS-grade window edge magnetic docking & Achroma particle mesh.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-white">Window Management, Spaces & Widgets</h3>
+                <p className="text-xs text-slate-400">Aero snap multi-tile grids, virtual spaces, draggable desktop widgets & Theme Studio.</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  openApp('theme-studio');
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center gap-2 border border-purple-400/30 transition-all"
+              >
+                <Sparkles size={14} />
+                <span>Launch Theme Studio</span>
+              </button>
             </div>
 
+            {/* 4c. Desktop Widgets Engine */}
+            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                    <LayoutGrid size={15} className="text-purple-400" />
+                    <span>Desktop Widgets Engine</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Movable, lockable glass panels pinned to the desktop layer above wallpaper.
+                  </p>
+                </div>
+                <span className="text-[10px] text-purple-300 font-mono bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">
+                  {widgets.filter((w) => w.isVisible).length} Active
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                {widgets.map((widget) => {
+                  return (
+                    <div
+                      key={widget.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors"
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-white">{widget.title}</div>
+                        <div className="text-[10px] text-slate-400 capitalize">{widget.type} widget • {widget.isLocked ? 'Locked' : 'Draggable'}</div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playClick();
+                          toggleWidgetVisibility(widget.id);
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          widget.isVisible ? 'bg-purple-600' : 'bg-white/10'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            widget.isVisible ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Window Snapping & Aero Multi-Tile */}
             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg divide-y divide-white/5">
               <div className="flex items-center justify-between pb-4">
                 <div>
-                  <span className="text-xs font-semibold text-white block">Smart Window Snapping</span>
-                  <span className="text-[11px] text-slate-400">Drag window to left/right edge (50% split) or top edge (maximize) with glowing ghost outline</span>
+                  <span className="text-xs font-semibold text-white block">Aero Snap Multi-Tile Grids</span>
+                  <span className="text-[11px] text-slate-400">Drag window titlebars to corners (2x2 quad), edges (3-col equal, Zen 70/20/10, or 70/30 split) with ghost preview overlay</span>
                 </div>
                 <button
                   type="button"
@@ -1120,6 +1242,64 @@ export const SettingsApp: React.FC = () => {
               >
                 Test Startup Chime
               </button>
+            </div>
+
+            {/* 4d. Sound Themes & Custom Soundpack */}
+            <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white">Tactile Soundpack Themes</h4>
+                  <p className="text-[11px] text-white/40">Select inline synthesizers or upload custom soundpack zip.</p>
+                </div>
+                <label className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-md">
+                  <Upload size={12} />
+                  <span>Upload .ZIP</span>
+                  <input
+                    type="file"
+                    accept=".zip"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleSoundpackZipUpload(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  { id: 'cyberpunk', name: 'Cyberpunk Mech', desc: 'Mechanical switches & neon resonant pulses' },
+                  { id: 'sonoma', name: 'macOS Sonoma', desc: 'Acoustic glassy marimba & velvet taps' },
+                  { id: 'win98', name: 'Windows 98 Retro', desc: 'Iconic 8-bit FM square synthesis' },
+                  { id: 'silent', name: 'Silent Mode', desc: 'Zero audio output' },
+                ].map((th) => {
+                  const isCurrent = (settings.soundTheme || 'cyberpunk') === th.id;
+                  return (
+                    <button
+                      key={th.id}
+                      onClick={() => {
+                        updateSettings({ soundTheme: th.id as any });
+                        sound.setTheme(th.id as any);
+                        sound.playEvent('notification');
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        isCurrent
+                          ? 'border-purple-400 bg-purple-500/20 text-white shadow-lg'
+                          : 'border-white/5 bg-black/40 text-white/70 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{th.name}</div>
+                      <div className="text-[10px] text-white/40 mt-1">{th.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {soundUploadMsg && (
+                <div className="text-xs font-mono text-purple-300 bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20">
+                  {soundUploadMsg}
+                </div>
+              )}
             </div>
           </div>
         )}

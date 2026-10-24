@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Minus, Square, X, Copy } from 'lucide-react';
-import { WindowInstance } from '../../types/os';
+import { Minus, Square, X, Copy, PictureInPicture2, Maximize2, Plus } from 'lucide-react';
+import { WindowInstance, SnapRegion } from '../../types/os';
 import { useOS } from '../../context/OSContext';
 import { useExtensions } from '../../context/ExtensionsContext';
 import { getAssetUrl } from '../../utils/assetHelper';
+import { sound } from '../../utils/sound';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -21,13 +22,20 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
     setSnapPreview,
     activeWindowId,
     settings,
+    mergeWindows,
+    detachWindowTab,
+    switchWindowTab,
+    toggleWindowPip,
+    setPipCorner,
   } = useOS();
 
   const isFocused = activeWindowId === win.id;
   const isMax = win.isMaximized;
+  const isPip = win.isPip;
 
   const { isExtensionEnabled } = useExtensions();
   const [isGenieMinimizing, setIsGenieMinimizing] = useState(false);
+  const [mergeTargetWindowId, setMergeTargetWindowId] = useState<string | null>(null);
 
   const handleMinimize = () => {
     if (isExtensionEnabled('mac-genie-minimizer')) {
@@ -44,50 +52,58 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
   const windowRef = useRef<HTMLDivElement>(null);
 
   // Position and bounds tracking
-  const currentPos  = useRef({ x: win.x, y: win.y });
+  const currentPos = useRef({ x: win.x, y: win.y });
   const currentSize = useRef({ width: win.width, height: win.height });
 
   useEffect(() => {
     if (!isDragging.current && !isResizing.current) {
-      currentPos.current  = { x: win.x, y: win.y };
+      currentPos.current = { x: win.x, y: win.y };
       currentSize.current = { width: win.width, height: win.height };
       if (windowRef.current) {
-        if (isMax) {
+        if (isPip) {
+          windowRef.current.style.transform = `translate3d(${win.x}px, ${win.y}px, 0px)`;
+          windowRef.current.style.width = '320px';
+          windowRef.current.style.height = '180px';
+        } else if (isMax) {
           windowRef.current.style.transform = 'translate3d(0px, 0px, 0px)';
-          windowRef.current.style.width     = '100vw';
-          windowRef.current.style.height    = '100vh';
+          windowRef.current.style.width = '100vw';
+          windowRef.current.style.height = `${window.innerHeight - 52}px`;
         } else {
           windowRef.current.style.transform = `translate3d(${win.x}px, ${win.y}px, 0px)`;
-          windowRef.current.style.width     = `${win.width}px`;
-          windowRef.current.style.height    = `${win.height}px`;
+          windowRef.current.style.width = `${win.width}px`;
+          windowRef.current.style.height = `${win.height}px`;
         }
       }
     }
-  }, [win.x, win.y, win.width, win.height, isMax]);
+  }, [win.x, win.y, win.width, win.height, isMax, isPip]);
 
-  const isDragging      = useRef(false);
-  const dragStartMouse  = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const dragStartMouse = useRef({ x: 0, y: 0 });
   const dragStartWindow = useRef({ x: 0, y: 0 });
-  const lastMousePos    = useRef({ x: 0, y: 0 });
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
-  const isResizing     = useRef(false);
-  const resizeDir      = useRef<string | null>(null);
-  const initialResize  = useRef({ x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 });
+  const isResizing = useRef(false);
+  const resizeDir = useRef<string | null>(null);
+  const initialResize = useRef({ x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 });
 
-  const [isInteracting,    setIsInteracting]    = useState(false);
-  const [controlsHovered,  setControlsHovered]  = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [controlsHovered, setControlsHovered] = useState(false);
 
-  // 120 FPS GPU-accelerated dragging
+  // Tab dragging out logic
+  const draggingTabId = useRef<string | null>(null);
+  const tabDragStart = useRef<{ x: number; y: number } | null>(null);
+
+  // 120 FPS GPU-accelerated dragging with Multi-Tile Snapping & Window Merge
   const handleTitlePointerDown = (e: React.PointerEvent) => {
-    if (isMax) return;
-    if ((e.target as HTMLElement).closest('.window-control-btn')) return;
+    if (isMax || isPip) return;
+    if ((e.target as HTMLElement).closest('.window-control-btn') || (e.target as HTMLElement).closest('.window-tab-btn')) return;
 
     focusWindow(win.id);
-    isDragging.current      = true;
+    isDragging.current = true;
     setIsInteracting(true);
-    dragStartMouse.current  = { x: e.clientX, y: e.clientY };
+    dragStartMouse.current = { x: e.clientX, y: e.clientY };
     dragStartWindow.current = { x: currentPos.current.x, y: currentPos.current.y };
-    lastMousePos.current    = { x: e.clientX, y: e.clientY };
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
 
     const onPointerMove = (moveEvt: PointerEvent) => {
       if (!isDragging.current) return;
@@ -104,11 +120,58 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         windowRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0px)`;
       }
 
-      if (settings.windowSnapping) {
-        if (moveEvt.clientX <= 28)                        setSnapPreview('left');
-        else if (moveEvt.clientX >= window.innerWidth - 28) setSnapPreview('right');
-        else if (moveEvt.clientY <= 22)                   setSnapPreview('top');
-        else                                              setSnapPreview('none');
+      // Check for window merge candidate under cursor
+      const elementsUnder = document.elementsFromPoint(moveEvt.clientX, moveEvt.clientY);
+      let foundMergeTarget: string | null = null;
+      for (const el of elementsUnder) {
+        const frameEl = el.closest('[data-window-id]');
+        if (frameEl) {
+          const targetId = frameEl.getAttribute('data-window-id');
+          if (targetId && targetId !== win.id) {
+            foundMergeTarget = targetId;
+            break;
+          }
+        }
+      }
+      setMergeTargetWindowId(foundMergeTarget);
+
+      // Multi-Tile Snapping Grid Zones
+      if (settings.windowSnapping && !foundMergeTarget) {
+        const cx = moveEvt.clientX;
+        const cy = moveEvt.clientY;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        // 1. 2x2 Quad Grid (Corners)
+        if (cx <= 40 && cy <= 45) {
+          setSnapPreview('top-left');
+        } else if (cx >= w - 40 && cy <= 45) {
+          setSnapPreview('top-right');
+        } else if (cx <= 40 && cy >= h - 65) {
+          setSnapPreview('bottom-left');
+        } else if (cx >= w - 40 && cy >= h - 65) {
+          setSnapPreview('bottom-right');
+        }
+        // 2. Top Edge Multi-Zone
+        else if (cy <= 26) {
+          if (cx < w * 0.33) {
+            setSnapPreview('col-1-of-3');
+          } else if (cx > w * 0.66) {
+            setSnapPreview('col-3-of-3');
+          } else {
+            setSnapPreview('top');
+          }
+        }
+        // 3. Side Splits
+        else if (cx <= 26) {
+          setSnapPreview('left');
+        } else if (cx >= w - 26) {
+          setSnapPreview('right');
+        } else {
+          setSnapPreview('none');
+        }
+      } else {
+        setSnapPreview('none');
       }
     };
 
@@ -119,11 +182,32 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
 
+      // Handle Tab Merge Drop
+      if (mergeTargetWindowId) {
+        mergeWindows(mergeTargetWindowId, win.id);
+        setMergeTargetWindowId(null);
+        setSnapPreview('none');
+        return;
+      }
+
+      // Handle Aero Snapping Drop
       if (settings.windowSnapping) {
-        let finalSnap: 'none' | 'left' | 'right' | 'top' = 'none';
-        if (lastMousePos.current.x <= 28)                          finalSnap = 'left';
-        else if (lastMousePos.current.x >= window.innerWidth - 28) finalSnap = 'right';
-        else if (lastMousePos.current.y <= 22)                     finalSnap = 'top';
+        const cx = lastMousePos.current.x;
+        const cy = lastMousePos.current.y;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        let finalSnap: SnapRegion = 'none';
+
+        if (cx <= 40 && cy <= 45) finalSnap = 'top-left';
+        else if (cx >= w - 40 && cy <= 45) finalSnap = 'top-right';
+        else if (cx <= 40 && cy >= h - 65) finalSnap = 'bottom-left';
+        else if (cx >= w - 40 && cy >= h - 65) finalSnap = 'bottom-right';
+        else if (cy <= 26) {
+          if (cx < w * 0.33) finalSnap = 'col-1-of-3';
+          else if (cx > w * 0.66) finalSnap = 'col-3-of-3';
+          else finalSnap = 'top';
+        } else if (cx <= 26) finalSnap = 'left';
+        else if (cx >= w - 26) finalSnap = 'right';
 
         if (finalSnap !== 'none') {
           snapWindow(win.id, finalSnap);
@@ -136,23 +220,60 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('pointerup',   onPointerUp,   { passive: true });
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
+  };
+
+  // PiP Dragging Between 4 Corners
+  const handlePipPointerDown = (e: React.PointerEvent) => {
+    if (!isPip) return;
+    e.stopPropagation();
+    isDragging.current = true;
+    dragStartMouse.current = { x: e.clientX, y: e.clientY };
+
+    const onPipMove = (moveEvt: PointerEvent) => {
+      if (!isDragging.current) return;
+      const dx = moveEvt.clientX - dragStartMouse.current.x;
+      const dy = moveEvt.clientY - dragStartMouse.current.y;
+      if (windowRef.current) {
+        windowRef.current.style.transform = `translate3d(${win.x + dx}px, ${win.y + dy}px, 0px)`;
+      }
+    };
+
+    const onPipUp = (upEvt: PointerEvent) => {
+      isDragging.current = false;
+      window.removeEventListener('pointermove', onPipMove);
+      window.removeEventListener('pointerup', onPipUp);
+
+      const midX = window.innerWidth / 2;
+      const midY = window.innerHeight / 2;
+      let targetCorner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' = 'bottom-right';
+
+      if (upEvt.clientX < midX && upEvt.clientY < midY) targetCorner = 'top-left';
+      else if (upEvt.clientX >= midX && upEvt.clientY < midY) targetCorner = 'top-right';
+      else if (upEvt.clientX < midX && upEvt.clientY >= midY) targetCorner = 'bottom-left';
+      else targetCorner = 'bottom-right';
+
+      setPipCorner(win.id, targetCorner);
+    };
+
+    window.addEventListener('pointermove', onPipMove);
+    window.addEventListener('pointerup', onPipUp);
   };
 
   // 120 FPS GPU-accelerated resizing
   const handleResizeStart = (e: React.PointerEvent, dir: string) => {
-    if (isMax) return;
+    if (isMax || isPip) return;
     e.stopPropagation();
     e.preventDefault();
     focusWindow(win.id);
 
-    isResizing.current   = true;
+    isResizing.current = true;
     setIsInteracting(true);
-    resizeDir.current    = dir;
+    resizeDir.current = dir;
     initialResize.current = {
       x: currentPos.current.x,
       y: currentPos.current.y,
-      width:  currentSize.current.width,
+      width: currentSize.current.width,
       height: currentSize.current.height,
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -160,33 +281,33 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
 
     const onResizeMove = (moveEvt: PointerEvent) => {
       if (!isResizing.current) return;
-      const dx  = moveEvt.clientX - initialResize.current.mouseX;
-      const dy  = moveEvt.clientY - initialResize.current.mouseY;
-      const dir = resizeDir.current;
+      const dx = moveEvt.clientX - initialResize.current.mouseX;
+      const dy = moveEvt.clientY - initialResize.current.mouseY;
+      const dirStr = resizeDir.current;
 
       let newW = initialResize.current.width;
       let newH = initialResize.current.height;
       let newX = initialResize.current.x;
       let newY = initialResize.current.y;
 
-      if (dir?.includes('right'))  newW = Math.max(380, initialResize.current.width  + dx);
-      if (dir?.includes('bottom')) newH = Math.max(260, initialResize.current.height + dy);
-      if (dir?.includes('left')) {
+      if (dirStr?.includes('right')) newW = Math.max(380, initialResize.current.width + dx);
+      if (dirStr?.includes('bottom')) newH = Math.max(260, initialResize.current.height + dy);
+      if (dirStr?.includes('left')) {
         const calcW = initialResize.current.width - dx;
         if (calcW >= 380) { newW = calcW; newX = initialResize.current.x + dx; }
       }
-      if (dir?.includes('top')) {
+      if (dirStr?.includes('top')) {
         const calcH = initialResize.current.height - dy;
         if (calcH >= 260) { newH = calcH; newY = initialResize.current.y + dy; }
       }
 
-      currentPos.current  = { x: newX, y: newY };
+      currentPos.current = { x: newX, y: newY };
       currentSize.current = { width: newW, height: newH };
 
       if (windowRef.current) {
         windowRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0px)`;
-        windowRef.current.style.width     = `${newW}px`;
-        windowRef.current.style.height    = `${newH}px`;
+        windowRef.current.style.width = `${newW}px`;
+        windowRef.current.style.height = `${newH}px`;
       }
     };
 
@@ -194,69 +315,189 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
       if (!isResizing.current) return;
       isResizing.current = false;
       setIsInteracting(false);
-      resizeDir.current  = null;
+      resizeDir.current = null;
       window.removeEventListener('pointermove', onResizeMove);
-      window.removeEventListener('pointerup',   onResizeEnd);
+      window.removeEventListener('pointerup', onResizeEnd);
 
       updateWindowBounds(win.id, {
-        x:      currentPos.current.x,
-        y:      currentPos.current.y,
-        width:  currentSize.current.width,
+        x: currentPos.current.x,
+        y: currentPos.current.y,
+        width: currentSize.current.width,
         height: currentSize.current.height,
       });
     };
 
     window.addEventListener('pointermove', onResizeMove, { passive: true });
-    window.addEventListener('pointerup',   onResizeEnd,  { passive: true });
+    window.addEventListener('pointerup', onResizeEnd, { passive: true });
+  };
+
+  // Tab Header Pointer Down with detach on drag
+  const handleTabPointerDown = (e: React.PointerEvent, tabId: string) => {
+    e.stopPropagation();
+    switchWindowTab(win.id, tabId);
+    draggingTabId.current = tabId;
+    tabDragStart.current = { x: e.clientX, y: e.clientY };
+
+    const onTabMove = (moveEvt: PointerEvent) => {
+      if (!tabDragStart.current) return;
+      const dy = Math.abs(moveEvt.clientY - tabDragStart.current.y);
+      const dx = Math.abs(moveEvt.clientX - tabDragStart.current.x);
+      if (dy > 38 || dx > 70) {
+        // Detach tab into its own standalone window
+        window.removeEventListener('pointermove', onTabMove);
+        window.removeEventListener('pointerup', onTabUp);
+        detachWindowTab(win.id, tabId, { x: moveEvt.clientX, y: moveEvt.clientY });
+        tabDragStart.current = null;
+        draggingTabId.current = null;
+      }
+    };
+
+    const onTabUp = () => {
+      tabDragStart.current = null;
+      draggingTabId.current = null;
+      window.removeEventListener('pointermove', onTabMove);
+      window.removeEventListener('pointerup', onTabUp);
+    };
+
+    window.addEventListener('pointermove', onTabMove);
+    window.addEventListener('pointerup', onTabUp);
   };
 
   if (win.isMinimized) return null;
 
   const isRgbGlow = isFocused && isExtensionEnabled('cyberpunk-rgb-aura');
+  const hasTabs = win.tabs && win.tabs.length > 1;
+
+  // ── Render Picture-in-Picture Floating Mode ──
+  if (isPip) {
+    return (
+      <div
+        ref={windowRef}
+        data-window-id={win.id}
+        onPointerDown={handlePipPointerDown}
+        className="fixed z-[9999] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-2xl border border-white/20 select-none group cursor-move transition-transform duration-200 hover:scale-[1.02]"
+        style={{
+          width: '320px',
+          height: '180px',
+          transform: `translate3d(${win.x}px, ${win.y}px, 0px)`,
+          background: 'rgba(10, 10, 18, 0.92)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.85), 0 0 25px rgba(139,92,246,0.3)',
+        }}
+      >
+        {/* Floating PiP Header */}
+        <div className="absolute top-0 inset-x-0 h-7 bg-black/60 backdrop-blur-md px-3 flex items-center justify-between z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <img src={getAssetUrl(win.icon)} alt="" className="w-3.5 h-3.5 rounded object-cover" />
+            <span className="text-[11px] font-medium text-white/90 truncate">{win.title}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => toggleWindowPip(win.id)}
+              className="p-1 rounded hover:bg-white/10 text-white/80 transition-colors"
+              title="Expand back to window"
+            >
+              <Maximize2 size={12} />
+            </button>
+            <button
+              onClick={() => closeWindow(win.id)}
+              className="p-1 rounded hover:bg-red-500/30 text-white/80 hover:text-red-400 transition-colors"
+              title="Close"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+
+        {/* Scaled-down App Viewport */}
+        <div className="w-full h-full overflow-hidden pointer-events-none transform origin-top-left scale-[0.62]" style={{ width: '516px', height: '290px' }}>
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       ref={windowRef}
+      data-window-id={win.id}
       onPointerDown={() => focusWindow(win.id)}
       className={`window-frame-container ${isInteracting ? 'is-interacting' : ''} flex flex-col overflow-hidden transition-[border-radius,box-shadow] duration-200 animate-window-open ${
-        isMax || (win.isSnapped && win.isSnapped !== 'none') ? 'rounded-none' : 'rounded-[18px]'
-      } ${isGenieMinimizing ? 'genie-minimizing' : ''} ${
-        isRgbGlow ? 'window-focused-glow' : ''
-      }`}
+        isMax || (win.isSnapped && win.isSnapped !== 'none') ? 'rounded-none' : 'rounded-[var(--radius,18px)]'
+      } ${isGenieMinimizing ? 'genie-minimizing' : ''} ${isRgbGlow ? 'window-focused-glow' : ''}`}
       style={{
-        position:  'absolute',
-        top:       0,
-        left:      0,
+        position: 'absolute',
+        top: 0,
+        left: 0,
         transform: isMax ? 'translate3d(0px, 0px, 0px)' : `translate3d(${win.x}px, ${win.y}px, 0px)`,
-        width:     isMax ? '100vw'  : `${win.width}px`,
-        height:    isMax ? '100vh'  : `${win.height}px`,
-        zIndex:    win.zIndex,
+        width: isMax ? '100vw' : `${win.width}px`,
+        height: isMax ? `${window.innerHeight - 52}px` : `${win.height}px`,
+        zIndex: win.zIndex,
         willChange: isInteracting ? 'transform, width, height' : 'auto',
         background: isFocused ? 'rgba(8,8,14,0.88)' : 'rgba(8,8,14,0.80)',
-        backdropFilter: 'blur(52px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(52px) saturate(180%)',
-        border: isRgbGlow
+        backdropFilter: `blur(var(--glass-blur, 38px)) saturate(180%)`,
+        WebkitBackdropFilter: `blur(var(--glass-blur, 38px)) saturate(180%)`,
+        border: mergeTargetWindowId
+          ? '2px solid rgba(59, 130, 246, 0.9)'
+          : isRgbGlow
           ? '1.5px solid rgba(236, 72, 153, 0.8)'
-          : `1px solid ${isFocused ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
-        boxShadow: isRgbGlow
+          : `1px solid ${isFocused ? 'var(--border-color, rgba(139,92,246,0.4))' : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: mergeTargetWindowId
+          ? '0 0 40px rgba(59, 130, 246, 0.7), inset 0 0 20px rgba(59, 130, 246, 0.3)'
+          : isRgbGlow
           ? '0 0 35px rgba(168, 85, 247, 0.65), 0 0 70px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(236, 72, 153, 0.7), 0 32px 80px rgba(0,0,0,0.85)'
           : isFocused
-          ? '0 32px 80px rgba(0,0,0,0.85), 0 0 32px rgba(139,92,246,0.20), inset 0 1px 0 rgba(255,255,255,0.09)'
+          ? '0 32px 80px rgba(0,0,0,0.85), 0 0 32px var(--accent-glow, rgba(139,92,246,0.20)), inset 0 1px 0 rgba(255,255,255,0.09)'
           : '0 20px 60px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06)',
       }}
     >
+      {/* ── Window Group Tab Bar (When multiple apps merged) ── */}
+      {hasTabs && (
+        <div
+          className="h-8 bg-black/40 border-b border-white/10 flex items-center px-2 gap-1.5 overflow-x-auto select-none"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {win.tabs!.map((tab) => {
+            const isActive = tab.id === (win.activeTabId || win.id);
+            return (
+              <div
+                key={tab.id}
+                onPointerDown={(e) => handleTabPointerDown(e, tab.id)}
+                className={`window-tab-btn px-3 py-1 rounded-lg flex items-center gap-2 cursor-pointer transition-all ${
+                  isActive
+                    ? 'bg-white/15 text-white border border-white/20 shadow-md'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                }`}
+              >
+                <img src={getAssetUrl(tab.icon)} alt="" className="w-3 h-3 rounded object-cover" />
+                <span className="text-[11px] font-medium truncate max-w-[140px]">{tab.title}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    detachWindowTab(win.id, tab.id);
+                  }}
+                  className="opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded transition-opacity"
+                  title="Detach Tab"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Title Bar ── */}
       <div
         onPointerDown={handleTitlePointerDown}
         onDoubleClick={() => maximizeWindow(win.id)}
         className="h-[38px] flex items-center justify-between px-4 flex-shrink-0 relative select-none"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.038) 0%, rgba(255,255,255,0.01) 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.055)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
           cursor: 'default',
         }}
       >
-        {/* Traffic lights */}
+        {/* Left Traffic Lights */}
         <div
           onMouseEnter={() => setControlsHovered(true)}
           onMouseLeave={() => setControlsHovered(false)}
@@ -289,7 +530,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
           </button>
         </div>
 
-        {/* Centered title */}
+        {/* Centered Title */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-20">
           <div className="flex items-center gap-1.5 min-w-0">
             <img
@@ -307,8 +548,15 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
           </div>
         </div>
 
-        {/* Right: live indicator */}
-        <div className="flex items-center gap-1.5 z-10">
+        {/* Right Tools: PiP and Live Status Indicator */}
+        <div className="flex items-center gap-2 z-10 window-control-btn">
+          <button
+            onClick={() => toggleWindowPip(win.id)}
+            className="p-1 rounded-md hover:bg-white/10 text-white/50 hover:text-white/90 transition-colors"
+            title="Picture-in-Picture Mini Widget"
+          >
+            <PictureInPicture2 size={13} />
+          </button>
           <span
             className={`w-1.5 h-1.5 rounded-full transition-all ${isFocused ? 'glow-pulse' : 'opacity-20'}`}
             style={{
@@ -333,16 +581,16 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
       )}
 
       {/* Resize handles */}
-      {!isMax && (
+      {!isMax && !isPip && (
         <>
-          <div onPointerDown={(e) => handleResizeStart(e, 'top')}         className="absolute top-0 left-2 right-2 h-1 cursor-ns-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'bottom')}      className="absolute bottom-0 left-2 right-2 h-1.5 cursor-ns-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'left')}        className="absolute left-0 top-2 bottom-2 w-1.5 cursor-ew-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'right')}       className="absolute right-0 top-2 bottom-2 w-1.5 cursor-ew-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'top-left')}    className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'top-right')}   className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'top')} className="absolute top-0 left-2 right-2 h-1 cursor-ns-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'bottom')} className="absolute bottom-0 left-2 right-2 h-1.5 cursor-ns-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'left')} className="absolute left-0 top-2 bottom-2 w-1.5 cursor-ew-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'right')} className="absolute right-0 top-2 bottom-2 w-1.5 cursor-ew-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'top-left')} className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'top-right')} className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize z-40" />
           <div onPointerDown={(e) => handleResizeStart(e, 'bottom-left')} className="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize z-40" />
-          <div onPointerDown={(e) => handleResizeStart(e, 'bottom-right')}className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-40" />
+          <div onPointerDown={(e) => handleResizeStart(e, 'bottom-right')} className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-40" />
         </>
       )}
     </div>

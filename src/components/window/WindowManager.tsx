@@ -15,11 +15,14 @@ import { SpotifyApp } from '../apps/SpotifyApp';
 import { TerminalApp } from '../apps/TerminalApp';
 import { ZenBrowserApp } from '../apps/ZenBrowserApp';
 import { ExtensionsStoreApp } from '../apps/ExtensionsStoreApp';
+import { CodeEditorApp } from '../apps/CodeEditorApp';
+import { VoiceMemosApp } from '../apps/VoiceMemosApp';
+import { ThemeStudioApp } from '../apps/ThemeStudioApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
 export const WindowManager: React.FC = () => {
-  const { windows } = useOS();
+  const { windows, activeWorkspaceId } = useOS();
 
   const renderAppContent = (win: any) => {
     if (win.appId === 'zen') {
@@ -32,11 +35,33 @@ export const WindowManager: React.FC = () => {
       );
     }
 
+    if (win.appId === 'code-editor') {
+      return <CodeEditorApp />;
+    }
+
+    if (win.appId === 'voice-memos') {
+      return <VoiceMemosApp />;
+    }
+
+    if (win.appId === 'theme-studio') {
+      return <ThemeStudioApp />;
+    }
+
     if (win.appId === 'extensions') {
       return <ExtensionsStoreApp />;
     }
 
-    if (win.appId === 'games' || win.appId === 'lumin' || win.appId === 'gnmath' || win.appId === 'zengs' || win.customUrl === 'lumin' || win.customUrl === 'gnmath' || win.customUrl === 'zengs' || win.customUrl === 'vault' || win.customUrl === 'nowgg') {
+    if (
+      win.appId === 'games' ||
+      win.appId === 'lumin' ||
+      win.appId === 'gnmath' ||
+      win.appId === 'zengs' ||
+      win.customUrl === 'lumin' ||
+      win.customUrl === 'gnmath' ||
+      win.customUrl === 'zengs' ||
+      win.customUrl === 'vault' ||
+      win.customUrl === 'nowgg'
+    ) {
       const tab =
         win.appId === 'lumin' || win.customUrl === 'lumin'
           ? 'lumin'
@@ -91,13 +116,22 @@ export const WindowManager: React.FC = () => {
       <SnapOverlay />
 
       <AnimatePresence>
-        {windows.map((win) => (
-          <div key={win.id} className="pointer-events-auto">
-            <WindowFrame window={win}>
-              {renderAppContent(win)}
-            </WindowFrame>
-          </div>
-        ))}
+        {windows.map((win) => {
+          // Virtual Desktops (Spaces): Pure DOM show/hide preserving all iframe/audio state
+          const isVisible = win.isPip || !win.workspaceId || win.workspaceId === activeWorkspaceId;
+
+          return (
+            <div
+              key={win.id}
+              className="pointer-events-auto"
+              style={{ display: isVisible ? 'block' : 'none' }}
+            >
+              <WindowFrame window={win}>
+                {renderAppContent(win)}
+              </WindowFrame>
+            </div>
+          );
+        })}
       </AnimatePresence>
     </div>
   );

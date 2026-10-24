@@ -18,13 +18,21 @@ import {
   Volume2,
   Zap,
   Star,
-  Compass
+  Compass,
+  Save,
+  Upload,
+  Download,
+  Gauge,
+  Bookmark
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 import { encodeUvUrl } from '../../utils/uvProxy';
 import { fetchGameHtml } from '../../utils/gameLoader';
 import { getAssetUrl } from '../../utils/assetHelper';
+import { GameSaveManager, GameSaveSlot } from '../../utils/gameSaveManager';
+import { GamepadMapperModal } from '../games/GamepadMapperModal';
+import { useOS } from '../../context/OSContext';
 
 declare global {
   interface Window {
@@ -193,6 +201,84 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const zenScriptInjectedRef = useRef<boolean>(false);
 
   // Game Vault state (1,567 local games)
+  const { settings, updateSettings } = useOS();
+  const [showGamepadMapper, setShowGamepadMapper] = useState(false);
+  const [showSaveManager, setShowSaveManager] = useState(false);
+  const [saveSlots, setSaveSlots] = useState<GameSaveSlot[]>([]);
+  const [slotNotes, setSlotNotes] = useState<Record<number, string>>({});
+  const [customUploadedGames, setCustomUploadedGames] = useState<LocalGame[]>(() => {
+    try {
+      const saved = localStorage.getItem('godly_custom_uploaded_games');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleUploadCustomGame = (file: File) => {
+    const isSwf = file.name.toLowerCase().endsWith('.swf');
+    const reader = new FileReader();
+    const gameId = 'custom_' + Date.now();
+
+    if (isSwf) {
+      reader.onload = (e) => {
+        const swfBase64 = (e.target?.result as string).split(',')[1] || '';
+        const rufflerHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+  <style>html, body, #container { width:100%; height:100%; margin:0; overflow:hidden; background:#000; }</style>
+</head>
+<body>
+  <div id="container"></div>
+  <script>
+    window.RufflePlayer = window.RufflePlayer || {};
+    window.addEventListener("DOMContentLoaded", () => {
+      const ruffle = window.RufflePlayer.newest();
+      const player = ruffle.createPlayer();
+      document.getElementById("container").appendChild(player);
+      player.load({ data: atob("${swfBase64}") });
+    });
+  </script>
+</body>
+</html>`;
+        localStorage.setItem('godly_custom_game_' + gameId, rufflerHtml);
+        const newGame: LocalGame = {
+          id: gameId,
+          folder: 'Uploaded',
+          file: file.name,
+          title: file.name.replace(/\.(html|swf)$/i, ''),
+          category: 'Flash SWF',
+          url: 'custom://' + gameId,
+        };
+        const updated = [newGame, ...customUploadedGames];
+        setCustomUploadedGames(updated);
+        localStorage.setItem('godly_custom_uploaded_games', JSON.stringify(updated));
+        sound.playNotification();
+      };
+      reader.readAsDataURL(file);
+    } else {
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        localStorage.setItem('godly_custom_game_' + gameId, content);
+        const newGame: LocalGame = {
+          id: gameId,
+          folder: 'Uploaded',
+          file: file.name,
+          title: file.name.replace(/\.(html|swf)$/i, ''),
+          category: 'HTML5 Custom',
+          url: 'custom://' + gameId,
+        };
+        const updated = [newGame, ...customUploadedGames];
+        setCustomUploadedGames(updated);
+        localStorage.setItem('godly_custom_uploaded_games', JSON.stringify(updated));
+        sound.playNotification();
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const [vaultGames, setVaultGames] = useState<LocalGame[]>([]);
   const [vaultLoading, setVaultLoading] = useState<boolean>(true);
   const [vaultSearch, setVaultSearch] = useState<string>('');
@@ -457,7 +543,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   };
 
   // Filter vault games
-  const filteredVaultGames = vaultGames.filter((g) => {
+  const allVaultGames = [...customUploadedGames, ...vaultGames];
+  const filteredVaultGames = allVaultGames.filter((g) => {
     if (selectedLetter !== 'ALL') {
       if (selectedLetter === '#') {
         const first = g.title.charAt(0);
@@ -511,10 +598,16 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setVaultLoadingGame(true);
     setVaultHtmlContent(null);
     setVaultRefreshKey((k) => k + 1);
+    setSaveSlots(GameSaveManager.getSlots(game.id));
 
     try {
-      const html = await fetchGameHtml(game.url);
-      setVaultHtmlContent(html);
+      if (game.url.startsWith('custom://')) {
+        const stored = localStorage.getItem('godly_custom_game_' + game.id);
+        setVaultHtmlContent(stored || '<h3>Uploaded game file not found in storage.</h3>');
+      } else {
+        const html = await fetchGameHtml(game.url);
+        setVaultHtmlContent(html);
+      }
     } catch (err) {
       console.error('Failed to load vault game:', err);
       setVaultHtmlContent(null);
@@ -766,6 +859,44 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <button
                       onClick={() => {
                         sound.playClick();
+                        setShowSaveManager(!showSaveManager);
+                      }}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        showSaveManager
+                          ? 'bg-purple-600/30 border-purple-500/50 text-purple-300'
+                          : 'text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.06]'
+                      }`}
+                      title="Quick Save State Manager (3 Slots)"
+                    >
+                      <Save size={14} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        setShowGamepadMapper(true);
+                      }}
+                      className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+                      title="Gamepad Controller Mapper"
+                    >
+                      <Gamepad2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        updateSettings({ fpsOverlayEnabled: !settings.fpsOverlayEnabled });
+                      }}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        settings.fpsOverlayEnabled
+                          ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300'
+                          : 'text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.06]'
+                      }`}
+                      title="FPS Counter & Performance Overlay (F3)"
+                    >
+                      <Gauge size={14} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        sound.playClick();
                         setVaultRefreshKey((k) => k + 1);
                       }}
                       className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
@@ -799,7 +930,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   </div>
                 </div>
 
-                <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center">
+                <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
                   {vaultLoadingGame && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07070d] z-20">
                       <div className="w-10 h-10 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin mb-3" />
@@ -832,6 +963,91 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                       </button>
                     </div>
                   ) : null}
+
+                  {/* 3a. Quick-Save Slide-Up Bar */}
+                  {showSaveManager && (
+                    <div className="absolute bottom-0 inset-x-0 bg-[#0d0e1b]/95 backdrop-blur-2xl border-t border-purple-500/40 p-4 z-40 shadow-2xl select-none animate-in slide-in-from-bottom duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Bookmark size={15} className="text-purple-400" />
+                          <span className="text-xs font-bold text-white tracking-wide">
+                            Local Save State Manager — {activeVaultGame.title}
+                          </span>
+                        </div>
+                        <button onClick={() => setShowSaveManager(false)} className="text-white/50 hover:text-white p-1">
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        {[1, 2, 3].map((slotNum) => {
+                          const slot = saveSlots.find((s) => s.slotNumber === slotNum);
+                          const hasData = slot && slot.timestamp > 0;
+                          return (
+                            <div key={slotNum} className="p-3 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between gap-2 shadow-inner">
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-white">Save Slot {slotNum}</span>
+                                  {hasData && (
+                                    <span className="text-[10px] text-emerald-400 font-mono">
+                                      {new Date(slot.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={slotNotes[slotNum] !== undefined ? slotNotes[slotNum] : (slot?.userNote || '')}
+                                  onChange={(e) => setSlotNotes((prev) => ({ ...prev, [slotNum]: e.target.value }))}
+                                  placeholder="Slot label / note..."
+                                  className="w-full mt-1.5 px-2.5 py-1 bg-black/40 border border-white/10 rounded-lg text-[10px] text-white focus:outline-none focus:border-purple-400"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-1.5 pt-1 border-t border-white/5">
+                                <button
+                                  onClick={async () => {
+                                    const note = slotNotes[slotNum] || `Save Slot ${slotNum}`;
+                                    await GameSaveManager.saveSlot(activeVaultGame.id, activeVaultGame.title, slotNum as any, note);
+                                    setSaveSlots(GameSaveManager.getSlots(activeVaultGame.id));
+                                    sound.playSnap();
+                                  }}
+                                  className="flex-1 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-[10px] font-bold text-white flex items-center justify-center gap-1 shadow-md active:scale-95 transition-all"
+                                >
+                                  <Save size={10} />
+                                  <span>Save</span>
+                                </button>
+
+                                <button
+                                  onClick={async () => {
+                                    const restored = await GameSaveManager.loadSlot(activeVaultGame.id, slotNum as any);
+                                    if (restored) {
+                                      setVaultRefreshKey((k) => k + 1);
+                                      sound.playNotification();
+                                    }
+                                  }}
+                                  disabled={!hasData}
+                                  className="flex-1 py-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 text-[10px] font-bold text-white flex items-center justify-center gap-1 active:scale-95 transition-all"
+                                >
+                                  <Play size={10} />
+                                  <span>Load</span>
+                                </button>
+
+                                {hasData && (
+                                  <button
+                                    onClick={() => GameSaveManager.exportSlotAsJson(activeVaultGame.id, slotNum as any)}
+                                    className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                                    title="Export JSON"
+                                  >
+                                    <Download size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -865,8 +1081,22 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-md">
+                        <Upload size={13} />
+                        <span>Upload .HTML / .SWF</span>
+                        <input
+                          type="file"
+                          accept=".html,.htm,.swf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            handleUploadCustomGame(file);
+                          }}
+                          className="hidden"
+                        />
+                      </label>
                       <span className="text-[11px] font-mono text-white/50 bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                        {filteredVaultGames.length.toLocaleString()} / {vaultGames.length.toLocaleString()} Games
+                        {filteredVaultGames.length.toLocaleString()} / {allVaultGames.length.toLocaleString()} Games
                       </span>
                     </div>
                   </div>
@@ -1620,6 +1850,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
           </div>
         </div>
       </div>
+      <GamepadMapperModal isOpen={showGamepadMapper} onClose={() => setShowGamepadMapper(false)} />
     </div>
   );
 };

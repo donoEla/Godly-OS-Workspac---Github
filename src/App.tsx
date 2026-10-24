@@ -11,6 +11,8 @@ import { NotificationCenter } from './components/taskbar/NotificationCenter';
 import { MediaPill } from './components/taskbar/MediaPill';
 import { CommandPalette } from './components/common/CommandPalette';
 import { OnboardingTutorial } from './components/common/OnboardingTutorial';
+import { ScreenCaptureTool } from './components/common/ScreenCaptureTool';
+import { FpsCounterHUD } from './components/games/FpsCounterHUD';
 
 function GodlyOS() {
   const { isExtensionEnabled } = useExtensions();
@@ -23,7 +25,7 @@ function GodlyOS() {
       {/* 2. Window Manager Layer */}
       <WindowManager />
 
-      {/* 3. Dynamic Floating Media Pill Island (Achroma style) */}
+      {/* 3. Dynamic Floating Media Pill Island */}
       <MediaPill />
 
       {/* 4. Taskbar */}
@@ -35,20 +37,26 @@ function GodlyOS() {
       <CalendarFlyout />
       <NotificationCenter />
 
-      {/* 6. Achroma-grade Command Palette (cmdk) */}
+      {/* 6. Command Palette (cmdk) */}
       <CommandPalette />
 
-      {/* 7. Interactive Feature Showcase & First-Time Onboarding Tour */}
+      {/* 7. Screen Recorder & Screenshot Snip Tool */}
+      <ScreenCaptureTool />
+
+      {/* 8. FPS & Performance Counter Overlay */}
+      <FpsCounterHUD />
+
+      {/* 9. Interactive Feature Showcase & First-Time Onboarding Tour */}
       <OnboardingTutorial />
 
-      {/* 8. Retro CRT Scanline Shimmer Extension Overlay */}
+      {/* 10. Retro CRT Scanline Shimmer Extension Overlay */}
       {isExtensionEnabled('crt-scanline-shimmer') && (
         <div
           id="godly-crt-overlay"
           className="pointer-events-none fixed inset-0 z-[999999] opacity-80 select-none"
           style={{
             background:
-              'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04))',
+              'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 255, 0, 0.04))',
             backgroundSize: '100% 3px, 6px 100%',
             boxShadow: 'inset 0 0 100px rgba(0, 0, 0, 0.65)',
           }}

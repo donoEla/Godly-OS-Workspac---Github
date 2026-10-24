@@ -11,11 +11,31 @@ export type AppId =
   | 'spotify'
   | 'terminal'
   | 'web-app'
-  | 'zen';
+  | 'zen'
+  | 'code-editor'
+  | 'voice-memos'
+  | 'screen-recorder'
+  | 'theme-studio';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 
-export type SnapRegion = 'none' | 'left' | 'right' | 'top';
+export type SnapRegion =
+  | 'none'
+  | 'left'
+  | 'right'
+  | 'top'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'col-1-of-3'
+  | 'col-2-of-3'
+  | 'col-3-of-3'
+  | 'zen-70'
+  | 'zen-20'
+  | 'zen-10'
+  | 'split-70'
+  | 'split-30';
 
 export interface CloakPreset {
   id: string;
@@ -48,6 +68,14 @@ export interface AppConfig {
   isPinned?: boolean;
 }
 
+export interface WindowTab {
+  id: string;
+  appId: AppId;
+  title: string;
+  icon: string;
+  customUrl?: string;
+}
+
 export interface WindowInstance {
   id: string;
   appId: AppId;
@@ -64,6 +92,46 @@ export interface WindowInstance {
   prevBounds?: { x: number; y: number; width: number; height: number };
   zIndex: number;
   initialTab?: any;
+  workspaceId?: string;
+  isPip?: boolean;
+  pipCorner?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  tabs?: WindowTab[];
+  activeTabId?: string;
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+export type LiveWallpaperType = 'none' | 'fluid' | 'matrix' | 'starfield' | 'visualizer';
+
+export type SoundThemeType = 'cyberpunk' | 'sonoma' | 'win98' | 'silent' | 'custom';
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  glassBlur: number;
+  neonColor: string;
+  radius: number;
+  fontFamily: string;
+  brightness: number;
+  contrast: number;
+}
+
+export interface DesktopWidget {
+  id: string;
+  type: 'clock' | 'weather' | 'system' | 'notes' | 'media';
+  title: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isLocked: boolean;
+  isVisible: boolean;
+  data?: any;
 }
 
 export interface Wallpaper {
@@ -110,4 +178,11 @@ export interface SystemSettings {
   mediaPillEnabled: boolean;
   activeCloak: string | null;
   wispUrl?: string;
+  liveWallpaper?: LiveWallpaperType;
+  activeWorkspaceId?: string;
+  workspaces?: Workspace[];
+  soundTheme?: SoundThemeType;
+  themePreset?: ThemePreset;
+  widgets?: DesktopWidget[];
+  fpsOverlayEnabled?: boolean;
 }

@@ -4,6 +4,8 @@ import { useOS } from '../../context/OSContext';
 import { DesktopIcon } from './DesktopIcon';
 import { DesktopContextMenu } from './DesktopContextMenu';
 import { ParticleCanvas } from './ParticleCanvas';
+import { LiveWallpaperCanvas } from './LiveWallpaperCanvas';
+import { DesktopWidgetsLayer } from './DesktopWidgetsLayer';
 import { getAssetUrl } from '../../utils/assetHelper';
 import { sound } from '../../utils/sound';
 
@@ -142,8 +144,14 @@ export const Desktop: React.FC = () => {
       {/* Subtle vignette shadow overlay */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 via-transparent to-black/20" />
 
-      {/* Interactive particle dot canvas sampling dynamic wallpaper colors */}
-      <ParticleCanvas />
+      {/* Dynamic Live Wallpapers Engine (Fluid, Matrix, Starfield, Audio-reactive) */}
+      <LiveWallpaperCanvas />
+
+      {/* Interactive particle dot canvas */}
+      {settings.particleBackground && <ParticleCanvas />}
+
+      {/* Desktop Widgets Engine (Draggable glass panels pinned to desktop) */}
+      <DesktopWidgetsLayer />
 
       {/* Desktop Draggable Icons with Magnetic Grid Snapping */}
       <div className="absolute inset-0 pointer-events-auto z-0">
@@ -187,7 +195,6 @@ export const Desktop: React.FC = () => {
                 isSelected={isSelected}
                 onSelect={() => setSelectedIconId(app.id)}
                 onOpen={() => {
-                  // Only open if it wasn't a drag gesture
                   if (dragDistanceRef.current > 10) return;
                   setSelectedIconId(null);
                   if (app.url) {

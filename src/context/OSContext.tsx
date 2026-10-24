@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { AppId, WindowInstance, SystemSettings, AccentColor, FileItem, NotificationItem, SnapRegion, InstalledApp } from '../types/os';
+import {
+  AppId,
+  WindowInstance,
+  WindowTab,
+  SystemSettings,
+  AccentColor,
+  FileItem,
+  NotificationItem,
+  SnapRegion,
+  InstalledApp,
+  Workspace,
+  DesktopWidget,
+  ThemePreset,
+} from '../types/os';
 import { WALLPAPERS, INITIAL_FILESYSTEM, ACCENT_CONFIGS, CLOAK_PRESETS } from '../constants/assets';
 import { sound } from '../utils/sound';
 import { getAssetUrl } from '../utils/assetHelper';
@@ -22,6 +35,114 @@ export interface NowPlayingState {
   progress: number;
 }
 
+export const DEFAULT_WORKSPACES: Workspace[] = [
+  { id: 'browsing', name: 'Browsing', icon: '🌐', color: '#3b82f6' },
+  { id: 'gaming', name: 'Gaming', icon: '🎮', color: '#ec4899' },
+  { id: 'dev', name: 'Dev/Terminal', icon: '💻', color: '#10b981' },
+];
+
+export const DEFAULT_WIDGETS: DesktopWidget[] = [
+  {
+    id: 'widget-clock',
+    type: 'clock',
+    title: 'Astronomical Chronometer',
+    x: 40,
+    y: 40,
+    width: 220,
+    height: 140,
+    isLocked: false,
+    isVisible: true,
+  },
+  {
+    id: 'widget-weather',
+    type: 'weather',
+    title: 'Global Weather Radar',
+    x: 280,
+    y: 40,
+    width: 260,
+    height: 140,
+    isLocked: false,
+    isVisible: true,
+  },
+  {
+    id: 'widget-system',
+    type: 'system',
+    title: 'Resource Monitor',
+    x: 560,
+    y: 40,
+    width: 240,
+    height: 140,
+    isLocked: false,
+    isVisible: true,
+  },
+  {
+    id: 'widget-notes',
+    type: 'notes',
+    title: 'Quick Scratchpad',
+    x: 40,
+    y: 200,
+    width: 260,
+    height: 200,
+    isLocked: false,
+    isVisible: false,
+    data: { text: 'Godly OS — Redefining the browser operating system.' },
+  },
+  {
+    id: 'widget-media',
+    type: 'media',
+    title: 'Aura Media Controller',
+    x: 320,
+    y: 200,
+    width: 260,
+    height: 160,
+    isLocked: false,
+    isVisible: false,
+  },
+];
+
+export const BUILTIN_THEME_PRESETS: ThemePreset[] = [
+  {
+    id: 'dark-neon',
+    name: 'Dark Neon',
+    glassBlur: 32,
+    neonColor: '#8b5cf6',
+    radius: 18,
+    fontFamily: 'Inter',
+    brightness: 100,
+    contrast: 100,
+  },
+  {
+    id: 'frosted-arctic',
+    name: 'Frosted Arctic',
+    glassBlur: 45,
+    neonColor: '#38bdf8',
+    radius: 22,
+    fontFamily: 'system-ui',
+    brightness: 108,
+    contrast: 98,
+  },
+  {
+    id: 'synthwave',
+    name: 'Synthwave',
+    glassBlur: 24,
+    neonColor: '#f43f5e',
+    radius: 16,
+    fontFamily: 'JetBrains Mono',
+    brightness: 104,
+    contrast: 110,
+  },
+  {
+    id: 'midnight-black',
+    name: 'Midnight Black',
+    glassBlur: 16,
+    neonColor: '#e2e8f0',
+    radius: 12,
+    fontFamily: 'Inter',
+    brightness: 92,
+    contrast: 105,
+  },
+];
+
 interface OSContextType {
   // Windows
   windows: WindowInstance[];
@@ -42,28 +163,52 @@ interface OSContextType {
   updateWindowBounds: (id: string, bounds: Partial<Pick<WindowInstance, 'x' | 'y' | 'width' | 'height'>>) => void;
   minimizeAll: () => void;
 
+  // Window Grouping & Tabs
+  mergeWindows: (targetWindowId: string, sourceWindowId: string) => void;
+  detachWindowTab: (windowId: string, tabId: string, clientPos?: { x: number; y: number }) => void;
+  switchWindowTab: (windowId: string, tabId: string) => void;
+
+  // Picture-in-Picture (PiP)
+  toggleWindowPip: (windowId: string) => void;
+  setPipCorner: (windowId: string, corner: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left') => void;
+
+  // Workspaces (Spaces)
+  workspaces: Workspace[];
+  activeWorkspaceId: string;
+  switchWorkspace: (workspaceId: string) => void;
+  addWorkspace: (name: string, icon?: string, color?: string) => void;
+  removeWorkspace: (workspaceId: string) => void;
+  moveWindowToWorkspace: (windowId: string, workspaceId: string) => void;
+
+  // Desktop Widgets
+  widgets: DesktopWidget[];
+  updateWidgetBounds: (id: string, bounds: Partial<Pick<DesktopWidget, 'x' | 'y' | 'width' | 'height'>>) => void;
+  toggleWidgetLock: (id: string) => void;
+  toggleWidgetVisibility: (id: string) => void;
+  updateWidgetData: (id: string, data: any) => void;
+
   // Installed Apps & Desktop
   installedApps: InstalledApp[];
   installApp: (app: InstalledApp) => void;
   uninstallApp: (appId: string) => void;
 
-  // Window Snapping (NautilusOS-style)
+  // Window Snapping
   snapPreview: SnapRegion;
   setSnapPreview: (snap: SnapRegion) => void;
   snapWindow: (id: string, region: SnapRegion) => void;
 
-  // Command Palette (Achroma-style cmdk)
+  // Command Palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   toggleCommandPalette: () => void;
 
-  // Dynamic Island / Media Pill (Achroma-style)
+  // Dynamic Island / Media Pill
   nowPlaying: NowPlayingState;
   setNowPlaying: React.Dispatch<React.SetStateAction<NowPlayingState>>;
   togglePlayPauseNowPlaying: () => void;
   nextTrackNowPlaying: () => void;
 
-  // Stealth & Cloaking (NautilusOS-style)
+  // Stealth & Cloaking
   applyCloak: (presetId: string | null) => void;
   openAboutBlankCloak: () => void;
   panicCloak: () => void;
@@ -83,12 +228,13 @@ interface OSContextType {
   openContextMenu: (e: React.MouseEvent, type?: 'desktop' | 'item', data?: any) => void;
   closeContextMenu: () => void;
 
-  // System Settings
+  // System Settings & Themes
   settings: SystemSettings;
   updateSettings: (newSettings: Partial<SystemSettings>) => void;
   setWallpaper: (path: string) => void;
   setAccentColor: (color: AccentColor) => void;
   toggleTheme: () => void;
+  applyThemePreset: (preset: ThemePreset) => void;
 
   // Notifications
   notifications: NotificationItem[];
@@ -121,16 +267,25 @@ const DEFAULT_SETTINGS: SystemSettings = {
   particleBackground: true,
   mediaPillEnabled: true,
   activeCloak: null,
+  liveWallpaper: 'none',
+  soundTheme: 'cyberpunk',
+  activeWorkspaceId: 'browsing',
+  workspaces: DEFAULT_WORKSPACES,
+  widgets: DEFAULT_WIDGETS,
+  fpsOverlayEnabled: false,
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'zen-browser', name: 'Godly Browser', icon: getAssetUrl('assets/icons/zen.jpg'), category: 'Productivity', appId: 'zen' },
+  { id: 'code-editor', name: 'Code Studio', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'code-editor' },
   { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
   { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
   { id: 'movies', name: 'Movies', icon: getAssetUrl('assets/icons/movies.png'), category: 'Media', url: 'https://1337x.to/' },
   { id: 'games-arcade', name: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'games' },
   { id: 'terminal', name: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'terminal' },
+  { id: 'voice-memos', name: 'Voice Memos', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Utilities', appId: 'voice-memos' },
   { id: 'notes-studio', name: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), category: 'Productivity', appId: 'notes' },
+  { id: 'theme-studio', name: 'Theme Studio', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'theme-studio' },
   { id: 'calculator-pro', name: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), category: 'Utilities', appId: 'calculator' },
   { id: 'file-manager', name: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), category: 'System', appId: 'file-manager' },
   { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
@@ -138,18 +293,22 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
-const APP_META: Record<AppId, { title: string; icon: string; width: number; height: number }> = {
+export const APP_META: Record<AppId, { title: string; icon: string; width: number; height: number }> = {
   'app-store': { title: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), width: 920, height: 640 },
   'calculator': { title: 'Calculator Pro', icon: getAssetUrl('assets/icons/calculator.jpg'), width: 440, height: 600 },
   'extensions': { title: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), width: 980, height: 640 },
   'file-manager': { title: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), width: 880, height: 580 },
-  'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 860, height: 640 },
+  'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 920, height: 670 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
-  'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 860, height: 620 },
+  'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 880, height: 640 },
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
   'terminal': { title: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), width: 780, height: 520 },
   'web-app': { title: 'Web App', icon: getAssetUrl('assets/icons/settings.jpg'), width: 960, height: 660 },
-  'zen': { title: 'Godly Browser', icon: getAssetUrl('assets/icons/zen.jpg'), width: 1060, height: 720 },
+  'zen': { title: 'Godly Browser', icon: getAssetUrl('assets/icons/zen.jpg'), width: 1080, height: 720 },
+  'code-editor': { title: 'Code Studio & Shell', icon: getAssetUrl('assets/icons/terminal.jpg'), width: 1040, height: 680 },
+  'voice-memos': { title: 'Voice Memos Studio', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 560, height: 620 },
+  'screen-recorder': { title: 'Screen Capture', icon: getAssetUrl('assets/icons/settings.jpg'), width: 480, height: 380 },
+  'theme-studio': { title: 'Glassmorphism Theme Studio', icon: getAssetUrl('assets/icons/settings.jpg'), width: 840, height: 640 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -170,94 +329,55 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   });
 
+  // Workspaces (Spaces) state
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
+    try {
+      const saved = localStorage.getItem('godly_workspaces');
+      return saved ? JSON.parse(saved) : DEFAULT_WORKSPACES;
+    } catch {
+      return DEFAULT_WORKSPACES;
+    }
+  });
+
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => {
+    try {
+      return localStorage.getItem('godly_active_workspace') || 'browsing';
+    } catch {
+      return 'browsing';
+    }
+  });
+
+  // Desktop Widgets state
+  const [widgets, setWidgets] = useState<DesktopWidget[]>(() => {
+    try {
+      const saved = localStorage.getItem('godly_desktop_widgets');
+      return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
+    } catch {
+      return DEFAULT_WIDGETS;
+    }
+  });
+
   // Windows state
   const [windows, setWindows] = useState<WindowInstance[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [highestZ, setHighestZ] = useState<number>(100);
 
-  // Installed Apps State (synced to localStorage with automatic version reconciliation)
+  // Installed Apps State
   const [installedApps, setInstalledApps] = useState<InstalledApp[]>(() => {
     try {
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
-      
-      if (saved && version === '3.6') {
-        const list: InstalledApp[] = JSON.parse(saved);
-        return list
-          .filter((a: any) => a.id !== 'gnmath-leonard')
-          .map((app) => {
-            if (app.id === 'streamflix' || app.id === 'movies') {
-              const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
-              if (def) return def;
-            }
-            const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === app.id);
-            if (def) {
-              return { ...app, icon: def.icon, name: def.name, url: def.url };
-            }
-            return { ...app, icon: getAssetUrl(app.icon) };
-          });
+
+      if (saved && version === '4.2') {
+        return JSON.parse(saved);
       }
-      // Migrate old storage: force update default icons and set version
-      localStorage.setItem('godly_apps_version', '3.6');
+      localStorage.setItem('godly_apps_version', '4.2');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
       return DEFAULT_INSTALLED_APPS;
     }
   });
-
-  // Always keep default app icons up to date even if user had older localStorage
-  useEffect(() => {
-    setInstalledApps((prev) => {
-      let changed = false;
-      let updated = prev.map((app) => {
-        if (app.id === 'streamflix') {
-          changed = true;
-          const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
-          if (def) return def;
-        }
-        const def = DEFAULT_INSTALLED_APPS.find((d) => d.id === app.id);
-        if (def && (app.icon !== def.icon || app.name !== def.name || app.url !== def.url)) {
-          changed = true;
-          return { ...app, icon: def.icon, name: def.name, url: def.url };
-        }
-        return app;
-      });
-
-      // Ensure Movies app is present
-      if (!updated.some((a) => a.id === 'movies')) {
-        const moviesDef = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'movies');
-        if (moviesDef) {
-          updated = [...updated, moviesDef];
-          changed = true;
-        }
-      }
-
-      // Ensure Zen Browser is present
-      if (!updated.some((a) => a.id === 'zen-browser')) {
-        const zenDef = DEFAULT_INSTALLED_APPS.find((d) => d.id === 'zen-browser');
-        if (zenDef) {
-          updated = [zenDef, ...updated];
-          changed = true;
-        }
-      }
-
-      if (changed) {
-        try {
-          localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-          localStorage.setItem('godly_apps_version', '3.6');
-        } catch {}
-        return updated;
-      }
-      return prev;
-    });
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('godly_installed_apps', JSON.stringify(installedApps));
-    } catch {}
-  }, [installedApps]);
 
   // Panels
   const [startMenuOpen, setStartMenuOpen] = useState(false);
@@ -292,8 +412,8 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
       id: 'welcome-notif',
-      title: 'Welcome to Godly OS',
-      message: 'Luxury browser operating system loaded with full fluid desktop features.',
+      title: 'Godly OS v4.2 Celestial Edition',
+      message: 'Spaces, Aero Snap Grids, Sound Themes, and Glassmorphism Studio active.',
       time: 'Just now',
       type: 'info',
       icon: getAssetUrl('assets/icons/settings.jpg'),
@@ -310,7 +430,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   });
 
-  // Sync settings to localStorage and DOM
+  // Sync settings & CSS variables to DOM
   useEffect(() => {
     try {
       localStorage.setItem('godly_settings', JSON.stringify(settings));
@@ -337,18 +457,51 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       root.style.setProperty('--accent-text', accent.text);
     }
 
+    if (settings.themePreset) {
+      root.style.setProperty('--glass-blur', `${settings.themePreset.glassBlur}px`);
+      root.style.setProperty('--border-color', settings.themePreset.neonColor);
+      root.style.setProperty('--radius', `${settings.themePreset.radius}px`);
+      root.style.setProperty('--font-family', settings.themePreset.fontFamily);
+      root.style.setProperty('--ui-brightness', `${settings.themePreset.brightness}%`);
+      root.style.setProperty('--ui-contrast', `${settings.themePreset.contrast}%`);
+    } else {
+      root.style.setProperty('--glass-blur', `${settings.glassBlur}px`);
+      root.style.setProperty('--radius', '18px');
+    }
+
     sound.setEnabled(settings.soundEnabled);
     sound.setVolume(settings.volume);
+    if (settings.soundTheme) {
+      sound.setTheme(settings.soundTheme);
+    }
   }, [settings]);
 
-  // Sync filesystem to localStorage
+  // Sync workspaces, widgets, filesystem to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('godly_workspaces', JSON.stringify(workspaces));
+    } catch {}
+  }, [workspaces]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('godly_active_workspace', activeWorkspaceId);
+    } catch {}
+  }, [activeWorkspaceId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('godly_desktop_widgets', JSON.stringify(widgets));
+    } catch {}
+  }, [widgets]);
+
   useEffect(() => {
     try {
       localStorage.setItem('godly_fs', JSON.stringify(fileSystem));
     } catch {}
   }, [fileSystem]);
 
-  // Play startup chime once
+  // Startup chime
   useEffect(() => {
     const timer = setTimeout(() => {
       sound.playStartup();
@@ -378,6 +531,11 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     sound.playClick();
   }, []);
 
+  const applyThemePreset = useCallback((preset: ThemePreset) => {
+    updateSettings({ themePreset: preset });
+    sound.playEvent('notification');
+  }, [updateSettings]);
+
   const toggleCommandPalette = useCallback(() => {
     sound.playClick();
     setCommandPaletteOpen((prev) => !prev);
@@ -401,6 +559,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     window.dispatchEvent(new CustomEvent('godly-music-next'));
   }, []);
 
+  // Stealth & Cloak
   const applyCloak = useCallback((presetId: string | null) => {
     if (!presetId || presetId === 'default') {
       document.title = 'Godly OS — Celestial Desktop';
@@ -461,9 +620,79 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setCommandPaletteOpen(false);
   }, [applyCloak]);
 
-  // Global keybindings
+  // Workspaces logic
+  const switchWorkspace = useCallback((workspaceId: string) => {
+    if (workspaceId === activeWorkspaceId) return;
+    setActiveWorkspaceId(workspaceId);
+    sound.playEvent('window-drag');
+    // Set active window to top window in that workspace
+    const workspaceWindows = windows.filter((w) => (w.workspaceId || 'browsing') === workspaceId && !w.isMinimized);
+    if (workspaceWindows.length > 0) {
+      const topWin = workspaceWindows.reduce((max, w) => (w.zIndex > max.zIndex ? w : max), workspaceWindows[0]);
+      setActiveWindowId(topWin.id);
+    } else {
+      setActiveWindowId(null);
+    }
+  }, [activeWorkspaceId, windows]);
+
+  const addWorkspace = useCallback((name: string, icon: string = '🚀', color: string = '#8b5cf6') => {
+    const newWs: Workspace = {
+      id: `ws-${Date.now()}`,
+      name: name.trim() || 'New Space',
+      icon,
+      color,
+    };
+    setWorkspaces((prev) => [...prev, newWs]);
+    sound.playClick();
+  }, []);
+
+  const removeWorkspace = useCallback((workspaceId: string) => {
+    if (workspaces.length <= 1) return; // Must have at least 1 workspace
+    setWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+    // Move any windows in that workspace to first remaining workspace
+    const remaining = workspaces.filter((w) => w.id !== workspaceId);
+    const fallbackId = remaining[0].id;
+    setWindows((prev) => prev.map((w) => (w.workspaceId === workspaceId ? { ...w, workspaceId: fallbackId } : w)));
+    if (activeWorkspaceId === workspaceId) {
+      switchWorkspace(fallbackId);
+    }
+  }, [workspaces, activeWorkspaceId, switchWorkspace]);
+
+  const moveWindowToWorkspace = useCallback((windowId: string, workspaceId: string) => {
+    setWindows((prev) => prev.map((w) => (w.id === windowId ? { ...w, workspaceId } : w)));
+    sound.playClick();
+  }, []);
+
+  // Keyboard shortcut: Ctrl + Alt + Left / Right for Workspaces
+  useEffect(() => {
+    const handleWorkspaceKeys = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.altKey) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const currentIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
+          if (currentIndex !== -1) {
+            let nextIndex = e.key === 'ArrowRight' ? currentIndex + 1 : currentIndex - 1;
+            if (nextIndex >= workspaces.length) nextIndex = 0;
+            if (nextIndex < 0) nextIndex = workspaces.length - 1;
+            switchWorkspace(workspaces[nextIndex].id);
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleWorkspaceKeys);
+    return () => window.removeEventListener('keydown', handleWorkspaceKeys);
+  }, [workspaces, activeWorkspaceId, switchWorkspace]);
+
+  // Global Keybindings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // F3: Toggle FPS Counter HUD
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setSettings((prev) => ({ ...prev, fpsOverlayEnabled: !prev.fpsOverlayEnabled }));
+        sound.playClick();
+        return;
+      }
       // Ctrl + Space -> toggle start menu
       if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
         e.preventDefault();
@@ -480,7 +709,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         e.preventDefault();
         panicCloak();
       }
-      // Escape -> close flyouts or double-escape panic
+      // Escape -> close flyouts
       if (e.key === 'Escape') {
         const now = Date.now();
         if (now - lastEscapeRef.current < 380) {
@@ -512,7 +741,6 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setNotifications((prev) => [newItem, ...prev]);
     sound.playNotification();
 
-    // Auto dismiss after 6s
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== newItem.id));
     }, 6000);
@@ -541,7 +769,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   }, [contextMenu.isOpen]);
 
-  // Window Management
+  // Window Focus
   const focusWindow = useCallback((id: string) => {
     setHighestZ((prev) => {
       const nextZ = prev + 1;
@@ -553,12 +781,15 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setActiveWindowId(id);
   }, []);
 
+  // Open App
   const openApp = useCallback((appId: AppId, customTitle?: string, customUrl?: string, customIcon?: string) => {
-    // Close start menu
     setStartMenuOpen(false);
 
-    // Check if an instance of this app or URL already exists
-    const existing = windows.find((w) => customUrl ? w.customUrl === customUrl : w.appId === appId);
+    // If already exists in this workspace, focus
+    const existing = windows.find((w) =>
+      (customUrl ? w.customUrl === customUrl : w.appId === appId) &&
+      (w.workspaceId === activeWorkspaceId || !w.workspaceId)
+    );
     if (existing) {
       if (existing.isMinimized) {
         setWindows((prev) => prev.map((w) => (w.id === existing.id ? { ...w, isMinimized: false } : w)));
@@ -568,7 +799,6 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       return;
     }
 
-    // Otherwise create new instance
     const meta = APP_META[appId] || APP_META['web-app'];
     const newZ = highestZ + 1;
     setHighestZ(newZ);
@@ -578,7 +808,6 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const w = Math.min(meta.width, screenW - 40);
     const h = Math.min(meta.height, screenH - 100);
 
-    // Stagger slightly based on number of open windows
     const offset = (windows.length % 6) * 28;
     const x = Math.max(20, Math.min(screenW - w - 20, (screenW - w) / 2 + offset));
     const y = Math.max(20, Math.min(screenH - h - 70, (screenH - h) / 2 - 20 + offset));
@@ -596,12 +825,13 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       isMinimized: false,
       isMaximized: false,
       zIndex: newZ,
+      workspaceId: activeWorkspaceId,
     };
 
     setWindows((prev) => [...prev, newWindow]);
     setActiveWindowId(newWindow.id);
     sound.playOpen();
-  }, [windows, highestZ, focusWindow]);
+  }, [windows, highestZ, focusWindow, activeWorkspaceId]);
 
   const openWebApp = useCallback((title: string, url: string, icon?: string) => {
     openApp('web-app', title, url, icon);
@@ -629,7 +859,6 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     let y = Math.max(20, Math.min(availH - h - 20, (availH - h) / 2 - 20 + taskbarOffset + (windows.length % 5) * 32));
     let snap: SnapRegion = options?.snapRegion || 'none';
 
-    // Handle Split-Screen side by side
     if (options?.snapRegion === 'left') {
       const halfW = Math.floor(screenW / 2);
       x = 0;
@@ -664,6 +893,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       isMaximized: false,
       isSnapped: snap,
       zIndex: newZ,
+      workspaceId: activeWorkspaceId,
     };
 
     setWindows((prev) => {
@@ -707,7 +937,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setActiveWindowId(newWindow.id);
     sound.playOpen();
     return newWindow.id;
-  }, [highestZ, windows.length, settings.taskbarPosition]);
+  }, [highestZ, windows.length, settings.taskbarPosition, activeWorkspaceId]);
 
   const installApp = useCallback((app: InstalledApp) => {
     setInstalledApps((prev) => {
@@ -727,7 +957,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setWindows((prev) => {
       const filtered = prev.filter((w) => w.id !== id);
       if (activeWindowId === id) {
-        const remaining = filtered.filter((w) => !w.isMinimized);
+        const remaining = filtered.filter((w) => !w.isMinimized && (w.workspaceId || 'browsing') === activeWorkspaceId);
         if (remaining.length > 0) {
           const top = remaining.reduce((max, w) => (w.zIndex > max.zIndex ? w : max), remaining[0]);
           setActiveWindowId(top.id);
@@ -738,7 +968,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       return filtered;
     });
     sound.playClick();
-  }, [activeWindowId]);
+  }, [activeWindowId, activeWorkspaceId]);
 
   const minimizeWindow = useCallback((id: string) => {
     setWindows((prev) =>
@@ -755,34 +985,34 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       prev.map((w) => {
         if (w.id !== id) return w;
         if (w.isMaximized) {
-          // Restore
           const prevB = w.prevBounds || { x: 80, y: 40, width: 800, height: 500 };
           sound.playMaximize();
           return {
             ...w,
             isMaximized: false,
+            isSnapped: 'none',
             x: prevB.x,
             y: prevB.y,
             width: prevB.width,
             height: prevB.height,
           };
         } else {
-          // Maximize to full desktop minus taskbar
           sound.playMaximize();
           return {
             ...w,
             isMaximized: true,
+            isSnapped: 'none',
             prevBounds: { x: w.x, y: w.y, width: w.width, height: w.height },
             x: 0,
-            y: 0,
+            y: settings.taskbarPosition === 'top' ? 52 : 0,
             width: window.innerWidth,
-            height: window.innerHeight - 52, // 52px taskbar
+            height: window.innerHeight - 52,
           };
         }
       })
     );
     focusWindow(id);
-  }, [focusWindow]);
+  }, [focusWindow, settings.taskbarPosition]);
 
   const updateWindowBounds = useCallback((id: string, bounds: Partial<Pick<WindowInstance, 'x' | 'y' | 'width' | 'height'>>) => {
     setWindows((prev) =>
@@ -791,7 +1021,8 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         return {
           ...w,
           ...bounds,
-          isMaximized: false, // moving or resizing un-maximizes
+          isMaximized: false,
+          isSnapped: 'none',
         };
       })
     );
@@ -803,6 +1034,184 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     sound.playMinimize();
   }, []);
 
+  // Window Grouping & Tabs
+  const mergeWindows = useCallback((targetWindowId: string, sourceWindowId: string) => {
+    if (targetWindowId === sourceWindowId) return;
+
+    setWindows((prev) => {
+      const targetWin = prev.find((w) => w.id === targetWindowId);
+      const sourceWin = prev.find((w) => w.id === sourceWindowId);
+      if (!targetWin || !sourceWin) return prev;
+
+      // Collect tabs
+      const targetTabs: WindowTab[] = targetWin.tabs && targetWin.tabs.length > 0
+        ? [...targetWin.tabs]
+        : [{
+            id: targetWin.id,
+            appId: targetWin.appId,
+            title: targetWin.title,
+            icon: targetWin.icon,
+            customUrl: targetWin.customUrl,
+          }];
+
+      const sourceTabs: WindowTab[] = sourceWin.tabs && sourceWin.tabs.length > 0
+        ? [...sourceWin.tabs]
+        : [{
+            id: sourceWin.id,
+            appId: sourceWin.appId,
+            title: sourceWin.title,
+            icon: sourceWin.icon,
+            customUrl: sourceWin.customUrl,
+          }];
+
+      const mergedTabs = [...targetTabs, ...sourceTabs];
+
+      const updatedTarget: WindowInstance = {
+        ...targetWin,
+        tabs: mergedTabs,
+        activeTabId: sourceTabs[0].id,
+        title: sourceTabs[0].title,
+        icon: sourceTabs[0].icon,
+        appId: sourceTabs[0].appId,
+        customUrl: sourceTabs[0].customUrl,
+      };
+
+      return prev.filter((w) => w.id !== sourceWindowId).map((w) => (w.id === targetWindowId ? updatedTarget : w));
+    });
+
+    sound.playEvent('window-open');
+  }, []);
+
+  const detachWindowTab = useCallback((windowId: string, tabId: string, clientPos?: { x: number; y: number }) => {
+    setWindows((prev) => {
+      const win = prev.find((w) => w.id === windowId);
+      if (!win || !win.tabs || win.tabs.length <= 1) return prev;
+
+      const tabToDetach = win.tabs.find((t) => t.id === tabId);
+      if (!tabToDetach) return prev;
+
+      const remainingTabs = win.tabs.filter((t) => t.id !== tabId);
+      const newActive = remainingTabs[0];
+
+      const updatedParent: WindowInstance = {
+        ...win,
+        tabs: remainingTabs.length > 1 ? remainingTabs : undefined,
+        activeTabId: newActive.id,
+        title: newActive.title,
+        icon: newActive.icon,
+        appId: newActive.appId,
+        customUrl: newActive.customUrl,
+      };
+
+      const posX = clientPos ? Math.max(20, clientPos.x - 180) : win.x + 40;
+      const posY = clientPos ? Math.max(20, clientPos.y - 30) : win.y + 40;
+
+      const detachedWin: WindowInstance = {
+        id: `win-${tabToDetach.appId}-${Date.now()}`,
+        appId: tabToDetach.appId,
+        title: tabToDetach.title,
+        icon: tabToDetach.icon,
+        customUrl: tabToDetach.customUrl,
+        x: posX,
+        y: posY,
+        width: Math.max(480, win.width - 60),
+        height: Math.max(360, win.height - 60),
+        isMinimized: false,
+        isMaximized: false,
+        zIndex: highestZ + 2,
+        workspaceId: win.workspaceId || activeWorkspaceId,
+      };
+
+      return [...prev.map((w) => (w.id === windowId ? updatedParent : w)), detachedWin];
+    });
+
+    sound.playOpen();
+  }, [highestZ, activeWorkspaceId]);
+
+  const switchWindowTab = useCallback((windowId: string, tabId: string) => {
+    setWindows((prev) =>
+      prev.map((w) => {
+        if (w.id !== windowId || !w.tabs) return w;
+        const tab = w.tabs.find((t) => t.id === tabId);
+        if (!tab) return w;
+        return {
+          ...w,
+          activeTabId: tab.id,
+          title: tab.title,
+          icon: tab.icon,
+          appId: tab.appId,
+          customUrl: tab.customUrl,
+        };
+      })
+    );
+    sound.playClick();
+  }, []);
+
+  // Picture-in-Picture (PiP)
+  const toggleWindowPip = useCallback((windowId: string) => {
+    setWindows((prev) =>
+      prev.map((w) => {
+        if (w.id !== windowId) return w;
+        if (w.isPip) {
+          // Restore from PiP
+          sound.playMaximize();
+          const prevB = w.prevBounds || { x: 80, y: 60, width: 840, height: 560 };
+          return {
+            ...w,
+            isPip: false,
+            x: prevB.x,
+            y: prevB.y,
+            width: prevB.width,
+            height: prevB.height,
+          };
+        } else {
+          // Enter PiP
+          sound.playMinimize();
+          const screenW = window.innerWidth;
+          const screenH = window.innerHeight;
+          const corner = w.pipCorner || 'bottom-right';
+          const taskbarH = 52;
+          let px = screenW - 340;
+          let py = screenH - 200 - taskbarH;
+          if (corner === 'bottom-left') { px = 20; py = screenH - 200 - taskbarH; }
+          else if (corner === 'top-left') { px = 20; py = 20; }
+          else if (corner === 'top-right') { px = screenW - 340; py = 20; }
+
+          return {
+            ...w,
+            isPip: true,
+            pipCorner: corner,
+            prevBounds: { x: w.x, y: w.y, width: w.width, height: w.height },
+            x: px,
+            y: py,
+            width: 320,
+            height: 180,
+            isMaximized: false,
+            isMinimized: false,
+            zIndex: 9999, // Always on top
+          };
+        }
+      })
+    );
+  }, []);
+
+  const setPipCorner = useCallback((windowId: string, corner: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left') => {
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    const taskbarH = 52;
+    let px = screenW - 340;
+    let py = screenH - 200 - taskbarH;
+    if (corner === 'bottom-left') { px = 20; py = screenH - 200 - taskbarH; }
+    else if (corner === 'top-left') { px = 20; py = 20; }
+    else if (corner === 'top-right') { px = screenW - 340; py = 20; }
+
+    setWindows((prev) =>
+      prev.map((w) => (w.id === windowId ? { ...w, pipCorner: corner, x: px, y: py } : w))
+    );
+    sound.playSnap();
+  }, []);
+
+  // Multi-Tile Aero Snapping (All 15 Regions)
   const snapWindow = useCallback((id: string, region: SnapRegion) => {
     if (region === 'none') return;
     if (region === 'top') {
@@ -811,14 +1220,61 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       return;
     }
     sound.playSnap();
+
+    const screenW = window.innerWidth;
+    const isTopTaskbar = settings.taskbarPosition === 'top';
+    const topOffset = isTopTaskbar ? 52 : 0;
+    const availH = window.innerHeight - 52;
+    const halfW = Math.floor(screenW / 2);
+    const halfH = Math.floor(availH / 2);
+
+    let x = 0;
+    let y = topOffset;
+    let width = screenW;
+    let height = availH;
+
+    switch (region) {
+      case 'left':
+        x = 0; y = topOffset; width = halfW; height = availH; break;
+      case 'right':
+        x = halfW; y = topOffset; width = screenW - halfW; height = availH; break;
+
+      // 2x2 Quad Grid (Corners)
+      case 'top-left':
+        x = 0; y = topOffset; width = halfW; height = halfH; break;
+      case 'top-right':
+        x = halfW; y = topOffset; width = screenW - halfW; height = halfH; break;
+      case 'bottom-left':
+        x = 0; y = topOffset + halfH; width = halfW; height = availH - halfH; break;
+      case 'bottom-right':
+        x = halfW; y = topOffset + halfH; width = screenW - halfW; height = availH - halfH; break;
+
+      // 3-Column Equal Split
+      case 'col-1-of-3':
+        x = 0; y = topOffset; width = Math.floor(screenW / 3); height = availH; break;
+      case 'col-2-of-3':
+        x = Math.floor(screenW / 3); y = topOffset; width = Math.floor(screenW / 3); height = availH; break;
+      case 'col-3-of-3':
+        x = Math.floor(screenW * 2 / 3); y = topOffset; width = screenW - Math.floor(screenW * 2 / 3); height = availH; break;
+
+      // Zen 70/20/10 Split
+      case 'zen-70':
+        x = 0; y = topOffset; width = Math.floor(screenW * 0.70); height = availH; break;
+      case 'zen-20':
+        x = Math.floor(screenW * 0.70); y = topOffset; width = Math.floor(screenW * 0.20); height = availH; break;
+      case 'zen-10':
+        x = Math.floor(screenW * 0.90); y = topOffset; width = screenW - Math.floor(screenW * 0.90); height = availH; break;
+
+      // 70/30 Code-Browser Split
+      case 'split-70':
+        x = 0; y = topOffset; width = Math.floor(screenW * 0.70); height = availH; break;
+      case 'split-30':
+        x = Math.floor(screenW * 0.70); y = topOffset; width = screenW - Math.floor(screenW * 0.70); height = availH; break;
+    }
+
     setWindows((prev) =>
       prev.map((w) => {
         if (w.id !== id) return w;
-        const halfW = Math.floor(window.innerWidth / 2);
-        const taskbarOffset = settings.taskbarPosition === 'top' ? 52 : 0;
-        const h = window.innerHeight - 52;
-        const x = region === 'left' ? 0 : halfW;
-        const y = taskbarOffset;
         return {
           ...w,
           isMaximized: false,
@@ -826,8 +1282,8 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
           prevBounds: w.prevBounds || { x: w.x, y: w.y, width: w.width, height: w.height },
           x,
           y,
-          width: region === 'left' ? halfW : window.innerWidth - halfW,
-          height: h,
+          width,
+          height,
         };
       })
     );
@@ -835,10 +1291,29 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setSnapPreview('none');
   }, [maximizeWindow, focusWindow, settings.taskbarPosition]);
 
+  // Desktop Widgets Actions
+  const updateWidgetBounds = useCallback((id: string, bounds: Partial<Pick<DesktopWidget, 'x' | 'y' | 'width' | 'height'>>) => {
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, ...bounds } : w)));
+  }, []);
+
+  const toggleWidgetLock = useCallback((id: string) => {
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, isLocked: !w.isLocked } : w)));
+    sound.playClick();
+  }, []);
+
+  const toggleWidgetVisibility = useCallback((id: string) => {
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, isVisible: !w.isVisible } : w)));
+    sound.playClick();
+  }, []);
+
+  const updateWidgetData = useCallback((id: string, data: any) => {
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, data: { ...w.data, ...data } } : w)));
+  }, []);
+
   // File System methods
   const createFile = useCallback((parentId: string | null, name: string, content: string = '', extension: string = 'txt', imageUrl?: string): FileItem => {
     const ext = extension || (name.includes('.') ? name.split('.').pop() || 'txt' : 'txt');
-    const computedSize = imageUrl 
+    const computedSize = imageUrl
       ? `${Math.max(1, Math.round((imageUrl.length * 0.75) / 1024))} KB`
       : `${Math.max(1, Math.round(content.length / 1024 * 10) / 10)} KB`;
     const newItem: FileItem = {
@@ -911,6 +1386,22 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         focusWindow,
         updateWindowBounds,
         minimizeAll,
+        mergeWindows,
+        detachWindowTab,
+        switchWindowTab,
+        toggleWindowPip,
+        setPipCorner,
+        workspaces,
+        activeWorkspaceId,
+        switchWorkspace,
+        addWorkspace,
+        removeWorkspace,
+        moveWindowToWorkspace,
+        widgets,
+        updateWidgetBounds,
+        toggleWidgetLock,
+        toggleWidgetVisibility,
+        updateWidgetData,
         installedApps,
         installApp,
         uninstallApp,
@@ -943,6 +1434,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setWallpaper,
         setAccentColor,
         toggleTheme,
+        applyThemePreset,
         notifications,
         addNotification,
         removeNotification,

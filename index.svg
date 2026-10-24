@@ -87,14 +87,30 @@
             }
 
             status.textContent = 'Launching celestial operating system...';
-            const mirrorUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
+            let mirrorUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
+            try {
+              const loc = window.location.href;
+              if (loc.includes('cdn.jsdelivr.net')) {
+                if (loc.includes('/dist/')) {
+                  mirrorUrl = loc.replace(/\/dist\/index\.svg.*$/, '/dist/index.html');
+                } else {
+                  mirrorUrl = loc.replace(/\/index\.svg.*$/, '/dist/index.html');
+                }
+              }
+            } catch (e) {}
 
             frame.onload = () => {
               setTimeout(dismiss, 350);
             };
 
+            frame.onerror = () => {
+              if (frame.src !== 'https://donoela.github.io/Godly-OS-Workspac---Github/') {
+                frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
+              }
+            };
+
             frame.src = mirrorUrl;
-            setTimeout(dismiss, 2000);
+            setTimeout(dismiss, 2500);
           })();
         ]]></script>
       </body>

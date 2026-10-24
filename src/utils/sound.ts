@@ -526,6 +526,10 @@ class SoundEngine {
   }
 
   // Backward compatibility convenience methods
+  public click() {
+    this.playEvent('click');
+  }
+
   public playClick() {
     this.playEvent('click');
   }

@@ -190,15 +190,26 @@ export const TerminalApp: React.FC = () => {
             appstore: 'app-store',
             settings: 'settings',
             terminal: 'terminal',
+            vm: 'virtual-machine',
+            webvm: 'virtual-machine',
+            cheerpx: 'virtual-machine',
+            virtualmachine: 'virtual-machine',
           };
           const target = map[args[0].toLowerCase()];
           if (target) {
             openApp(target);
             addLine('success', `Launched ${args[0]} application.`);
           } else {
-            addLine('error', `Unknown application: ${args[0]}. Valid apps: spotify, notes, games, calculator, store, settings, files`);
+            addLine('error', `Unknown application: ${args[0]}. Valid apps: vm, webvm, cheerpx, spotify, notes, games, calculator, store, settings, files`);
           }
         }
+        break;
+
+      case 'vm':
+      case 'webvm':
+      case 'cheerpx':
+        openApp('virtual-machine');
+        addLine('success', 'Launching CheerpX / WebAssembly Virtual Machine...');
         break;
 
       case 'cmatrix':

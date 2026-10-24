@@ -15,7 +15,8 @@ export type AppId =
   | 'code-editor'
   | 'voice-memos'
   | 'screen-recorder'
-  | 'theme-studio';
+  | 'theme-studio'
+  | 'virtual-machine';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 

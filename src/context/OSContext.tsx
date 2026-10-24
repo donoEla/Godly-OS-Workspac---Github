@@ -290,6 +290,7 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'file-manager', name: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), category: 'System', appId: 'file-manager' },
   { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
   { id: 'extensions-hub', name: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'extensions' },
+  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.jpg'), category: 'Utilities', appId: 'virtual-machine' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
@@ -309,6 +310,7 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'voice-memos': { title: 'Voice Memos Studio', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 560, height: 620 },
   'screen-recorder': { title: 'Screen Capture', icon: getAssetUrl('assets/icons/settings.jpg'), width: 480, height: 380 },
   'theme-studio': { title: 'Glassmorphism Theme Studio', icon: getAssetUrl('assets/icons/settings.jpg'), width: 840, height: 640 },
+  'virtual-machine': { title: 'Virtual Machine (WebVM & CheerpX)', icon: getAssetUrl('assets/icons/vm.jpg'), width: 1040, height: 680 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

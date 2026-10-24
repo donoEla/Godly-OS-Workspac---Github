@@ -24,8 +24,9 @@ interface PinnedTaskbarItem {
 }
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
-  { id: 'zen',          name: 'Godly Browser',  icon: getAssetUrl('assets/icons/zen.jpg') },
-  { id: 'code-editor',  name: 'Code Studio',    icon: getAssetUrl('assets/icons/terminal.jpg') },
+  { id: 'zen',             name: 'Godly Browser',   icon: getAssetUrl('assets/icons/zen.jpg') },
+  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.jpg') },
+  { id: 'code-editor',     name: 'Code Studio',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'app-store',    name: 'Godly Store',    icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'extensions',   name: 'Extensions',     icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'theme-studio', name: 'Theme Studio',   icon: getAssetUrl('assets/icons/settings.jpg') },

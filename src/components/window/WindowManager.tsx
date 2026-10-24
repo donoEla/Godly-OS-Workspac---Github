@@ -18,6 +18,7 @@ import { ExtensionsStoreApp } from '../apps/ExtensionsStoreApp';
 import { CodeEditorApp } from '../apps/CodeEditorApp';
 import { VoiceMemosApp } from '../apps/VoiceMemosApp';
 import { ThemeStudioApp } from '../apps/ThemeStudioApp';
+import { VirtualMachineApp } from '../apps/VirtualMachineApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -33,6 +34,10 @@ export const WindowManager: React.FC = () => {
           initialTab={win.initialTab}
         />
       );
+    }
+
+    if (win.appId === 'virtual-machine') {
+      return <VirtualMachineApp />;
     }
 
     if (win.appId === 'code-editor') {

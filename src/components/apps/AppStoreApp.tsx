@@ -39,6 +39,19 @@ interface StoreApp {
 
 const STORE_CATALOG: StoreApp[] = [
   {
+    id: 'virtual-machine-app',
+    name: 'Virtual Machine (WebVM & CheerpX)',
+    category: 'Dev',
+    developer: 'Leaning Technologies & Godly Core',
+    rating: 5.0,
+    reviews: '96.4K',
+    icon: getAssetUrl('assets/icons/vm.jpg'),
+    description: 'Full in-browser x86 virtualization machine powered by WebVM and CheerpX WebAssembly JIT with Debian Linux, python, gcc, node, and xterm.',
+    isInstalled: true,
+    appId: 'virtual-machine',
+    features: ['Unmodified x86 Linux binary execution', 'WebAssembly CheerpX JIT virtualization', 'Direct, Ultraviolet & Scramjet tunnel support', 'Command cheatsheet & terminal tools'],
+  },
+  {
     id: 'zen-browser-app',
     name: 'Godly Browser',
     category: 'Productivity',

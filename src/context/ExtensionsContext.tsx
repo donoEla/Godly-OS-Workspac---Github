@@ -287,6 +287,80 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [extensions]);
 
+  // Zen Universal Glance (Peek) Effect (when enabled)
+  useEffect(() => {
+    const isGlanceEnabled = extensions.some((e) => e.id === 'zen-glance-everywhere' && e.enabled);
+    if (!isGlanceEnabled) return;
+
+    let glanceCard: HTMLDivElement | null = null;
+    let isAltDown = false;
+
+    const createGlanceCard = (text: string, icon: string, x: number, y: number) => {
+      if (glanceCard) glanceCard.remove();
+      glanceCard = document.createElement('div');
+      glanceCard.id = 'zen-glance-peek-modal';
+      glanceCard.className = 'fixed z-[9999999] pointer-events-none transition-all duration-200 select-none';
+      glanceCard.style.left = `${Math.min(x + 18, window.innerWidth - 280)}px`;
+      glanceCard.style.top = `${Math.min(y + 18, window.innerHeight - 100)}px`;
+      glanceCard.innerHTML = `
+        <div style="background: rgba(15, 15, 26, 0.88); backdrop-filter: blur(28px) saturate(190%); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 10px 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 20px rgba(168, 85, 247, 0.2); display: flex; items-center; gap: 10px; color: #fff; font-family: sans-serif; font-size: 12px; min-width: 180px; max-width: 260px;">
+          <div style="font-size: 18px; line-height: 1; flex-shrink: 0;">${icon}</div>
+          <div style="overflow: hidden;">
+            <div style="font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${text}</div>
+            <div style="font-size: 10px; color: #a855f7; margin-top: 2px; font-family: monospace;">Zen Glance Peek ⚡</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(glanceCard);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        isAltDown = true;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        isAltDown = false;
+        if (glanceCard) {
+          glanceCard.remove();
+          glanceCard = null;
+        }
+      }
+    };
+
+    const handlePointerOver = (e: MouseEvent) => {
+      if (!isAltDown) return;
+      const target = (e.target as HTMLElement)?.closest('button, a, .dock-item, .window-tab-btn, [data-window-id], [title]') as HTMLElement;
+      if (target) {
+        const title = target.getAttribute('title') || target.innerText?.trim() || target.getAttribute('aria-label') || 'Interactive Element';
+        createGlanceCard(title.slice(0, 40), '👁️', e.clientX, e.clientY);
+      }
+    };
+
+    const handlePointerOut = () => {
+      if (glanceCard) {
+        glanceCard.remove();
+        glanceCard = null;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('mouseover', handlePointerOver);
+    window.addEventListener('mouseout', handlePointerOut);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('mouseover', handlePointerOver);
+      window.removeEventListener('mouseout', handlePointerOut);
+      if (glanceCard) glanceCard.remove();
+    };
+  }, [extensions]);
+
+
   const toggleExtension = useCallback((id: string) => {
     sound.playClick();
     setExtensions((prev) =>

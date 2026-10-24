@@ -492,9 +492,10 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize Ultraviolet Proxy
+  // Initialize Proxies (Ultraviolet & Scramjet)
   useEffect(() => {
     initUvProxy().catch((err) => console.warn('[Godly Browser] UV Init note:', err));
+    initScramjetProxy().catch((err) => console.warn('[Godly Browser] Scramjet Init note:', err));
   }, [activeWisp]);
 
   // Set active search engine

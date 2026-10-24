@@ -143,15 +143,36 @@ export function getActiveWispUrl(): string {
 export function getBasePrefix(): string {
   if (typeof window !== 'undefined') {
     if (window.location.hostname === 'cdn.jsdelivr.net') {
-      return '';
+      const match = window.location.pathname.match(/^(\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?(?:\/dist)?)/i);
+      if (match) {
+        return match[1].replace(/\/$/, '');
+      }
+      const path = window.location.pathname.replace(/\/index\.html?$/i, '').replace(/\/$/, '');
+      return path || '';
     }
     if (window.__uv$config?.loc) {
       return window.__uv$config.loc.replace(/\/$/, '');
     }
     const path = window.location.pathname;
     const parts = path.split('/').filter(Boolean);
-    // Ignore internal asset directories, SVG loaders, and srcdoc contexts
-    const ignored = ['uv', 'assets', 'local-games', 'epoxy', 'baremux', 'index.html', 'index.svg', 'srcdoc', 'gh'];
+    // Ignore internal asset directories, SVG loaders, proxy endpoints, and srcdoc contexts
+    const ignored = [
+      'uv',
+      'assets',
+      'local-games',
+      'epoxy',
+      'baremux',
+      'index.html',
+      'index.svg',
+      'srcdoc',
+      'gh',
+      'scramjet',
+      'scramjet-engine',
+      'scramjet-transport',
+      'sw-service',
+      'transport',
+      'libcurl'
+    ];
     if (parts.length > 0 && !ignored.includes(parts[0])) {
       return '/' + parts[0];
     }

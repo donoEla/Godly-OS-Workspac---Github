@@ -77,7 +77,25 @@ export function getAssetUrl(path: string | undefined | null): string {
       window.location.pathname.includes('/srcdoc'));
 
   if (isSrcDoc) {
-    // Fall back to dedicated GitHub Pages mirror for stable HTTPS resolution
+    if (isJsDelivr) {
+      const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
+      const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
+      return query ? `${url}?${query}` : url;
+    }
+    // Check parent frame origin if accessible
+    try {
+      if (window.parent && window.parent !== window && window.parent.location?.origin) {
+        const parentOrigin = window.parent.location.origin;
+        if (parentOrigin && !parentOrigin.startsWith('null') && !parentOrigin.startsWith('about:')) {
+          if (window.parent.location.hostname === 'cdn.jsdelivr.net') {
+            const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
+            const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
+            return query ? `${url}?${query}` : url;
+          }
+        }
+      }
+    } catch {}
+
     const url = `${GITHUB_PAGES_ORIGIN}/${cleanPath}`;
     return query ? `${url}?${query}` : url;
   }

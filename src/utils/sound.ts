@@ -3,6 +3,18 @@ import { SoundThemeType } from '../types/os';
 
 export type SoundEvent = 'window-open' | 'window-close' | 'window-drag' | 'click' | 'error' | 'notification';
 
+function isMechanicalAudioEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem('godly_desktop_extensions');
+    if (!raw) return true; // Enabled by default in BUILTIN_EXTENSIONS
+    const exts = JSON.parse(raw);
+    const mech = exts.find((e: any) => e.id === 'tactile-mechanical-audio');
+    return mech ? !!mech.enabled : true;
+  } catch {
+    return true;
+  }
+}
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private enabled: boolean = true;
@@ -299,16 +311,43 @@ class SoundEngine {
 
     switch (event) {
       case 'click':
-        // Soft wooden / glassy pop
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(900, t);
-        osc.frequency.exponentialRampToValueAtTime(450, t + 0.03);
-        gain.gain.setValueAtTime(this.volume * 0.15, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.03);
+        if (isMechanicalAudioEnabled()) {
+          // Dual-stage Cherry MX mechanical click synthesizer
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(3200, t);
+          osc.frequency.exponentialRampToValueAtTime(1400, t + 0.018);
+          gain.gain.setValueAtTime(this.volume * 0.22, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.022);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.025);
+
+          // Secondary housing resonance snap
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(750, t + 0.006);
+          osc2.frequency.exponentialRampToValueAtTime(260, t + 0.035);
+          gain2.gain.setValueAtTime(0.001, t);
+          gain2.gain.setValueAtTime(this.volume * 0.16, t + 0.006);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.038);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t + 0.006);
+          osc2.stop(t + 0.04);
+        } else {
+          // Soft wooden / glassy pop
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(900, t);
+          osc.frequency.exponentialRampToValueAtTime(450, t + 0.03);
+          gain.gain.setValueAtTime(this.volume * 0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.03);
+        }
         break;
 
       case 'window-open':

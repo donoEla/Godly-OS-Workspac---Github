@@ -1,11 +1,13 @@
 import { getAssetUrl } from './assetHelper';
+import { encodeUvUrl } from './uvProxy';
 
 /**
  * Universal Game HTML Fetcher & Sanitizer
  * Fetches HTML5/WebGL games from multiple fallback CDN mirrors,
- * handles external URLs (GN-Math) with CORS proxy fallbacks,
+ * handles external URLs (GN-Math) with CORS proxy fallbacks & UV proxy,
  * unwraps Google Module CDATA wrappers, injects absolute <base>,
- * and returns clean HTML for native srcDoc iframe execution.
+ * resolves root-relative asset URLs, stubs service worker errors in iframes,
+ * and returns clean, executable HTML for native srcDoc iframe execution.
  */
 export async function fetchGameHtml(rawUrl: string): Promise<string> {
   // Case A: External URL (e.g. GN-Math or external CDN game)
@@ -44,12 +46,26 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
       }
     }
 
+    // 3. Fallback via Ultraviolet Proxy if direct and public CORS proxies fail
+    if (!rawContent) {
+      try {
+        const proxyUrl = encodeUvUrl(rawUrl);
+        const res = await fetch(proxyUrl);
+        if (res.ok) {
+          const text = await res.text();
+          if (text && text.trim().length > 0) {
+            rawContent = text;
+          }
+        }
+      } catch {}
+    }
+
     if (rawContent) {
       return sanitizeGameHtml(rawContent, successfulBase);
     }
   }
 
-  // Case B: Local Game Path (e.g. /local-games/1/cl1.html)
+  // Case B: Local Game Path (e.g. /local-games/W/clwordle.html)
   const cleanPath = rawUrl.startsWith('/') ? rawUrl.slice(1) : rawUrl;
   const rel = cleanPath.startsWith('local-games/')
     ? cleanPath
@@ -91,7 +107,7 @@ export async function fetchGameHtml(rawUrl: string): Promise<string> {
   return sanitizeGameHtml(rawContent, successfulBase);
 }
 
-function sanitizeGameHtml(raw: string, successfulBase: string): string {
+export function sanitizeGameHtml(raw: string, successfulBase: string): string {
   let html = raw;
 
   // 1. Unwrap Google Sites / Module CDATA container
@@ -112,15 +128,94 @@ function sanitizeGameHtml(raw: string, successfulBase: string): string {
     .replace(/<\/Content>/gi, '')
     .trim();
 
-  // 3. Inject base tag for relative scripts, images, audio, and wasm resolution if not already present
-  if (!html.includes('<base ') && !html.includes('<BASE ') && successfulBase) {
-    if (html.includes('<head>')) {
-      html = html.replace('<head>', `<head>\n<base href="${successfulBase}">\n`);
-    } else if (html.includes('<HEAD>')) {
-      html = html.replace('<HEAD>', `<HEAD>\n<base href="${successfulBase}">\n`);
-    } else {
-      html = `<base href="${successfulBase}">\n` + html;
+  // 3. Clean up stray closing tags before <head> or <body> (e.g. clpolytrackalt.html)
+  const headIdx = html.search(/<(head|body)[\s>]/i);
+  if (headIdx > 0) {
+    const prefix = html.substring(0, headIdx).replace(/<\/(html|head|body)>/gi, '');
+    html = prefix + html.substring(headIdx);
+  }
+
+  // 4. Extract existing <base href="..."> if present
+  let effectiveBase = successfulBase;
+  const existingBaseMatch = html.match(/<base\s+[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/i);
+  if (existingBaseMatch && existingBaseMatch[1]) {
+    const existingHref = existingBaseMatch[1].trim();
+    if (existingHref.startsWith('http://') || existingHref.startsWith('https://')) {
+      effectiveBase = existingHref;
     }
+  }
+
+  // Remove existing <base> tag to avoid duplicates or invalid locations
+  html = html.replace(/<base\s+[^>]*>/gi, '');
+
+  // 5. Rewrite root-relative URLs (src="/..." and href="/...") to relative paths so they resolve via <base>
+  // Preserves protocol-relative URLs (//) and absolute URLs (http://, https://, data:, blob:)
+  html = html.replace(/\b(src|href)=["']\/([^\/"'][^"']*)["']/gi, '$1="$2"');
+
+  // 6. Neutralize legacy Google gadget parent calls
+  html = html.replace(/window\.parent\.maeExportApis_\(\);?/g, '/* maeExportApis_ */');
+
+  // 7. Universal Compatibility Companion Script
+  const companionShim = `
+<script>
+// Godly OS Game Compatibility & Sandbox Companion
+try {
+  window.maeExportApis_ = function() {};
+  if (window.parent) {
+    try { window.parent.maeExportApis_ = window.parent.maeExportApis_ || function() {}; } catch(e) {}
+  }
+} catch(e) {}
+try {
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.register = function() {
+      return Promise.reject(new Error('ServiceWorker disabled in sandboxed embed'));
+    };
+  }
+} catch(e) {}
+window.ytgame = window.ytgame || {
+  game: {
+    firstFrameReady: function() {},
+    gameReady: function() {},
+    onPause: function() {},
+    onResume: function() {},
+    loadData: function() { return Promise.resolve(''); },
+    saveData: function() { return Promise.resolve(); }
+  },
+  healthMonitor: { setHealth: function() {} }
+};
+window.ytgamehelper = window.ytgamehelper || { myConsoleLog: function() {} };
+window.google = window.google || {
+  jsapi: {},
+  csi: function() {
+    return {
+      reset_: function(){},
+      report_: function(){},
+      tickPrtAndReport: function(){},
+      tickDl: function(){}
+    };
+  }
+};
+window.gtag = window.gtag || function() {};
+window.ga = window.ga || function() {};
+window.SDK_OPTIONS = window.SDK_OPTIONS || {};
+window.C2_RegisterSW = function() {};
+</script>
+`;
+
+  // 8. Inject base tag and companion shim into <head> or start of document
+  const baseTag = effectiveBase ? `<base href="${effectiveBase}">\n` : '';
+  const injection = `${baseTag}${companionShim}`;
+
+  if (html.includes('<head>')) {
+    html = html.replace('<head>', `<head>\n${injection}`);
+  } else if (html.includes('<HEAD>')) {
+    html = html.replace('<HEAD>', `<HEAD>\n${injection}`);
+  } else if (html.includes('<body>')) {
+    html = html.replace('<body>', `<head>\n${injection}</head>\n<body>`);
+  } else if (html.includes('<BODY>')) {
+    html = html.replace('<BODY>', `<head>\n${injection}</head>\n<BODY>`);
+  } else {
+    html = `<head>\n${injection}</head>\n` + html;
   }
 
   return html;

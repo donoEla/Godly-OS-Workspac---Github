@@ -70,21 +70,21 @@
         <div id="godly-splash">
           <div class="spin-ring"></div>
           <div class="os-title">Godly OS — Divine Edition</div>
-          <div class="os-status" id="godly-status">Launching celestial operating system...</div>
-          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:20px; z-index:30;">
-            <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_top" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; background:linear-gradient(135deg, #9333ea, #4f46e5); color:#ffffff; border-radius:12px; text-decoration:none; font-size:13px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 0 25px rgba(168,85,247,0.5); pointer-events:auto; cursor:pointer;">
-              <span>🚀 Launch Godly OS Live ↗</span>
+          <div class="os-status" id="godly-status">Streaming Godly OS from jsDelivr CDN...</div>
+          <div id="godly-fallback-wrap" style="display:none; flex-direction:column; align-items:center; gap:8px; margin-top:20px; z-index:30; pointer-events:auto;">
+            <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; background:linear-gradient(135deg, #9333ea, #4f46e5); color:#ffffff; border-radius:12px; text-decoration:none; font-size:13px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 0 25px rgba(168,85,247,0.5); pointer-events:auto; cursor:pointer;">
+              <span>🚀 Open Live Mirror (GitHub Pages) ↗</span>
             </a>
-            <span style="font-size:10px; color:rgba(255,255,255,0.4); font-family:monospace;">Edge CDN Bridge • Click to open if not auto-redirected</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.4); font-family:monospace;">Edge CDN fallback if streaming is blocked</span>
           </div>
         </div>
         <iframe id="godly-viewport" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; cross-origin-isolated" allowfullscreen="true"></iframe>
         <script><![CDATA[
-          (function () {
+          (async function () {
             const status = document.getElementById('godly-status');
             const splash = document.getElementById('godly-splash');
             const frame = document.getElementById('godly-viewport');
-            const fallbackBtn = document.getElementById('godly-fallback-btn');
+            const fallbackWrap = document.getElementById('godly-fallback-wrap');
 
             let dismissed = false;
             function dismiss() {
@@ -97,39 +97,67 @@
             }
 
             frame.onload = () => {
-              setTimeout(dismiss, 350);
+              setTimeout(dismiss, 400);
             };
 
             const loc = window.location.href;
-            const origin = window.location.origin || '';
             const isJsDelivr = loc.includes('cdn.jsdelivr.net');
             const isWasmer = loc.includes('wasmer.app') || loc.includes('wasmer.io');
+            const origin = window.location.origin || '';
 
-            let targetUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/dist/';
-            if (isWasmer && origin && origin !== 'null') {
-              targetUrl = origin + '/';
-            } else if (!isJsDelivr && origin && origin !== 'null' && window.location.protocol.startsWith('http')) {
-              targetUrl = './dist/';
-            }
+            // Handle jsDelivr direct streaming:
+            if (isJsDelivr) {
+              try {
+                let baseHref = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/';
+                const match = loc.match(/(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?)/i);
+                if (match) {
+                  baseHref = match[1] + '/dist/';
+                }
+                const htmlUrl = baseHref + 'index.html';
 
-            if (fallbackBtn) {
-              fallbackBtn.href = targetUrl;
-            }
+                const res = await fetch(htmlUrl);
+                if (res.ok) {
+                  let html = await res.text();
+                  // Clean any router or redirect scripts
+                  html = html.replace(/<script>[\s\S]*?Production Deployment Router[\s\S]*?<\/script>/gi, '');
+                  html = html.replace(/<noscript>[\s\S]*?<\/noscript>/gi, '');
 
-            // 1. Instant top-level redirect when loaded in standard browser address bar
-            try {
-              if (window.top && window.top.location) {
-                window.top.location.replace(targetUrl);
-              } else {
-                window.location.replace(targetUrl);
+                  // Ensure <base href="..."> is present so all relative JS/CSS/assets resolve to jsDelivr
+                  if (!html.includes('<base ')) {
+                    html = html.replace('<head>', '<head>\n    <base href="' + baseHref + '">');
+                  }
+                  // Rewrite relative ./ paths to absolute jsDelivr CDN endpoints
+                  html = html.replace(/(src|href)=["']\.\/([^"']+)["']/gi, '$1="' + baseHref + '$2"');
+
+                  // Stream directly into iframe. No redirect.
+                  frame.srcdoc = html;
+                  setTimeout(dismiss, 1200);
+                  return;
+                }
+              } catch (err) {
+                console.warn('jsDelivr inline stream error:', err);
               }
-            } catch (e) {
-              try { window.location.href = targetUrl; } catch (err) {}
             }
 
-            // 2. Embedded iframe fallback if top-level redirect was intercepted by sandbox
-            frame.src = targetUrl;
-            setTimeout(dismiss, 4500);
+            // If on Wasmer:
+            if (isWasmer && origin && origin !== 'null') {
+              frame.src = origin + '/';
+              setTimeout(dismiss, 1200);
+              return;
+            }
+
+            // If local development or non-jsDelivr:
+            if (!isJsDelivr && origin && origin !== 'null' && window.location.protocol.startsWith('http')) {
+              frame.src = './dist/';
+              setTimeout(dismiss, 1200);
+              return;
+            }
+
+            // Fallback only if inline streaming was blocked:
+            if (status) status.textContent = 'CDN stream blocked. Click below to launch:';
+            if (fallbackWrap) fallbackWrap.style.display = 'flex';
+            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/dist/';
+            setTimeout(dismiss, 3500);
           })();
         ]]></script>
       </body>

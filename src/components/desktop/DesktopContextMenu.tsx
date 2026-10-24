@@ -11,6 +11,7 @@ import {
   Sparkles,
   Command,
   Shield,
+  Sliders,
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 
@@ -155,6 +156,11 @@ export const DesktopContextMenu: React.FC = () => {
         onClick={() => handleAction(() => {
           window.dispatchEvent(new CustomEvent('godly-toggle-widget-deck'));
         })}
+      />
+      <MenuItem
+        icon={<Sliders size={13} className="text-purple-400" />}
+        label="Customize Widgets Studio..."
+        onClick={() => handleAction(() => openApp('widgets'))}
       />
 
       <MenuItem

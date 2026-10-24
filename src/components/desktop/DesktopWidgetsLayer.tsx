@@ -26,15 +26,19 @@ import {
   Plus,
   CheckSquare,
   Square,
-  Activity
+  Activity,
+  Quote,
+  Compass,
+  RefreshCw,
 } from 'lucide-react';
-import { DesktopWidget } from '../../types/os';
+import { DesktopWidget, AppId } from '../../types/os';
 import { useOS, getDefaultWidgets } from '../../context/OSContext';
 import { sound } from '../../utils/sound';
 
 export const DesktopWidgetsLayer: React.FC = () => {
   const {
     widgets,
+    openApp,
     updateWidgetBounds,
     toggleWidgetLock,
     toggleWidgetVisibility,
@@ -216,6 +220,19 @@ export const DesktopWidgetsLayer: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Launch Widgets Studio Button */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                setDeckOpen(false);
+                openApp('widgets');
+              }}
+              className="mt-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600/40 to-indigo-600/40 hover:from-purple-600/60 hover:to-indigo-600/60 border border-purple-500/40 text-xs font-semibold text-purple-200 shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Open Widgets Studio App ↗</span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -231,6 +248,7 @@ export const DesktopWidgetsLayer: React.FC = () => {
             toggleLock={toggleWidgetLock}
             toggleVisibility={toggleWidgetVisibility}
             updateData={updateWidgetData}
+            openApp={openApp}
             nowPlaying={nowPlaying}
             toggleMusic={togglePlayPauseNowPlaying}
             nextTrack={nextTrackNowPlaying}
@@ -247,6 +265,7 @@ interface WidgetCardProps {
   toggleLock: (id: string) => void;
   toggleVisibility: (id: string) => void;
   updateData: (id: string, data: any) => void;
+  openApp?: (appId: AppId) => void;
   nowPlaying: any;
   toggleMusic: () => void;
   nextTrack: () => void;
@@ -258,6 +277,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
   toggleLock,
   toggleVisibility,
   updateData,
+  openApp,
   nowPlaying,
   toggleMusic,
   nextTrack,
@@ -339,6 +359,10 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
         return 'hover:border-amber-500/40 hover:shadow-[0_20px_50px_rgba(251,191,36,0.18)]';
       case 'media':
         return 'hover:border-pink-500/40 hover:shadow-[0_20px_50px_rgba(236,72,153,0.18)]';
+      case 'quote':
+        return 'hover:border-fuchsia-500/40 hover:shadow-[0_20px_50px_rgba(217,70,239,0.18)]';
+      case 'launcher':
+        return 'hover:border-cyan-500/40 hover:shadow-[0_20px_50px_rgba(6,182,212,0.18)]';
       default:
         return 'hover:border-white/30';
     }
@@ -354,19 +378,34 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
         left: widget.x,
         width: widget.width,
         height: widget.height,
+        opacity: widget.opacity ?? 1,
+        transform: isDragging ? undefined : widget.scale && widget.scale !== 1 ? `scale(${widget.scale})` : undefined,
+        transformOrigin: 'top left',
         zIndex: isDragging ? 50 : 10,
         transition: isDragging ? 'none' : 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       className={`pointer-events-auto rounded-[28px] p-3.5 flex flex-col group overflow-hidden select-none ${getAccentGlow()}`}
     >
-      {/* Luxury VisionOS Glass Backdrop */}
+      {/* Luxury VisionOS Glass Backdrop with Dynamic Theme & Blur */}
       <div
         className="absolute inset-0 rounded-[28px] pointer-events-none"
         style={{
-          background: 'linear-gradient(135deg, rgba(14, 16, 25, 0.82) 0%, rgba(7, 8, 13, 0.92) 100%)',
-          backdropFilter: 'blur(40px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-          border: '1px solid rgba(255, 255, 255, 0.14)',
+          background:
+            widget.theme === 'cyber'
+              ? 'linear-gradient(135deg, rgba(6, 24, 38, 0.88) 0%, rgba(2, 10, 18, 0.96) 100%)'
+              : widget.theme === 'gold'
+              ? 'linear-gradient(135deg, rgba(38, 28, 6, 0.88) 0%, rgba(18, 12, 2, 0.96) 100%)'
+              : widget.theme === 'obsidian'
+              ? 'linear-gradient(135deg, rgba(5, 5, 5, 0.96) 0%, rgba(0, 0, 0, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(14, 16, 25, 0.82) 0%, rgba(7, 8, 13, 0.92) 100%)',
+          backdropFilter: `blur(${widget.blur ?? 40}px) saturate(200%)`,
+          WebkitBackdropFilter: `blur(${widget.blur ?? 40}px) saturate(200%)`,
+          border:
+            widget.theme === 'cyber'
+              ? '1px solid rgba(56, 189, 248, 0.35)'
+              : widget.theme === 'gold'
+              ? '1px solid rgba(251, 191, 36, 0.35)'
+              : '1px solid rgba(255, 255, 255, 0.14)',
           boxShadow: isDragging
             ? '0 32px 80px rgba(0,0,0,0.9), 0 0 30px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.25)'
             : '0 18px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.12)',
@@ -381,10 +420,24 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
           {widget.type === 'system' && <Cpu size={11} className="text-emerald-400" />}
           {widget.type === 'notes' && <StickyNote size={11} className="text-amber-400" />}
           {widget.type === 'media' && <Music size={11} className="text-pink-400" />}
+          {widget.type === 'quote' && <Quote size={11} className="text-fuchsia-400" />}
+          {widget.type === 'launcher' && <Compass size={11} className="text-cyan-400" />}
           <span className="tracking-wide text-white/90">{widget.title}</span>
         </div>
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {openApp && (
+            <button
+              onClick={() => {
+                sound.playClick();
+                openApp('widgets');
+              }}
+              className="p-1 rounded-md hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              title="Customize in Widgets Studio"
+            >
+              <Sliders size={10} />
+            </button>
+          )}
           <button
             onClick={() => toggleLock(widget.id)}
             className="p-1 rounded-md hover:bg-white/10 text-white/60 hover:text-white transition-colors"
@@ -411,6 +464,8 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
         {widget.type === 'media' && (
           <MediaWidgetBody nowPlaying={nowPlaying} toggleMusic={toggleMusic} nextTrack={nextTrack} />
         )}
+        {widget.type === 'quote' && <QuoteWidgetBody widget={widget} updateData={updateData} />}
+        {widget.type === 'launcher' && <LauncherWidgetBody widget={widget} openApp={openApp} />}
       </div>
     </div>
   );
@@ -987,6 +1042,96 @@ const MediaWidgetBody: React.FC<{
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// 6. Celestial Wisdom Quote Widget
+interface QuoteWidgetBodyProps {
+  widget: DesktopWidget;
+  updateData: (id: string, data: any) => void;
+}
+
+const QuoteWidgetBody: React.FC<QuoteWidgetBodyProps> = ({ widget, updateData }) => {
+  const quote = widget.data?.quote || 'The soul becomes dyed with the color of its thoughts.';
+  const author = widget.data?.author || 'Marcus Aurelius';
+
+  const handleShuffle = () => {
+    sound.playClick();
+    const quotes = [
+      { quote: 'We suffer more often in imagination than in reality.', author: 'Seneca' },
+      { quote: 'The obstacle is the way.', author: 'Marcus Aurelius' },
+      { quote: 'Simplicity is the ultimate sophistication.', author: 'Leonardo da Vinci' },
+      { quote: 'Look up at the stars and not down at your feet.', author: 'Stephen Hawking' },
+      { quote: 'The mind is everything. What you think you become.', author: 'Buddha' },
+      { quote: 'Order and simplification are the first steps toward the mastery of a subject.', author: 'Thomas Mann' },
+    ];
+    const nextQ = quotes[Math.floor(Math.random() * quotes.length)];
+    updateData(widget.id, nextQ);
+  };
+
+  return (
+    <div className="h-full flex flex-col justify-between p-1 select-none">
+      <div className="flex items-start gap-2">
+        <Quote className="w-4 h-4 text-fuchsia-400/80 shrink-0 mt-0.5" />
+        <p className="text-xs italic text-white/90 leading-snug line-clamp-3 font-serif">
+          "{quote}"
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mt-1">
+        <span className="text-[10px] font-mono text-fuchsia-300/80 tracking-wide font-semibold">
+          — {author}
+        </span>
+        <button
+          onClick={handleShuffle}
+          className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+          title="New Quote"
+        >
+          <RefreshCw size={11} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// 7. Quick App Dock Widget
+interface LauncherWidgetBodyProps {
+  widget: DesktopWidget;
+  openApp?: (id: AppId) => void;
+}
+
+const LauncherWidgetBody: React.FC<LauncherWidgetBodyProps> = ({ openApp }) => {
+  const dockApps: { id: AppId; name: string; icon: string }[] = [
+    { id: 'zen', name: 'Browser', icon: 'assets/icons/zen.jpg' },
+    { id: 'virtual-machine', name: 'VM', icon: 'assets/icons/vm.jpg' },
+    { id: 'code-editor', name: 'Code', icon: 'assets/icons/terminal.jpg' },
+    { id: 'widgets', name: 'Widgets', icon: 'assets/icons/widgets.jpg' },
+    { id: 'games', name: 'Arcade', icon: 'assets/icons/games.jpg' },
+  ];
+
+  return (
+    <div className="h-full flex items-center justify-around px-1 select-none">
+      {dockApps.map((app) => (
+        <button
+          key={app.id}
+          onClick={() => {
+            sound.playClick();
+            openApp?.(app.id);
+          }}
+          className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-white/10 transition-transform hover:scale-110 active:scale-95 group"
+          title={`Launch ${app.name}`}
+        >
+          <img
+            src={app.icon}
+            alt={app.name}
+            className="w-7 h-7 rounded-xl object-cover ring-1 ring-white/15 shadow-md shadow-black/40"
+          />
+          <span className="text-[9px] font-medium text-white/70 group-hover:text-white truncate max-w-[44px]">
+            {app.name}
+          </span>
+        </button>
+      ))}
     </div>
   );
 };

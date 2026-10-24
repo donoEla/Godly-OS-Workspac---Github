@@ -11,6 +11,7 @@ import {
   InstalledApp,
   Workspace,
   DesktopWidget,
+  WidgetType,
   ThemePreset,
 } from '../types/os';
 import { WALLPAPERS, INITIAL_FILESYSTEM, ACCENT_CONFIGS, CLOAK_PRESETS } from '../constants/assets';
@@ -109,6 +110,36 @@ export const getDefaultWidgets = (): DesktopWidget[] => {
       isLocked: false,
       isVisible: false,
     },
+    {
+      id: 'widget-quote',
+      type: 'quote',
+      title: 'Celestial Wisdom',
+      x: rightX,
+      y: 538,
+      width: 290,
+      height: 130,
+      isLocked: false,
+      isVisible: false,
+      data: {
+        category: 'stoic',
+        quote: 'The soul becomes dyed with the color of its thoughts.',
+        author: 'Marcus Aurelius',
+      },
+    },
+    {
+      id: 'widget-launcher',
+      type: 'launcher',
+      title: 'Quick App Dock',
+      x: rightX,
+      y: 680,
+      width: 290,
+      height: 110,
+      isLocked: false,
+      isVisible: false,
+      data: {
+        apps: ['zen', 'virtual-machine', 'code-editor', 'widgets', 'terminal'],
+      },
+    },
   ];
 };
 
@@ -200,6 +231,13 @@ interface OSContextType {
   toggleWidgetLock: (id: string) => void;
   toggleWidgetVisibility: (id: string) => void;
   updateWidgetData: (id: string, data: any) => void;
+  addWidget: (widget: Partial<DesktopWidget> & { type: WidgetType; title: string }) => void;
+  removeWidget: (id: string) => void;
+  updateWidget: (id: string, updates: Partial<DesktopWidget>) => void;
+  resetWidgetsToDefault: () => void;
+  setAllWidgetsVisibility: (visible: boolean) => void;
+  lockAllWidgets: (locked: boolean) => void;
+  alignWidgets: (mode: 'sidebar' | 'top' | 'grid') => void;
 
   // Installed Apps & Desktop
   installedApps: InstalledApp[];
@@ -305,6 +343,7 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
   { id: 'extensions-hub', name: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'extensions' },
   { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.jpg'), category: 'Utilities', appId: 'virtual-machine' },
+  { id: 'widgets-studio', name: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpg'), category: 'Utilities', appId: 'widgets' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
@@ -325,6 +364,7 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'screen-recorder': { title: 'Screen Capture', icon: getAssetUrl('assets/icons/settings.jpg'), width: 480, height: 380 },
   'theme-studio': { title: 'Glassmorphism Theme Studio', icon: getAssetUrl('assets/icons/settings.jpg'), width: 840, height: 640 },
   'virtual-machine': { title: 'Virtual Machine (WebVM & CheerpX)', icon: getAssetUrl('assets/icons/vm.jpg'), width: 1040, height: 680 },
+  'widgets': { title: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpg'), width: 880, height: 620 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -366,12 +406,19 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   // Desktop Widgets state with versioned layout migration to avoid icon overlap
   const [widgets, setWidgets] = useState<DesktopWidget[]>(() => {
     try {
-      const v = localStorage.getItem('godly_widgets_v4');
-      if (v) {
-        const saved = localStorage.getItem('godly_desktop_widgets');
-        if (saved) return JSON.parse(saved);
+      const v = localStorage.getItem('godly_widgets_v5');
+      const saved = localStorage.getItem('godly_desktop_widgets');
+      if (saved && v) {
+        const parsed: DesktopWidget[] = JSON.parse(saved);
+        const defaults = getDefaultWidgets();
+        defaults.forEach((dw) => {
+          if (!parsed.some((pw) => pw.id === dw.id)) {
+            parsed.push(dw);
+          }
+        });
+        return parsed;
       }
-      localStorage.setItem('godly_widgets_v4', 'true');
+      localStorage.setItem('godly_widgets_v5', 'true');
       return getDefaultWidgets();
     } catch {
       return DEFAULT_WIDGETS;
@@ -389,10 +436,10 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
 
-      if (saved && version === '4.2') {
+      if (saved && version === '4.4') {
         return JSON.parse(saved);
       }
-      localStorage.setItem('godly_apps_version', '4.2');
+      localStorage.setItem('godly_apps_version', '4.4');
       localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
       return DEFAULT_INSTALLED_APPS;
     } catch {
@@ -1331,6 +1378,91 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, data: { ...w.data, ...data } } : w)));
   }, []);
 
+  const addWidget = useCallback((widgetConfig: Partial<DesktopWidget> & { type: WidgetType; title: string }) => {
+    const isBrowser = typeof window !== 'undefined';
+    const screenWidth = isBrowser ? window.innerWidth : 1280;
+    const defaultX = Math.max(680, screenWidth - 320);
+
+    const newWidget: DesktopWidget = {
+      id: `widget-${widgetConfig.type}-${Date.now().toString(36)}`,
+      type: widgetConfig.type,
+      title: widgetConfig.title,
+      x: widgetConfig.x ?? defaultX,
+      y: widgetConfig.y ?? 100,
+      width: widgetConfig.width ?? 290,
+      height: widgetConfig.height ?? 160,
+      isLocked: false,
+      isVisible: true,
+      scale: widgetConfig.scale ?? 1,
+      opacity: widgetConfig.opacity ?? 1,
+      blur: widgetConfig.blur ?? 28,
+      theme: widgetConfig.theme ?? 'glass',
+      config: widgetConfig.config ?? {},
+      data: widgetConfig.data ?? {},
+    };
+
+    setWidgets((prev) => [...prev, newWidget]);
+    sound.playClick();
+  }, []);
+
+  const removeWidget = useCallback((id: string) => {
+    setWidgets((prev) => prev.filter((w) => w.id !== id));
+    sound.playClick();
+  }, []);
+
+  const updateWidget = useCallback((id: string, updates: Partial<DesktopWidget>) => {
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
+  }, []);
+
+  const resetWidgetsToDefault = useCallback(() => {
+    setWidgets(getDefaultWidgets());
+    sound.playSnap();
+  }, []);
+
+  const setAllWidgetsVisibility = useCallback((visible: boolean) => {
+    setWidgets((prev) => prev.map((w) => ({ ...w, isVisible: visible })));
+    sound.playClick();
+  }, []);
+
+  const lockAllWidgets = useCallback((locked: boolean) => {
+    setWidgets((prev) => prev.map((w) => ({ ...w, isLocked: locked })));
+    sound.playClick();
+  }, []);
+
+  const alignWidgets = useCallback((mode: 'sidebar' | 'top' | 'grid') => {
+    const isBrowser = typeof window !== 'undefined';
+    const screenW = isBrowser ? window.innerWidth : 1280;
+
+    setWidgets((prev) => {
+      let curX = 24;
+      let curY = 28;
+      const rightX = Math.max(680, screenW - 320);
+
+      return prev.map((w) => {
+        if (!w.isVisible) return w;
+
+        if (mode === 'sidebar') {
+          const res = { ...w, x: rightX, y: curY, width: 290 };
+          curY += w.height + 16;
+          return res;
+        } else if (mode === 'top') {
+          const res = { ...w, x: curX, y: 24 };
+          curX += w.width + 16;
+          return res;
+        } else {
+          const res = { ...w, x: curX, y: curY };
+          curX += w.width + 16;
+          if (curX + w.width > screenW - 40) {
+            curX = 24;
+            curY += 180;
+          }
+          return res;
+        }
+      });
+    });
+    sound.playSnap();
+  }, []);
+
   // File System methods
   const createFile = useCallback((parentId: string | null, name: string, content: string = '', extension: string = 'txt', imageUrl?: string): FileItem => {
     const ext = extension || (name.includes('.') ? name.split('.').pop() || 'txt' : 'txt');
@@ -1423,6 +1555,13 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         toggleWidgetLock,
         toggleWidgetVisibility,
         updateWidgetData,
+        addWidget,
+        removeWidget,
+        updateWidget,
+        resetWidgetsToDefault,
+        setAllWidgetsVisibility,
+        lockAllWidgets,
+        alignWidgets,
         installedApps,
         installApp,
         uninstallApp,

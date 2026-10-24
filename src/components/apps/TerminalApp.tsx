@@ -194,15 +194,23 @@ export const TerminalApp: React.FC = () => {
             webvm: 'virtual-machine',
             cheerpx: 'virtual-machine',
             virtualmachine: 'virtual-machine',
+            widgets: 'widgets',
+            widget: 'widgets',
           };
           const target = map[args[0].toLowerCase()];
           if (target) {
             openApp(target);
             addLine('success', `Launched ${args[0]} application.`);
           } else {
-            addLine('error', `Unknown application: ${args[0]}. Valid apps: vm, webvm, cheerpx, spotify, notes, games, calculator, store, settings, files`);
+            addLine('error', `Unknown application: ${args[0]}. Valid apps: widgets, vm, webvm, cheerpx, spotify, notes, games, calculator, store, settings, files`);
           }
         }
+        break;
+
+      case 'widgets':
+      case 'widget':
+        openApp('widgets');
+        addLine('success', 'Launching Desktop Widgets Studio...');
         break;
 
       case 'vm':

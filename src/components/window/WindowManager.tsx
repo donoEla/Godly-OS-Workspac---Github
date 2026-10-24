@@ -19,6 +19,7 @@ import { CodeEditorApp } from '../apps/CodeEditorApp';
 import { VoiceMemosApp } from '../apps/VoiceMemosApp';
 import { ThemeStudioApp } from '../apps/ThemeStudioApp';
 import { VirtualMachineApp } from '../apps/VirtualMachineApp';
+import { WidgetsApp } from '../apps/WidgetsApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -106,6 +107,8 @@ export const WindowManager: React.FC = () => {
         return <SpotifyApp />;
       case 'terminal':
         return <TerminalApp />;
+      case 'widgets':
+        return <WidgetsApp />;
       default:
         return (
           <div className="p-6 text-white text-center">

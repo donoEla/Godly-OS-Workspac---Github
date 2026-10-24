@@ -71,6 +71,7 @@ export const CommandPalette: React.FC = () => {
     const apps: { id: AppId; name: string; desc: string; icon: string }[] = [
       { id: 'zen', name: 'Godly Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: '/assets/icons/zen.jpg' },
       { id: 'virtual-machine', name: 'Virtual Machine', desc: 'In-browser x86 Linux VM & CheerpX WebAssembly sandbox', icon: '/assets/icons/vm.jpg' },
+      { id: 'widgets', name: 'Widgets Studio', desc: 'Add, remove, configure, and customize desktop widgets & layouts', icon: '/assets/icons/widgets.jpg' },
       { id: 'app-store', name: 'Godly Store', desc: 'Browse games, proxies & dev utilities', icon: '/assets/icons/app-store.jpg' },
       { id: 'extensions', name: 'Desktop Extensions Hub', desc: 'Genie minimize, physics, particle trails & custom mods', icon: '/assets/icons/app-store.jpg' },
       { id: 'terminal', name: 'Terminal', desc: 'Interactive Godly OS command shell & network tools', icon: '/assets/icons/terminal.jpg' },

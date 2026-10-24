@@ -16,7 +16,8 @@ export type AppId =
   | 'voice-memos'
   | 'screen-recorder'
   | 'theme-studio'
-  | 'virtual-machine';
+  | 'virtual-machine'
+  | 'widgets';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 
@@ -122,9 +123,11 @@ export interface ThemePreset {
   contrast: number;
 }
 
+export type WidgetType = 'clock' | 'weather' | 'system' | 'notes' | 'media' | 'quote' | 'launcher';
+
 export interface DesktopWidget {
   id: string;
-  type: 'clock' | 'weather' | 'system' | 'notes' | 'media';
+  type: WidgetType;
   title: string;
   x: number;
   y: number;
@@ -132,6 +135,11 @@ export interface DesktopWidget {
   height: number;
   isLocked: boolean;
   isVisible: boolean;
+  scale?: number;
+  opacity?: number;
+  blur?: number;
+  theme?: 'glass' | 'cyber' | 'obsidian' | 'gold' | 'neon';
+  config?: Record<string, any>;
   data?: any;
 }
 

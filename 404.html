@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Godly OS</title>
+    <script>
+      (function() {
+        var isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname) || (location.port && location.port === '5173');
+        var basePath = location.pathname.includes('/Godly-OS-Workspac---Github')
+          ? '/Godly-OS-Workspac---Github/dist/'
+          : '/dist/';
+        location.replace(basePath + location.search + location.hash);
+      })();
+    </script>
+  </head>
+  <body style="background:#020617;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+    <p>Loading Godly OS...</p>
+  </body>
+</html>

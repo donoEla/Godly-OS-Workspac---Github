@@ -2,19 +2,6 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <!-- Production Deployment Router: Automatically forward root GitHub Pages & static visits to compiled dist/ -->
-    <script>
-      (function() {
-        var isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname) || (location.port && location.port === '5173');
-        if (!isLocalDev && !location.pathname.includes('/dist/')) {
-          var basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
-          location.replace(basePath + 'dist/' + location.search + location.hash);
-        }
-      })();
-    </script>
-    <noscript>
-      <meta http-equiv="refresh" content="0; url=./dist/" />
-    </noscript>
     <link rel="icon" type="image/jpeg" href="./assets/icons/settings.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Godly OS — Divine Browser Operating System</title>

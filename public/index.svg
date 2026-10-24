@@ -71,7 +71,7 @@
           <div class="spin-ring"></div>
           <div class="os-title">Godly OS — Divine Edition</div>
           <div class="os-status" id="godly-status">Initializing celestial environment...</div>
-          <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_blank" style="display:none; margin-top:18px; padding:10px 20px; background:linear-gradient(135deg, #7c3aed, #4f46e5); color:#ffffff; border-radius:10px; text-decoration:none; font-size:12px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 4px 16px rgba(124,58,237,0.4); pointer-events:auto; transition:transform 0.2s ease;">Open Direct Live Mirror ↗</a>
+          <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/" target="_blank" style="display:none; margin-top:18px; padding:10px 20px; background:linear-gradient(135deg, #7c3aed, #4f46e5); color:#ffffff; border-radius:10px; text-decoration:none; font-size:12px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 4px 16px rgba(124,58,237,0.4); pointer-events:auto; transition:transform 0.2s ease;">Open Direct Live Mirror ↗</a>
         </div>
         <iframe id="godly-viewport" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; cross-origin-isolated" allowfullscreen="true"></iframe>
         <script><![CDATA[
@@ -103,14 +103,13 @@
             const isWasmer = loc.includes('wasmer.app') || loc.includes('wasmer.io');
 
             // Robust target resolution:
-            // 1. If running on Wasmer, load /dist/ from the same Wasmer origin.
-            // 2. If running on same domain over HTTP(S) and not jsDelivr, load ./dist/ relative.
-            // 3. If running on jsDelivr or external host, load production bundle at donoela.github.io/Godly-OS-Workspac---Github/dist/
-            let targetUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/dist/';
+            // GitHub Pages actions workflow publishes ./dist directly as the root site.
+            // On Wasmer, files are served directly at root.
+            let targetUrl = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
             if (isWasmer && origin && origin !== 'null') {
-              targetUrl = origin + '/dist/';
+              targetUrl = origin + '/';
             } else if (!isJsDelivr && origin && origin !== 'null' && window.location.protocol.startsWith('http')) {
-              targetUrl = './dist/';
+              targetUrl = './';
             }
 
             if (fallbackBtn) {

@@ -22,6 +22,7 @@ import { VirtualMachineApp } from '../apps/VirtualMachineApp';
 import { WidgetsApp } from '../apps/WidgetsApp';
 import { EmulatorHubApp } from '../apps/EmulatorHubApp';
 import { MultiplayerLobbyApp } from '../apps/MultiplayerLobbyApp';
+import { EaglercraftApp } from '../apps/EaglercraftApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -115,6 +116,8 @@ export const WindowManager: React.FC = () => {
         return <EmulatorHubApp />;
       case 'multiplayer':
         return <MultiplayerLobbyApp />;
+      case 'eaglercraft':
+        return <EaglercraftApp />;
       default:
         return (
           <div className="p-6 text-white text-center">

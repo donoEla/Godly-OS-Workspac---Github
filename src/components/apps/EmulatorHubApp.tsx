@@ -15,16 +15,20 @@ import {
   Info,
   Sparkles,
   Layers,
-  ChevronLeft
+  ChevronLeft,
+  Pause,
+  Key
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
-export type EmulatorSystem = 'all' | 'gba' | 'nes' | 'snes' | 'n64' | 'nds' | 'psx' | 'gbc';
+export type EmulatorSystem = 'all' | 'gba' | 'nes' | 'snes' | 'gbc' | 'genesis' | 'n64' | 'psx';
 
 export interface CuratedRom {
   id: string;
   title: string;
   system: EmulatorSystem;
+  core: string;
   systemName: string;
   author: string;
   cover: string;
@@ -35,82 +39,100 @@ export interface CuratedRom {
 
 export const CURATED_ROMS: CuratedRom[] = [
   {
-    id: 'anguna-gba',
-    title: 'Anguna: Warriors of Faith',
-    system: 'gba',
-    systemName: 'Game Boy Advance',
-    author: 'Nathan Tolbert',
-    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/RetroAchievements/RAIntegration@master/tests/sample_roms/anguna.gba',
-    description: 'Acclaimed full-length homebrew action-adventure RPG for GBA with sprawling dungeons and boss battles.',
-    year: '2008',
-  },
-  {
-    id: '2048-gba',
-    title: '2048 GBA Edition',
-    system: 'gba',
-    systemName: 'Game Boy Advance',
-    author: 'Gabriele Cirulli / Port by sterlux',
-    cover: 'https://images.unsplash.com/photo-1612287232269-231a44c74ea0?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/sterlux/2048-gba@master/2048.gba',
-    description: 'Butter-smooth GBA port of the classic tile sliding math puzzle with chiptune soundtracks.',
-    year: '2014',
-  },
-  {
     id: 'celeste-classic-gba',
     title: 'Celeste Classic GBA',
     system: 'gba',
+    core: 'mgba',
     systemName: 'Game Boy Advance',
     author: 'Maddy Thorson / Port by lemon32767',
-    cover: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/lemon32767/celeste-classic-gba@master/celeste.gba',
+    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=240&fit=crop',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy%20Advance/Celeste%20Classic%20%28v1.0%29.zip',
     description: 'Precision climbing platformer demake built from the ground up for the Game Boy Advance hardware.',
     year: '2020',
   },
   {
-    id: 'micro-mages-nes',
-    title: 'Micro Mages Demo',
+    id: 'super-tilt-bro-nes',
+    title: 'Super Tilt Bro',
     system: 'nes',
-    systemName: 'Nintendo Entertainment System',
-    author: 'Morphcat Games',
+    core: 'fceumm',
+    systemName: 'NES 8-Bit',
+    author: 'RogerBidon',
     cover: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/morphcat/micromages@master/micromages_demo.nes',
-    description: 'Masterclass 40KB vertical platformer pushing the NES PPU and APU beyond standard limits.',
-    year: '2019',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Super%20Tilt%20Bro%20%28USA%29.nes',
+    description: 'Acclaimed 8-bit platform brawler with fluid physics and fast-paced competitive arena fighting.',
+    year: '2022',
   },
   {
     id: 'alter-ego-nes',
     title: 'Alter Ego NES',
     system: 'nes',
-    systemName: 'Nintendo Entertainment System',
+    core: 'fceumm',
+    systemName: 'NES 8-Bit',
     author: 'Shiru / Denis Grachev',
     cover: 'https://images.unsplash.com/photo-1551103782-8ab07afd45c1?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/shiru8bit/alter-ego-nes@master/alter_ego.nes',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Alter%20Ego.nes',
     description: 'Unique dual-character puzzle platformer where you control a hero and their mirrored phantom counterpart.',
     year: '2011',
+  },
+  {
+    id: 'spacegulls-nes',
+    title: 'Spacegulls NES',
+    system: 'nes',
+    core: 'fceumm',
+    systemName: 'NES 8-Bit',
+    author: 'Morphcat Games',
+    cover: 'https://images.unsplash.com/photo-1612287232269-231a44c74ea0?w=400&h=240&fit=crop',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Spacegulls%20%28v1.1%29.nes',
+    description: 'High-octane platform adventure from the creators of Micro Mages with colorful 8-bit sprite art.',
+    year: '2021',
+  },
+  {
+    id: 'super-boss-gaiden-snes',
+    title: 'Super Boss Gaiden SNES',
+    system: 'snes',
+    core: 'snes9x',
+    systemName: 'Super Nintendo',
+    author: 'ChronoMoogle',
+    cover: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&h=240&fit=crop',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/Super%20Boss%20Gaiden%20%28Japan%29.zip',
+    description: 'Hilarious and action-packed satirical 16-bit beat em up built exclusively for the Super Nintendo.',
+    year: '2016',
   },
   {
     id: 'tobu-tobu-girl-gbc',
     title: 'Tobu Tobu Girl Deluxe',
     system: 'gbc',
+    core: 'gambatte',
     systemName: 'Game Boy Color',
     author: 'Tangram Games',
     cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=240&fit=crop',
-    romUrl: 'https://cdn.jsdelivr.net/gh/tangramgames/tobutobugirl-deluxe@master/tobutobugirldeluxe.gbc',
-    description: 'Adrenaline-fueled vertical action platformer with colorful GBC pixel aesthetics and upbeat soundtrack.',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy/Tobu%20Tobu%20Girl.zip',
+    description: 'Adrenaline-fueled vertical action platformer with vibrant GBC pixel aesthetics and upbeat chiptune soundtrack.',
     year: '2019',
+  },
+  {
+    id: 'deadeus-gb',
+    title: 'Deadeus Horror RPG',
+    system: 'gbc',
+    core: 'gambatte',
+    systemName: 'Game Boy Classic',
+    author: 'IZMA / Chris Beach',
+    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=240&fit=crop',
+    romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy/Deadeus.gb',
+    description: 'Critically acclaimed atmospheric psychological horror adventure featuring multiple branching endings.',
+    year: '2020',
   },
 ];
 
 export const EmulatorHubApp: React.FC = () => {
   const [selectedSystem, setSelectedSystem] = useState<EmulatorSystem>('all');
   const [activeRom, setActiveRom] = useState<CuratedRom | null>(null);
-  const [customRomName, setCustomRomName] = useState<string | null>(null);
-  const [customRomUrl, setCustomRomUrl] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [speed, setSpeed] = useState<number>(1);
+  const [customBuffer, setCustomBuffer] = useState<{ buffer: ArrayBuffer; filename: string; core: string } | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [showKeybindings, setShowKeybindings] = useState(false);
 
   const emulatorFrameRef = useRef<HTMLIFrameElement>(null);
 
@@ -123,101 +145,132 @@ export const EmulatorHubApp: React.FC = () => {
     return matchesSystem && matchesQuery;
   });
 
-  const getSystemCore = (system: EmulatorSystem, filename?: string): string => {
-    if (filename) {
-      const ext = filename.toLowerCase().split('.').pop();
-      if (ext === 'gba') return 'gba';
-      if (ext === 'nes') return 'nes';
-      if (ext === 'snes' || ext === 'smc') return 'snes';
-      if (ext === 'n64' || ext === 'z64') return 'n64';
-      if (ext === 'nds') return 'nds';
-      if (ext === 'gbc') return 'gbc';
-      if (ext === 'gb') return 'gb';
-      if (ext === 'iso' || ext === 'bin' || ext === 'cue') return 'psx';
-    }
-    return system === 'all' ? 'gba' : system;
+  const getSystemCore = (filename: string): { system: EmulatorSystem; core: string } => {
+    const ext = filename.toLowerCase().split('.').pop();
+    if (ext === 'gba') return { system: 'gba', core: 'mgba' };
+    if (ext === 'nes') return { system: 'nes', core: 'fceumm' };
+    if (ext === 'snes' || ext === 'smc' || ext === 'sfc') return { system: 'snes', core: 'snes9x' };
+    if (ext === 'gb' || ext === 'gbc') return { system: 'gbc', core: 'gambatte' };
+    if (ext === 'md' || ext === 'gen' || ext === 'bin') return { system: 'genesis', core: 'genesis_plus_gx' };
+    if (ext === 'n64' || ext === 'z64') return { system: 'n64', core: 'mupen64plus_next' };
+    if (ext === 'iso' || ext === 'chd') return { system: 'psx', core: 'pcsx_rearmed' };
+    return { system: 'gba', core: 'mgba' };
   };
 
   const handleLaunchRom = (rom: CuratedRom) => {
     sound.playClick();
+    setCustomBuffer(null);
     setActiveRom(rom);
-    setCustomRomName(null);
-    setCustomRomUrl(null);
   };
 
-  const handleCustomRomDrop = (file: File) => {
+  const handleCustomRomDrop = async (file: File) => {
     sound.playClick();
-    const system = getSystemCore('all', file.name) as EmulatorSystem;
-    const blobUrl = URL.createObjectURL(file);
-    setCustomRomName(file.name);
-    setCustomRomUrl(blobUrl);
-    setActiveRom({
-      id: 'custom-' + Date.now(),
-      title: file.name.replace(/\.[^/.]+$/, ''),
-      system,
-      systemName: system.toUpperCase(),
-      author: 'Local ROM File',
-      cover: '',
-      romUrl: blobUrl,
-      description: `Uploaded from disk (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
-      year: new Date().getFullYear().toString(),
-    });
+    const { system, core } = getSystemCore(file.name);
+    try {
+      const buffer = await file.arrayBuffer();
+      setCustomBuffer({ buffer, filename: file.name, core });
+      setActiveRom({
+        id: 'custom-' + Date.now(),
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        system,
+        core,
+        systemName: system.toUpperCase(),
+        author: 'Local File',
+        cover: '',
+        romUrl: '',
+        description: `Loaded from disk (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+        year: new Date().getFullYear().toString(),
+      });
+    } catch (err) {
+      console.error('Error reading custom ROM file:', err);
+    }
+  };
+
+  // Post buffer when frame loads custom ROM
+  const handleIframeLoad = () => {
+    if (customBuffer && emulatorFrameRef.current?.contentWindow) {
+      emulatorFrameRef.current.contentWindow.postMessage(
+        {
+          type: 'LAUNCH_BUFFER',
+          core: customBuffer.core,
+          buffer: customBuffer.buffer,
+          filename: customBuffer.filename,
+        },
+        '*'
+      );
+    }
+  };
+
+  // Listen for save states from emulator
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'STATE_SAVED') {
+        const key = `godly_game_save_emulator_${activeRom?.title || 'game'}`;
+        try {
+          localStorage.setItem(key, JSON.stringify(e.data.state));
+          setSaveStatus('Game state saved to local storage!');
+          sound.playSuccess();
+          setTimeout(() => setSaveStatus(null), 3000);
+        } catch (err) {
+          console.warn('Failed to save state to localStorage:', err);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [activeRom]);
+
+  const handleSaveState = () => {
+    sound.playClick();
+    emulatorFrameRef.current?.contentWindow?.postMessage({ type: 'SAVE_STATE' }, '*');
+  };
+
+  const handleLoadState = () => {
+    sound.playClick();
+    const key = `godly_game_save_emulator_${activeRom?.title || 'game'}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try {
+        const state = JSON.parse(raw);
+        emulatorFrameRef.current?.contentWindow?.postMessage({ type: 'LOAD_STATE', state }, '*');
+        setSaveStatus('Restored save state!');
+        sound.playSuccess();
+        setTimeout(() => setSaveStatus(null), 3000);
+      } catch (err) {
+        console.warn('Failed to parse save state:', err);
+      }
+    } else {
+      setSaveStatus('No save state found for this title.');
+      setTimeout(() => setSaveStatus(null), 2500);
+    }
+  };
+
+  const handlePauseResume = () => {
+    sound.playClick();
+    if (isPaused) {
+      emulatorFrameRef.current?.contentWindow?.postMessage({ type: 'RESUME' }, '*');
+      setIsPaused(false);
+    } else {
+      emulatorFrameRef.current?.contentWindow?.postMessage({ type: 'PAUSE' }, '*');
+      setIsPaused(true);
+    }
   };
 
   const handleReload = () => {
     sound.playClick();
-    if (emulatorFrameRef.current) {
-      const src = emulatorFrameRef.current.src;
-      emulatorFrameRef.current.src = '';
-      setTimeout(() => {
-        if (emulatorFrameRef.current) emulatorFrameRef.current.src = src;
-      }, 60);
-    }
+    emulatorFrameRef.current?.contentWindow?.postMessage({ type: 'RESTART' }, '*');
   };
 
   const handleFullscreen = () => {
     sound.playClick();
-    if (emulatorFrameRef.current) {
-      if (emulatorFrameRef.current.requestFullscreen) {
-        emulatorFrameRef.current.requestFullscreen();
-      }
+    if (emulatorFrameRef.current?.requestFullscreen) {
+      emulatorFrameRef.current.requestFullscreen();
     }
   };
 
-  // Generate lightweight self-contained EmulatorJS HTML loader
-  const activeCore = activeRom ? getSystemCore(activeRom.system, customRomName || undefined) : 'gba';
-  const activeUrl = activeRom ? activeRom.romUrl : '';
-
-  const emulatorPlayerHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${activeRom?.title || 'Emulator'}</title>
-  <style>
-    body, html { margin:0; padding:0; width:100%; height:100%; background:#050508; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    #game { width:100%; height:100%; }
-    .loader { color:#a855f7; font-family:sans-serif; text-align:center; font-size:14px; }
-  </style>
-</head>
-<body>
-  <div id="game"></div>
-  <script>
-    window.EJS_player = '#game';
-    window.EJS_core = '${activeCore}';
-    window.EJS_gameUrl = '${activeUrl}';
-    window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/';
-    window.EJS_startOnLoaded = true;
-    window.EJS_color = '#9333ea';
-    window.EJS_fullscreenOnLoad = false;
-  </script>
-  <script src="https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/loader.js"></script>
-</body>
-</html>`;
-
   return (
     <div className="w-full h-full flex flex-col bg-[#07070d] text-white select-none overflow-hidden font-sans">
-      {/* ── Active Game Player Mode ── */}
+      {/* ── Active Game Player Screen ── */}
       {activeRom ? (
         <div className="w-full h-full flex flex-col bg-black">
           {/* Top Control Bar */}
@@ -227,12 +280,12 @@ export const EmulatorHubApp: React.FC = () => {
                 onClick={() => {
                   sound.playClick();
                   setActiveRom(null);
-                  if (customRomUrl) URL.revokeObjectURL(customRomUrl);
+                  setCustomBuffer(null);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-all active:scale-95 border border-white/10"
               >
                 <ChevronLeft size={14} />
-                <span>Back to Hub</span>
+                <span>Exit to Hub</span>
               </button>
 
               <div className="h-4 w-px bg-white/10" />
@@ -240,7 +293,7 @@ export const EmulatorHubApp: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-white tracking-tight">{activeRom.title}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
-                  {activeCore.toUpperCase()} CORE • WASM
+                  {activeRom.core.toUpperCase()} • RETROARCH WASM
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
                   ● 60 FPS JIT
@@ -250,28 +303,54 @@ export const EmulatorHubApp: React.FC = () => {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
+              {saveStatus && (
+                <span className="text-xs text-emerald-400 font-mono bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/30 animate-pulse">
+                  {saveStatus}
+                </span>
+              )}
+
               <button
-                onClick={() => {
-                  sound.playClick();
-                  setSpeed((s) => (s === 1 ? 2 : s === 2 ? 4 : 1));
-                }}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1 ${
-                  speed > 1
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                    : 'bg-white/[0.04] border-white/10 text-white/70 hover:text-white'
-                }`}
-                title="Fast Forward Speed"
+                onClick={handleSaveState}
+                className="px-2.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-purple-600/30 border border-white/10 text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                title="Quick Save State (F2 / Click)"
               >
-                <FastForward size={13} />
-                <span>{speed}x</span>
+                <Save size={13} className="text-purple-400" />
+                <span>Save</span>
+              </button>
+
+              <button
+                onClick={handleLoadState}
+                className="px-2.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-purple-600/30 border border-white/10 text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                title="Load Save State (F4 / Click)"
+              >
+                <Download size={13} className="text-cyan-400" />
+                <span>Load</span>
+              </button>
+
+              <button
+                onClick={handlePauseResume}
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/10 transition-all"
+                title={isPaused ? 'Resume Game' : 'Pause Game'}
+              >
+                {isPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} />}
               </button>
 
               <button
                 onClick={handleReload}
                 className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/10 transition-all"
-                title="Restart Game"
+                title="Restart ROM"
               >
                 <RotateCcw size={14} />
+              </button>
+
+              <button
+                onClick={() => setShowKeybindings((k) => !k)}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  showKeybindings ? 'bg-purple-600 border-purple-400 text-white' : 'bg-white/[0.04] border-white/10 text-white/70 hover:text-white'
+                }`}
+                title="Controls & Keybindings"
+              >
+                <Key size={14} />
               </button>
 
               <button
@@ -284,11 +363,33 @@ export const EmulatorHubApp: React.FC = () => {
             </div>
           </div>
 
+          {/* Controls overlay guide */}
+          {showKeybindings && (
+            <div className="bg-[#0b0c16]/95 border-b border-white/10 px-5 py-2.5 flex items-center justify-between text-xs text-slate-300 z-20">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="font-bold text-purple-300">Retro Controls:</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">Arrow Keys</kbd> Move / D-Pad</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">Z</kbd> A Button</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">X</kbd> B Button</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">A</kbd> L Trigger</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">S</kbd> R Trigger</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">Enter</kbd> Start</span>
+                <span><kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">Shift</kbd> Select</span>
+              </div>
+              <button onClick={() => setShowKeybindings(false)} className="text-white/50 hover:text-white text-xs">✕</button>
+            </div>
+          )}
+
           {/* Emulator Display Screen */}
           <div className="flex-1 w-full h-full relative bg-[#000000] overflow-hidden">
             <iframe
               ref={emulatorFrameRef}
-              srcDoc={emulatorPlayerHtml}
+              src={
+                customBuffer
+                  ? getAssetUrl('emulator.html')
+                  : `${getAssetUrl('emulator.html')}?core=${activeRom.core}&rom=${encodeURIComponent(activeRom.romUrl)}`
+              }
+              onLoad={handleIframeLoad}
               className="w-full h-full border-0 block"
               allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; keyboard-map"
               allowFullScreen
@@ -297,7 +398,7 @@ export const EmulatorHubApp: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* ── Hub Library & ROM Dropzone ── */
+        /* ── Hub Library & Drag-and-Drop Dropzone ── */
         <div className="w-full h-full flex flex-col overflow-hidden">
           {/* Hub Header */}
           <div className="p-5 border-b border-white/[0.08] bg-[#090a12]/90 backdrop-blur-xl flex items-center justify-between flex-wrap gap-4 shrink-0">
@@ -309,7 +410,7 @@ export const EmulatorHubApp: React.FC = () => {
                 <div>
                   <h1 className="text-base font-bold text-white tracking-tight">Web Emulator Hub</h1>
                   <p className="text-xs text-slate-400">
-                    High-performance WebAssembly emulation cores for GBA, NES, SNES, N64, NDS & PS1.
+                    High-performance WebAssembly RetroArch cores for GBA, NES, SNES, N64, NDS, PS1 & GBC.
                   </p>
                 </div>
               </div>
@@ -334,10 +435,8 @@ export const EmulatorHubApp: React.FC = () => {
               { id: 'gba', label: 'Game Boy Advance' },
               { id: 'nes', label: 'NES 8-Bit' },
               { id: 'snes', label: 'Super Nintendo' },
-              { id: 'n64', label: 'Nintendo 64' },
-              { id: 'nds', label: 'Nintendo DS' },
-              { id: 'psx', label: 'PlayStation 1' },
               { id: 'gbc', label: 'Game Boy Color' },
+              { id: 'genesis', label: 'Sega Genesis' },
             ].map((sys) => {
               const isCur = selectedSystem === sys.id;
               return (
@@ -382,7 +481,7 @@ export const EmulatorHubApp: React.FC = () => {
               onClick={() => {
                 const input = document.createElement('input');
                 input.type = 'file';
-                input.accept = '.gba,.nes,.snes,.smc,.n64,.z64,.nds,.gbc,.gb,.bin,.iso,.zip';
+                input.accept = '.gba,.nes,.snes,.smc,.sfc,.n64,.z64,.nds,.gbc,.gb,.bin,.iso,.chd,.zip';
                 input.onchange = (e: any) => {
                   const file = e.target.files?.[0];
                   if (file) handleCustomRomDrop(file);
@@ -402,7 +501,7 @@ export const EmulatorHubApp: React.FC = () => {
                 <code className="text-purple-300 font-mono">.snes</code>,{' '}
                 <code className="text-purple-300 font-mono">.nds</code>,{' '}
                 <code className="text-purple-300 font-mono">.n64</code>, or{' '}
-                <code className="text-purple-300 font-mono">.gbc</code> files directly into Godly OS. Runs entirely client-side with WASM.
+                <code className="text-purple-300 font-mono">.gbc</code> files directly into Godly OS. Runs entirely client-side with WebAssembly.
               </p>
             </div>
 
@@ -448,7 +547,7 @@ export const EmulatorHubApp: React.FC = () => {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-500 font-mono">WASM Ready</span>
+                      <span className="text-[10px] text-emerald-400 font-mono">● WASM Verified</span>
                       <button className="px-3 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold shadow flex items-center gap-1 group-hover:brightness-110">
                         <Play size={11} fill="currentColor" />
                         <span>Play Now</span>

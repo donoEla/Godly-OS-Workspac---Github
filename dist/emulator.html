@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Godly OS RetroArch WebAssembly Player</title>
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #050509;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      display: block;
+      background: #000;
+    }
+    #status-wrap {
+      position: absolute;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: #c084fc;
+      text-align: center;
+      padding: 24px;
+      background: rgba(12, 13, 22, 0.92);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(168, 85, 247, 0.2);
+      backdrop-filter: blur(16px);
+      max-width: 380px;
+    }
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 3px solid rgba(168, 85, 247, 0.2);
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .status-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+    .status-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .error-msg {
+      color: #f87171;
+      font-size: 12px;
+      font-family: monospace;
+      word-break: break-word;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js"></script>
+</head>
+<body>
+  <div id="status-wrap">
+    <div class="spinner" id="status-spinner"></div>
+    <div class="status-title" id="status-title">Launching Emulator Core</div>
+    <div class="status-desc" id="status-desc">Downloading WebAssembly binary & initializing RetroArch...</div>
+  </div>
+
+  <canvas id="canvas" tabindex="1"></canvas>
+
+  <script>
+    let nostalgistInstance = null;
+    const canvas = document.getElementById('canvas');
+    const statusWrap = document.getElementById('status-wrap');
+    const statusTitle = document.getElementById('status-title');
+    const statusDesc = document.getElementById('status-desc');
+    const statusSpinner = document.getElementById('status-spinner');
+
+    function setStatus(title, desc, isError = false) {
+      if (statusTitle) statusTitle.textContent = title;
+      if (statusDesc) {
+        statusDesc.textContent = desc;
+        if (isError) statusDesc.className = 'error-msg';
+      }
+      if (isError && statusSpinner) statusSpinner.style.display = 'none';
+      if (statusWrap) statusWrap.style.display = 'flex';
+    }
+
+    function hideStatus() {
+      if (statusWrap) statusWrap.style.display = 'none';
+      if (canvas) canvas.focus();
+    }
+
+    async function launch(core, romInput) {
+      try {
+        setStatus('Initializing Core', 'Loading ' + core + ' WebAssembly core...');
+
+        if (nostalgistInstance) {
+          try { await nostalgistInstance.exit(); } catch(e) {}
+          nostalgistInstance = null;
+        }
+
+        nostalgistInstance = await Nostalgist.launch({
+          element: canvas,
+          core: core,
+          rom: romInput,
+        });
+
+        hideStatus();
+
+        // Notify parent that launch succeeded
+        window.parent.postMessage({ type: 'EMULATOR_READY' }, '*');
+      } catch (err) {
+        console.error('[Nostalgist] Launch error:', err);
+        setStatus('Launch Failed', err.message || 'Failed to initialize emulator core.', true);
+      }
+    }
+
+    // Handle messages from React host
+    window.addEventListener('message', async (e) => {
+      const data = e.data || {};
+      if (data.type === 'LAUNCH_ROM') {
+        const { core, romUrl } = data;
+        launch(core || 'fceumm', romUrl);
+      } else if (data.type === 'LAUNCH_BUFFER') {
+        const { core, buffer, filename } = data;
+        if (buffer) {
+          const uint8 = new Uint8Array(buffer);
+          launch(core || 'mgba', {
+            fileName: filename || 'game.bin',
+            fileContent: uint8,
+          });
+        }
+      } else if (data.type === 'PAUSE') {
+        if (nostalgistInstance) nostalgistInstance.pause();
+      } else if (data.type === 'RESUME') {
+        if (nostalgistInstance) nostalgistInstance.resume();
+      } else if (data.type === 'RESTART') {
+        if (nostalgistInstance) nostalgistInstance.restart();
+      } else if (data.type === 'SAVE_STATE') {
+        if (nostalgistInstance) {
+          try {
+            const { state } = await nostalgistInstance.saveState();
+            window.parent.postMessage({ type: 'STATE_SAVED', state }, '*');
+          } catch (err) {
+            console.warn('Save state error:', err);
+          }
+        }
+      } else if (data.type === 'LOAD_STATE') {
+        if (nostalgistInstance && data.state) {
+          try {
+            await nostalgistInstance.loadState(data.state);
+          } catch (err) {
+            console.warn('Load state error:', err);
+          }
+        }
+      }
+    });
+
+    // Check query parameters on startup
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      const core = params.get('core');
+      const rom = params.get('rom');
+      if (core && rom) {
+        launch(core, decodeURIComponent(rom));
+      }
+    });
+  </script>
+</body>
+</html>

@@ -19,7 +19,8 @@ export type AppId =
   | 'virtual-machine'
   | 'widgets'
   | 'emulator'
-  | 'multiplayer';
+  | 'multiplayer'
+  | 'eaglercraft';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 

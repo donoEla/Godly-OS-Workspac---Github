@@ -25,7 +25,8 @@ interface PinnedTaskbarItem {
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
   { id: 'zen',             name: 'Godly Browser',   icon: getAssetUrl('assets/icons/zen.jpg') },
-  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.jpg') },
+  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.svg') },
+  { id: 'widgets',         name: 'Widgets Studio',  icon: getAssetUrl('assets/icons/widgets.svg') },
   { id: 'code-editor',     name: 'Code Studio',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'app-store',    name: 'Godly Store',    icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'extensions',   name: 'Extensions',     icon: getAssetUrl('assets/icons/app-store.jpg') },
@@ -223,7 +224,8 @@ export const Taskbar: React.FC = () => {
         <div
           className="relative glass-dock rounded-2xl flex items-center gap-1 px-2.5 py-1.5"
           style={{
-            boxShadow: '0 24px 60px rgba(0,0,0,0.75), 0 0 0 0.5px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.09)',
+            border: '1px solid var(--dock-border, rgba(255,255,255,0.1))',
+            boxShadow: 'var(--dock-shadow, 0 24px 60px rgba(0,0,0,0.75), 0 0 0 0.5px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.12))',
           }}
         >
           {/* ── Start / Launcher Button ── */}

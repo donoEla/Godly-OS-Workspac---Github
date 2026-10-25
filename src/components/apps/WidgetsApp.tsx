@@ -37,6 +37,7 @@ import {
 import { useOS } from '../../context/OSContext';
 import { DesktopWidget, WidgetType } from '../../types/os';
 import { sound } from '../../utils/sound';
+import { WidgetsIcon } from '../icons/WidgetsIcon';
 
 interface WidgetTemplate {
   type: WidgetType;
@@ -190,8 +191,8 @@ export const WidgetsApp: React.FC = () => {
         <div className="flex flex-col gap-4">
           {/* Header */}
           <div className="flex items-center gap-3 px-1 py-1">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+              <WidgetsIcon size={36} className="w-9 h-9" />
             </div>
             <div>
               <h2 className="text-sm font-bold tracking-tight text-white">Widgets Studio</h2>

@@ -17,7 +17,8 @@ import { getAssetUrl } from '../../utils/assetHelper';
 
 const PINNED_APPS: { id: AppId; name: string; category: string; icon: string }[] = [
   { id: 'zen',             name: 'Godly Browser',   category: 'Web',     icon: getAssetUrl('assets/icons/zen.jpg') },
-  { id: 'virtual-machine', name: 'Virtual Machine', category: 'Dev',     icon: getAssetUrl('assets/icons/vm.jpg') },
+  { id: 'virtual-machine', name: 'Virtual Machine', category: 'Dev',     icon: getAssetUrl('assets/icons/vm.svg') },
+  { id: 'widgets',         name: 'Widgets Studio',  category: 'Utility', icon: getAssetUrl('assets/icons/widgets.svg') },
   { id: 'app-store',       name: 'Godly Store',     category: 'Hub',     icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'extensions',   name: 'Extensions',    category: 'System',  icon: getAssetUrl('assets/icons/app-store.jpg') },
   { id: 'terminal',     name: 'Terminal',       category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
@@ -89,11 +90,11 @@ export const StartMenu: React.FC = () => {
         className={`fixed ${isTop ? 'top-14' : 'bottom-14'} left-1/2 -translate-x-1/2 z-50 w-[480px] max-w-[95vw] select-none overflow-hidden`}
         style={{
           borderRadius: 24,
-          background: 'rgba(8, 8, 14, 0.94)',
-          backdropFilter: 'blur(52px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(52px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.85), 0 0 0 0.5px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08)',
+          background: 'var(--glass-panel, rgba(8, 8, 14, 0.94))',
+          backdropFilter: 'blur(var(--glass-blur, 52px)) saturate(180%)',
+          WebkitBackdropFilter: 'blur(var(--glass-blur, 52px)) saturate(180%)',
+          border: '1px solid var(--border-default, rgba(255,255,255,0.09))',
+          boxShadow: 'var(--shadow-lg, 0 32px 80px rgba(0,0,0,0.85)), inset 0 1px 0 rgba(255,255,255,0.08)',
         }}
       >
         {/* Top ambient glow strip */}

@@ -24,6 +24,7 @@ import {
 import { sound } from '../../utils/sound';
 import { initUvProxy, encodeUvUrl } from '../../utils/uvProxy';
 import { initScramjetProxy, encodeScramjetUrl } from '../../utils/scramjetProxy';
+import { VmIcon } from '../icons/VmIcon';
 
 export type VmEnginePreset = 'webvm' | 'cheerpx-showcase' | 'custom';
 export type VmTunnelMode = 'direct' | 'uv' | 'scramjet';
@@ -193,7 +194,7 @@ export const VirtualMachineApp: React.FC = () => {
               }}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold tracking-wide transition-all"
             >
-              <Cpu className="w-4 h-4 text-cyan-400 animate-pulse" />
+              <VmIcon className="w-4 h-4 shadow-sm" />
               <span>{currentPresetData ? currentPresetData.name : 'Custom Machine'}</span>
               <ChevronDown className="w-3.5 h-3.5 text-white/50" />
             </button>

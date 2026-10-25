@@ -1104,9 +1104,9 @@ interface LauncherWidgetBodyProps {
 const LauncherWidgetBody: React.FC<LauncherWidgetBodyProps> = ({ openApp }) => {
   const dockApps: { id: AppId; name: string; icon: string }[] = [
     { id: 'zen', name: 'Browser', icon: 'assets/icons/zen.jpg' },
-    { id: 'virtual-machine', name: 'VM', icon: 'assets/icons/vm.jpg' },
+    { id: 'virtual-machine', name: 'VM', icon: 'assets/icons/vm.svg' },
     { id: 'code-editor', name: 'Code', icon: 'assets/icons/terminal.jpg' },
-    { id: 'widgets', name: 'Widgets', icon: 'assets/icons/widgets.jpg' },
+    { id: 'widgets', name: 'Widgets', icon: 'assets/icons/widgets.svg' },
     { id: 'games', name: 'Arcade', icon: 'assets/icons/games.jpg' },
   ];
 

@@ -145,48 +145,8 @@ export const getDefaultWidgets = (): DesktopWidget[] => {
 
 export const DEFAULT_WIDGETS: DesktopWidget[] = getDefaultWidgets();
 
-export const BUILTIN_THEME_PRESETS: ThemePreset[] = [
-  {
-    id: 'dark-neon',
-    name: 'Dark Neon',
-    glassBlur: 32,
-    neonColor: '#8b5cf6',
-    radius: 18,
-    fontFamily: 'Inter',
-    brightness: 100,
-    contrast: 100,
-  },
-  {
-    id: 'frosted-arctic',
-    name: 'Frosted Arctic',
-    glassBlur: 45,
-    neonColor: '#38bdf8',
-    radius: 22,
-    fontFamily: 'system-ui',
-    brightness: 108,
-    contrast: 98,
-  },
-  {
-    id: 'synthwave',
-    name: 'Synthwave',
-    glassBlur: 24,
-    neonColor: '#f43f5e',
-    radius: 16,
-    fontFamily: 'JetBrains Mono',
-    brightness: 104,
-    contrast: 110,
-  },
-  {
-    id: 'midnight-black',
-    name: 'Midnight Black',
-    glassBlur: 16,
-    neonColor: '#e2e8f0',
-    radius: 12,
-    fontFamily: 'Inter',
-    brightness: 92,
-    contrast: 105,
-  },
-];
+export { BUILTIN_THEME_PRESETS } from '../constants/themePresets';
+import { BUILTIN_THEME_PRESETS } from '../constants/themePresets';
 
 interface OSContextType {
   // Windows
@@ -312,7 +272,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   wallpaperBlur: 0,
   soundEnabled: true,
   volume: 0.6,
-  glassBlur: 28,
+  glassBlur: 38,
   animationsEnabled: true,
   taskbarPosition: 'bottom',
   windowSnapping: true,
@@ -325,6 +285,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   workspaces: DEFAULT_WORKSPACES,
   widgets: DEFAULT_WIDGETS,
   fpsOverlayEnabled: false,
+  themePreset: BUILTIN_THEME_PRESETS[0],
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
@@ -342,8 +303,8 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'file-manager', name: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), category: 'System', appId: 'file-manager' },
   { id: 'app-store', name: 'Godly Store', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'app-store' },
   { id: 'extensions-hub', name: 'Extensions Hub', icon: getAssetUrl('assets/icons/app-store.jpg'), category: 'System', appId: 'extensions' },
-  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.jpg'), category: 'Utilities', appId: 'virtual-machine' },
-  { id: 'widgets-studio', name: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpg'), category: 'Utilities', appId: 'widgets' },
+  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.svg'), category: 'Utilities', appId: 'virtual-machine' },
+  { id: 'widgets-studio', name: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.svg'), category: 'Utilities', appId: 'widgets' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
@@ -363,8 +324,8 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'voice-memos': { title: 'Voice Memos Studio', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 560, height: 620 },
   'screen-recorder': { title: 'Screen Capture', icon: getAssetUrl('assets/icons/settings.jpg'), width: 480, height: 380 },
   'theme-studio': { title: 'Glassmorphism Theme Studio', icon: getAssetUrl('assets/icons/settings.jpg'), width: 840, height: 640 },
-  'virtual-machine': { title: 'Virtual Machine (WebVM & CheerpX)', icon: getAssetUrl('assets/icons/vm.jpg'), width: 1040, height: 680 },
-  'widgets': { title: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpg'), width: 880, height: 620 },
+  'virtual-machine': { title: 'Virtual Machine (WebVM & CheerpX)', icon: getAssetUrl('assets/icons/vm.svg'), width: 1040, height: 680 },
+  'widgets': { title: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.svg'), width: 880, height: 620 },
 };
 
 export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -505,37 +466,87 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     } catch {}
 
     const root = document.documentElement;
-    if (settings.theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
+    const preset = settings.themePreset || BUILTIN_THEME_PRESETS[0];
+
+    // Theme identification & mode on root DOM
+    root.setAttribute('data-theme', preset.id);
+    root.setAttribute('data-theme-mode', preset.mode || settings.theme);
+
+    if (preset.mode === 'light' || settings.theme === 'light') {
       root.classList.add('light');
       root.classList.remove('dark');
-    }
-
-    const accent = ACCENT_CONFIGS[settings.accentColor];
-    if (accent) {
-      root.style.setProperty('--accent', accent.hex);
-      root.style.setProperty('--accent-color', accent.hex);
-      root.style.setProperty('--accent-glow', accent.glow);
-      root.style.setProperty('--accent-dim', accent.subtle);
-      root.style.setProperty('--accent-subtle', accent.subtle);
-      root.style.setProperty('--accent-border', accent.hex + '66');
-      root.style.setProperty('--accent-soft', accent.hex + '18');
-      root.style.setProperty('--accent-text', accent.text);
-    }
-
-    if (settings.themePreset) {
-      root.style.setProperty('--glass-blur', `${settings.themePreset.glassBlur}px`);
-      root.style.setProperty('--border-color', settings.themePreset.neonColor);
-      root.style.setProperty('--radius', `${settings.themePreset.radius}px`);
-      root.style.setProperty('--font-family', settings.themePreset.fontFamily);
-      root.style.setProperty('--ui-brightness', `${settings.themePreset.brightness}%`);
-      root.style.setProperty('--ui-contrast', `${settings.themePreset.contrast}%`);
     } else {
-      root.style.setProperty('--glass-blur', `${settings.glassBlur}px`);
-      root.style.setProperty('--radius', '18px');
+      root.classList.add('dark');
+      root.classList.remove('light');
     }
+
+    // Palette tokens
+    if (preset.bgBase) root.style.setProperty('--bg-base', preset.bgBase);
+    if (preset.bgSurface) root.style.setProperty('--bg-surface', preset.bgSurface);
+    if (preset.bgOverlay) root.style.setProperty('--bg-overlay', preset.bgOverlay);
+    if (preset.bgRaised) root.style.setProperty('--bg-raised', preset.bgRaised);
+
+    if (preset.textPrimary) root.style.setProperty('--text-primary', preset.textPrimary);
+    if (preset.textSecondary) root.style.setProperty('--text-secondary', preset.textSecondary);
+    if (preset.textMuted) root.style.setProperty('--text-muted', preset.textMuted);
+
+    // Accent & Highlights
+    const accentVal = preset.accent || (ACCENT_CONFIGS[settings.accentColor]?.hex ?? '#8b5cf6');
+    root.style.setProperty('--accent', accentVal);
+    root.style.setProperty('--accent-color', accentVal);
+    root.style.setProperty('--accent-glow', preset.accentGlow || `${accentVal}55`);
+    root.style.setProperty('--accent-dim', preset.accentDim || `${accentVal}1f`);
+    root.style.setProperty('--accent-subtle', preset.accentDim || `${accentVal}1f`);
+    root.style.setProperty('--accent-border', preset.accentBorder || `${accentVal}66`);
+    root.style.setProperty('--accent-soft', preset.accentDim || `${accentVal}14`);
+    root.style.setProperty('--accent-text', preset.accentText || accentVal);
+
+    // Glass & Surfaces
+    if (preset.glassWindow) {
+      root.style.setProperty('--glass-window', preset.glassWindow);
+      root.style.setProperty('--window-glass', preset.glassWindow);
+      root.style.setProperty('--window-bg', preset.glassWindow);
+    }
+    if (preset.glassWindowFocused) {
+      root.style.setProperty('--glass-window-focused', preset.glassWindowFocused);
+      root.style.setProperty('--window-bg-focused', preset.glassWindowFocused);
+    } else if (preset.glassWindow) {
+      root.style.setProperty('--glass-window-focused', preset.glassWindow);
+      root.style.setProperty('--window-bg-focused', preset.glassWindow);
+    }
+    if (preset.glassPanel) root.style.setProperty('--glass-panel', preset.glassPanel);
+    if (preset.glassCard) root.style.setProperty('--glass-card', preset.glassCard);
+    if (preset.glassDock) {
+      root.style.setProperty('--glass-dock', preset.glassDock);
+      root.style.setProperty('--dock-glass', preset.glassDock);
+    }
+
+    // Windows & Dock Tokens
+    if (preset.windowHeaderBg) root.style.setProperty('--window-header-bg', preset.windowHeaderBg);
+    if (preset.windowHeaderBorder) root.style.setProperty('--window-header-border', preset.windowHeaderBorder);
+    if (preset.windowBorder) {
+      root.style.setProperty('--window-border', preset.windowBorder);
+      root.style.setProperty('--dock-border', preset.dockBorder || preset.windowBorder);
+    }
+    if (preset.windowBorderFocused) root.style.setProperty('--window-border-focused', preset.windowBorderFocused);
+    if (preset.windowShadow) root.style.setProperty('--window-shadow', preset.windowShadow);
+    if (preset.windowShadowFocused) root.style.setProperty('--window-shadow-focused', preset.windowShadowFocused);
+    if (preset.windowBodyBg) root.style.setProperty('--window-body-bg', preset.windowBodyBg);
+
+    // Borders & Bevels
+    if (preset.borderSubtle) root.style.setProperty('--border-subtle', preset.borderSubtle);
+    if (preset.borderDefault) root.style.setProperty('--border-default', preset.borderDefault);
+    if (preset.borderStrong) root.style.setProperty('--border-strong', preset.borderStrong);
+    if (preset.borderBevel) root.style.setProperty('--border-bevel', preset.borderBevel);
+
+    // Layout & Geometry
+    root.style.setProperty('--glass-blur', `${preset.glassBlur ?? settings.glassBlur}px`);
+    root.style.setProperty('--border-color', preset.neonColor || accentVal);
+    root.style.setProperty('--radius', `${preset.radius ?? 18}px`);
+    root.style.setProperty('--font-family', preset.fontFamily || 'Inter');
+    root.style.setProperty('--ui-brightness', `${preset.brightness ?? 100}%`);
+    root.style.setProperty('--ui-contrast', `${preset.contrast ?? 100}%`);
+    root.style.setProperty('--wallpaper-filter', preset.wallpaperFilter || 'none');
 
     sound.setEnabled(settings.soundEnabled);
     sound.setVolume(settings.volume);
@@ -600,7 +611,11 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, []);
 
   const applyThemePreset = useCallback((preset: ThemePreset) => {
-    updateSettings({ themePreset: preset });
+    updateSettings({
+      themePreset: preset,
+      theme: preset.mode,
+      glassBlur: preset.glassBlur,
+    });
     sound.playEvent('notification');
   }, [updateSettings]);
 

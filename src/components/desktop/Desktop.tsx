@@ -131,6 +131,7 @@ export const Desktop: React.FC = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        filter: 'var(--wallpaper-filter, none)',
       }}
     >
       {/* Dynamic wallpaper blur overlay */}
@@ -140,6 +141,9 @@ export const Desktop: React.FC = () => {
           style={{ backdropFilter: `blur(${settings.wallpaperBlur}px)` }}
         />
       )}
+
+      {/* Thematic Surface Overlay (Frosted tint, Neon Grid, Metal speculars) */}
+      <div className="absolute inset-0 pointer-events-none theme-desktop-overlay transition-opacity duration-300" />
 
       {/* Subtle vignette shadow overlay */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 via-transparent to-black/20" />

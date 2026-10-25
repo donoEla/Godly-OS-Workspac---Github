@@ -433,21 +433,21 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         height: isMax ? `${window.innerHeight - 52}px` : `${win.height}px`,
         zIndex: win.zIndex,
         willChange: isInteracting ? 'transform, width, height' : 'auto',
-        background: isFocused ? 'rgba(8,8,14,0.88)' : 'rgba(8,8,14,0.80)',
+        background: isFocused ? 'var(--window-bg-focused, var(--window-bg, rgba(8,8,14,0.88)))' : 'var(--window-bg, rgba(8,8,14,0.80))',
         backdropFilter: `blur(var(--glass-blur, 38px)) saturate(180%)`,
         WebkitBackdropFilter: `blur(var(--glass-blur, 38px)) saturate(180%)`,
         border: mergeTargetWindowId
           ? '2px solid rgba(59, 130, 246, 0.9)'
           : isRgbGlow
           ? '1.5px solid rgba(236, 72, 153, 0.8)'
-          : `1px solid ${isFocused ? 'var(--border-color, rgba(139,92,246,0.4))' : 'rgba(255,255,255,0.08)'}`,
+          : `1px solid ${isFocused ? 'var(--window-border-focused, var(--accent-border, rgba(139,92,246,0.4)))' : 'var(--window-border, rgba(255,255,255,0.08))'}`,
         boxShadow: mergeTargetWindowId
           ? '0 0 40px rgba(59, 130, 246, 0.7), inset 0 0 20px rgba(59, 130, 246, 0.3)'
           : isRgbGlow
           ? '0 0 35px rgba(168, 85, 247, 0.65), 0 0 70px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(236, 72, 153, 0.7), 0 32px 80px rgba(0,0,0,0.85)'
           : isFocused
-          ? '0 32px 80px rgba(0,0,0,0.85), 0 0 32px var(--accent-glow, rgba(139,92,246,0.20)), inset 0 1px 0 rgba(255,255,255,0.09)'
-          : '0 20px 60px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06)',
+          ? 'var(--window-shadow-focused, 0 32px 80px rgba(0,0,0,0.85))'
+          : 'var(--window-shadow, 0 20px 60px rgba(0,0,0,0.75))',
       }}
     >
       {/* ── Window Group Tab Bar (When multiple apps merged) ── */}
@@ -492,8 +492,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
         onDoubleClick={() => maximizeWindow(win.id)}
         className="h-[38px] flex items-center justify-between px-4 flex-shrink-0 relative select-none"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--window-header-bg, linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%))',
+          borderBottom: 'var(--window-header-border, 1px solid rgba(255,255,255,0.06))',
           cursor: 'default',
         }}
       >
@@ -541,7 +541,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
             />
             <span
               className="text-[12px] font-medium truncate tracking-tight"
-              style={{ color: isFocused ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)' }}
+              style={{ color: isFocused ? 'var(--text-primary, rgba(255,255,255,0.85))' : 'var(--text-secondary, rgba(255,255,255,0.45))' }}
             >
               {win.title}
             </span>
@@ -560,8 +560,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
           <span
             className={`w-1.5 h-1.5 rounded-full transition-all ${isFocused ? 'glow-pulse' : 'opacity-20'}`}
             style={{
-              background: isFocused ? '#10b981' : 'rgba(255,255,255,0.3)',
-              boxShadow: isFocused ? '0 0 6px rgba(16,185,129,0.6)' : 'none',
+              background: isFocused ? 'var(--accent, #10b981)' : 'var(--border-subtle, rgba(255,255,255,0.3))',
+              boxShadow: isFocused ? '0 0 6px var(--accent-glow, rgba(16,185,129,0.6))' : 'none',
             }}
           />
         </div>
@@ -570,7 +570,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
       {/* ── Window Body ── */}
       <div
         className={`flex-1 w-full overflow-hidden relative ${isInteracting ? 'pointer-events-none select-none' : ''}`}
-        style={{ background: 'rgba(6,6,12,0.45)' }}
+        style={{ background: 'var(--window-body-bg, rgba(6,6,12,0.45))' }}
       >
         {children}
       </div>

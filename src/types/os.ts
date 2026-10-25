@@ -115,12 +115,45 @@ export type SoundThemeType = 'cyberpunk' | 'sonoma' | 'win98' | 'silent' | 'cust
 export interface ThemePreset {
   id: string;
   name: string;
+  category: 'Dark' | 'Light' | 'Material' | 'Special';
+  description: string;
+  mode: 'dark' | 'light';
   glassBlur: number;
   neonColor: string;
   radius: number;
   fontFamily: string;
   brightness: number;
   contrast: number;
+  bgBase: string;
+  bgSurface: string;
+  bgOverlay: string;
+  bgRaised: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentGlow: string;
+  accentDim: string;
+  accentBorder: string;
+  accentText: string;
+  glassWindow: string;
+  glassWindowFocused?: string;
+  glassPanel: string;
+  glassCard: string;
+  glassDock: string;
+  windowHeaderBg: string;
+  windowHeaderBorder: string;
+  windowBorder: string;
+  windowBorderFocused: string;
+  windowShadow: string;
+  windowShadowFocused: string;
+  windowBodyBg: string;
+  dockBorder: string;
+  borderSubtle: string;
+  borderDefault: string;
+  borderStrong: string;
+  borderBevel: string;
+  wallpaperFilter?: string;
 }
 
 export type WidgetType = 'clock' | 'weather' | 'system' | 'notes' | 'media' | 'quote' | 'launcher';

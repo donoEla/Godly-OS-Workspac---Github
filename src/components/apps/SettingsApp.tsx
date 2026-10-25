@@ -26,9 +26,11 @@ import {
   FileText,
   Terminal,
   Gamepad2,
-  Upload
+  Upload,
+  MousePointer
 } from 'lucide-react';
 import { WALLPAPERS, ACCENT_CONFIGS, CLOAK_PRESETS } from '../../constants/assets';
+import { CURSOR_PRESETS } from '../../constants/cursorPresets';
 import { AccentColor } from '../../types/os';
 import { sound } from '../../utils/sound';
 import { getActiveWispUrl, setActiveWispUrl, WISP_ENDPOINTS } from '../../utils/uvProxy';
@@ -355,6 +357,116 @@ export const SettingsApp: React.FC = () => {
                         style={{ backgroundColor: cfg.hex, boxShadow: `0 0 16px ${cfg.hex}80` }}
                       />
                       <span className="text-xs font-semibold text-white">{cfg.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hardware-Accelerated Custom Cursors Suite */}
+            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <MousePointer size={16} className="text-purple-400" />
+                    <span className="text-sm font-semibold text-white">Hardware-Accelerated Custom Cursors</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30 font-bold">
+                      {(settings.customCursor || 'default').toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Select a hand-crafted SVG cursor with zero-latency hardware compositing and custom hover states.
+                  </p>
+                </div>
+                {settings.customCursor && settings.customCursor !== 'default' && (
+                  <button
+                    onClick={() => {
+                      updateSettings({ customCursor: 'default' });
+                      sound.playClick();
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-all border border-white/10"
+                  >
+                    <RotateCcw size={12} />
+                    Reset to Classic
+                  </button>
+                )}
+              </div>
+
+              {/* Interactive Cursor Sandbox Test Track */}
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-xs text-slate-300 font-medium">Interactive Test Track:</span>
+                  <button
+                    onClick={() => sound.playClick()}
+                    className="px-3 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Hover & Click Me
+                  </button>
+                  <a
+                    href="#cursor-test"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      sound.playClick();
+                    }}
+                    className="text-xs text-cyan-400 underline hover:text-cyan-300 cursor-pointer font-medium"
+                  >
+                    Hoverable Link
+                  </a>
+                  <input
+                    type="text"
+                    placeholder="Text input cursor..."
+                    className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 w-36 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <span className="text-[11px] text-slate-400 italic">
+                  Hover elements to see dynamic pointer transformations
+                </span>
+              </div>
+
+              {/* Cursor Preset Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {CURSOR_PRESETS.map((preset) => {
+                  const isCur = (settings.customCursor || 'default') === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => {
+                        updateSettings({ customCursor: preset.id });
+                        sound.playClick();
+                      }}
+                      className={`group relative flex flex-col items-center p-3 rounded-2xl border text-center transition-all duration-200 cursor-pointer ${
+                        isCur
+                          ? 'border-purple-500 bg-purple-600/20 shadow-xl shadow-purple-600/25 scale-105 ring-1 ring-purple-400/50'
+                          : 'border-white/5 hover:border-white/20 bg-white/[0.03] hover:scale-[1.02]'
+                      }`}
+                    >
+                      {/* Active Checkmark Pill */}
+                      {isCur && (
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] shadow">
+                          <Check size={10} strokeWidth={3} />
+                        </div>
+                      )}
+
+                      {/* Cursor Visual Preview Box */}
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 border border-white/10"
+                        style={{
+                          background: preset.id === 'default' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.6)',
+                          boxShadow: isCur ? `0 0 16px ${preset.color}60` : undefined,
+                        }}
+                      >
+                        {preset.svgPointer ? (
+                          <div
+                            className="w-7 h-7 flex items-center justify-center"
+                            dangerouslySetInnerHTML={{ __html: preset.svgPointer }}
+                          />
+                        ) : (
+                          <MousePointer size={22} className="text-slate-300" />
+                        )}
+                      </div>
+
+                      <span className="text-xs font-bold text-white tracking-tight">{preset.name}</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{preset.category}</span>
                     </button>
                   );
                 })}

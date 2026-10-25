@@ -23,7 +23,8 @@ import {
   Upload,
   Download,
   Gauge,
-  Bookmark
+  Bookmark,
+  Radio
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
@@ -188,12 +189,124 @@ const CATEGORIES = [
   'Sports & Skill',
 ];
 
+const P2P_LOADER_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P GameWebSight Loader</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0d0e12;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #loader-container { text-align: center; }
+        svg.spinner {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loader-text {
+            font-size: 15px;
+            color: #f97316;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        .loader-sub {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loader-container">
+        <svg class="spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#f97316" stroke-width="2"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#f97316" stroke-width="1.5" opacity="0.5"/>
+            <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>
+        <p class="loader-text">CONNECTING TO P2P WEBSIGHT...</p>
+        <p class="loader-sub">Bitbucket Raw Mirror • 500+ Games & Playables</p>
+    </div>
+
+    <script>
+        (async () => {
+            const url = "https://bitbucket.org/p2p-alt-public/p2p-emis/raw/main/GameWebSight";
+            try {
+                const response = await fetch(url, { credentials: "omit" });
+                if (!response.ok) {
+                    throw new Error("HTTP " + response.status);
+                }
+                const html = await response.text();
+                const parser = new DOMParser();
+                const remote = parser.parseFromString(html, "text/html");
+
+                const base = document.createElement("base");
+                base.href = new URL("./", url).href;
+
+                document.head.replaceChildren(base);
+                document.body.replaceChildren();
+
+                for (const node of [...remote.head.childNodes]) {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SCRIPT") continue;
+                    document.head.appendChild(document.importNode(node, true));
+                }
+
+                const scripts = [];
+                for (const node of [...remote.body.childNodes]) {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SCRIPT") {
+                        scripts.push(node);
+                    } else {
+                        document.body.appendChild(document.importNode(node, true));
+                    }
+                }
+
+                for (const original of scripts) {
+                    const script = document.createElement("script");
+                    for (const attr of original.attributes) {
+                        script.setAttribute(attr.name, attr.value);
+                    }
+                    if (original.src) {
+                        script.src = new URL(original.getAttribute("src"), url).href;
+                        await new Promise((resolve, reject) => {
+                            script.onload = resolve;
+                            script.onerror = () => reject(new Error("Failed: " + script.src));
+                            document.body.appendChild(script);
+                        });
+                    } else {
+                        script.textContent = original.textContent;
+                        document.body.appendChild(script);
+                    }
+                }
+            } catch (error) {
+                console.error("P2P GameWebSight loader failed:", error);
+                document.body.innerHTML = '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#f97316;font-family:system-ui,sans-serif;gap:14px;"><div style="font-size:32px;">⚠️</div><div style="font-size:16px;font-weight:700;">Failed to connect to P2P GameWebSight</div><div style="font-size:12px;color:#94a3b8;max-width:400px;">' + (error.message || 'Please check your connection and reload.') + '</div><button onclick="location.reload()" style="padding:8px 16px;background:#f97316;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button></div>';
+            }
+        })();
+    </script>
+</body>
+</html>`;
+
 interface GamesAppProps {
-  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin';
+  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p';
 }
 
 export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
-  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin'>(initialTab || 'vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p'>(initialTab || 'vault');
+  const p2pFrameRef = useRef<HTMLIFrameElement>(null);
   
   // Zen GS state (1,700+ CloudFront CDN games)
   const [activeZenGame, setActiveZenGame] = useState<ZenGSGameSelection | null>(null);
@@ -521,6 +634,29 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
   };
 
+  const handleReloadP2P = () => {
+    sound.playClick();
+    if (p2pFrameRef.current) {
+      p2pFrameRef.current.srcdoc = '';
+      setTimeout(() => {
+        if (p2pFrameRef.current) {
+          p2pFrameRef.current.srcdoc = P2P_LOADER_HTML;
+        }
+      }, 60);
+    }
+  };
+
+  const handleFullscreenP2P = () => {
+    sound.playClick();
+    if (p2pFrameRef.current) {
+      if (p2pFrameRef.current.requestFullscreen) {
+        p2pFrameRef.current.requestFullscreen();
+      } else if ((p2pFrameRef.current as any).webkitRequestFullscreen) {
+        (p2pFrameRef.current as any).webkitRequestFullscreen();
+      }
+    }
+  };
+
   const handleFullscreenZen = () => {
     sound.playClick();
     const viewer = document.getElementById('zg-viewer');
@@ -682,6 +818,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
                 {activeTab === 'lumin' && 'Lumin Engine'}
+                {activeTab === 'p2p' && '500+ P2P GameWebSight'}
               </span>
             </div>
             <p className="text-[10px] text-white/40 tracking-tight">
@@ -811,6 +948,30 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             >
               <Zap size={13} />
               Lumin SDK
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('p2p');
+                setActiveVaultGame(null);
+                setActiveNowGGGame(null);
+                setActiveGnGame(null);
+              }}
+              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
+              style={
+                activeTab === 'p2p'
+                  ? {
+                      background: '#f97316',
+                      color: '#ffffff',
+                      fontWeight: 600,
+                      boxShadow: '0 2px 10px rgba(249, 115, 22, 0.5)',
+                    }
+                  : { color: 'rgba(255, 255, 255, 0.55)' }
+              }
+            >
+              <Radio size={13} />
+              P2P WebSight (500+)
             </button>
           </div>
         </div>
@@ -1847,6 +2008,67 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 <RotateCcw size={12} /> Reload SDK
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            TAB 6: P2P WEBSIGHT / GAMEWEBSIGHT ENGINE (Bitbucket Raw Mirror)
+            ========================================================================= */}
+        <div className={`w-full h-full flex flex-col relative ${activeTab === 'p2p' ? 'flex' : 'hidden'}`}>
+          {/* Header Toolbar */}
+          <div className="h-12 border-b border-white/[0.08] bg-[#0c0c14]/90 backdrop-blur-xl px-4 flex items-center justify-between shrink-0 z-20">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-sm font-semibold text-white tracking-tight">
+                  P2P GameWebSight Library
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 font-mono">
+                  Bitbucket Raw Mirror • 500+ Games & Playables
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleReloadP2P}
+                title="Reload P2P Library"
+                className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/10 text-xs flex items-center gap-1.5 transition-all"
+              >
+                <RotateCcw size={13} />
+                <span>Reload</span>
+              </button>
+              <button
+                onClick={handleFullscreenP2P}
+                title="Fullscreen"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/10 transition-all"
+              >
+                <Maximize2 size={14} />
+              </button>
+              <a
+                href="https://bitbucket.org/p2p-alt-public/p2p-emis/raw/main/GameWebSight"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Direct Bitbucket Raw Source"
+                className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/10 text-xs flex items-center gap-1.5 transition-all"
+              >
+                <ExternalLink size={13} />
+                <span>Direct Source</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Sandboxed P2P Frame Container */}
+          <div className="flex-1 w-full h-full relative bg-[#0d0e12] overflow-hidden">
+            <iframe
+              ref={p2pFrameRef}
+              id="p2p-websight-frame"
+              className="w-full h-full border-0 block"
+              srcDoc={P2P_LOADER_HTML}
+              allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; keyboard-map"
+              allowFullScreen
+              title="P2P GameWebSight"
+            />
           </div>
         </div>
       </div>

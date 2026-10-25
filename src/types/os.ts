@@ -227,4 +227,5 @@ export interface SystemSettings {
   themePreset?: ThemePreset;
   widgets?: DesktopWidget[];
   fpsOverlayEnabled?: boolean;
+  customCursor?: string;
 }

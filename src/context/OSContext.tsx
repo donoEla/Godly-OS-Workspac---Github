@@ -17,6 +17,7 @@ import {
 import { WALLPAPERS, INITIAL_FILESYSTEM, ACCENT_CONFIGS, CLOAK_PRESETS } from '../constants/assets';
 import { sound } from '../utils/sound';
 import { getAssetUrl } from '../utils/assetHelper';
+import { applyCursorStyle } from '../constants/cursorPresets';
 
 interface ContextMenuState {
   isOpen: boolean;
@@ -286,6 +287,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   widgets: DEFAULT_WIDGETS,
   fpsOverlayEnabled: false,
   themePreset: BUILTIN_THEME_PRESETS[0],
+  customCursor: 'default',
 };
 
 export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
@@ -577,6 +579,9 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     if (settings.soundTheme) {
       sound.setTheme(settings.soundTheme);
     }
+
+    // Hardware-accelerated custom cursor preset
+    applyCursorStyle(settings.customCursor || 'default');
   }, [settings]);
 
   // Sync workspaces, widgets, filesystem to localStorage

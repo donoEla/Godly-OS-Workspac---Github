@@ -108,12 +108,13 @@
             // Handle jsDelivr direct streaming:
             if (isJsDelivr) {
               try {
-                let baseHref = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist/';
-                const match = loc.match(/(https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?)/i);
-                if (match) {
-                  baseHref = match[1] + '/dist/';
+                let tag = 'v4.4.3';
+                const tagMatch = loc.match(/@([^/]+)/);
+                if (tagMatch && tagMatch[1] && tagMatch[1] !== 'main') {
+                  tag = tagMatch[1];
                 }
-                const htmlUrl = baseHref + 'index.html';
+                const baseHref = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@' + tag + '/dist/';
+                const htmlUrl = baseHref + 'index.html?v=' + tag;
 
                 const res = await fetch(htmlUrl);
                 if (res.ok) {
@@ -126,8 +127,10 @@
                   if (!html.includes('<base ')) {
                     html = html.replace('<head>', '<head>\n    <base href="' + baseHref + '">');
                   }
-                  // Rewrite relative ./ paths to absolute jsDelivr CDN endpoints
-                  html = html.replace(/(src|href)=["']\.\/([^"']+)["']/gi, '$1="' + baseHref + '$2"');
+                  // Rewrite relative ./ paths to absolute jsDelivr CDN endpoints with cache-buster
+                  html = html.replace(/(src|href)=["']\.\/([^"']+)["']/gi, function(_, attr, relPath) {
+                    return attr + '="' + baseHref + relPath + (relPath.includes('?') ? '&' : '?') + 'v=' + tag + '"';
+                  });
 
                   // Stream directly into iframe. No redirect.
                   frame.srcdoc = html;

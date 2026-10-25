@@ -12,10 +12,12 @@ import {
   Moon,
   Droplets,
   Cpu,
+  MousePointer,
 } from 'lucide-react';
 import { useOS, BUILTIN_THEME_PRESETS } from '../../context/OSContext';
 import { ThemePreset } from '../../types/os';
 import { sound } from '../../utils/sound';
+import { CURSOR_PRESETS } from '../../constants/cursorPresets';
 
 type CategoryFilter = 'All' | 'Dark' | 'Light' | 'Material' | 'Special';
 
@@ -464,6 +466,38 @@ export const ThemeStudioApp: React.FC = () => {
               }}
               className="w-full cursor-pointer accent-violet-500"
             />
+          </div>
+
+          {/* Hardware Custom Cursor */}
+          <div className="p-3.5 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                <MousePointer size={12} style={{ color: 'var(--accent)' }} />
+                <span>Hardware Cursor</span>
+              </label>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-white/10" style={{ color: 'var(--accent-text)' }}>
+                {(settings.customCursor || 'default').toUpperCase()}
+              </span>
+            </div>
+            <select
+              value={settings.customCursor || 'default'}
+              onChange={(e) => {
+                updateSettings({ customCursor: e.target.value });
+                sound.playClick();
+              }}
+              className="w-full rounded-xl px-2.5 py-1.5 text-xs outline-none border transition-colors cursor-pointer"
+              style={{
+                background: 'var(--surface-2)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {CURSOR_PRESETS.map((c) => (
+                <option key={c.id} value={c.id} style={{ background: '#090d16', color: '#ffffff' }}>
+                  {c.name} • {c.category}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>

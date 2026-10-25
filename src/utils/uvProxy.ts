@@ -142,14 +142,49 @@ export function getActiveWispUrl(): string {
 
 export function getBasePrefix(): string {
   if (typeof window !== 'undefined') {
-    if (window.location.hostname === 'cdn.jsdelivr.net') {
+    // 1. Check document.baseURI for jsDelivr
+    if (typeof document !== 'undefined' && document.baseURI && !document.baseURI.startsWith('about:')) {
+      try {
+        const baseUriObj = new URL(document.baseURI);
+        if (baseUriObj.hostname === 'cdn.jsdelivr.net') {
+          const match = baseUriObj.pathname.match(/^(\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?(?:\/dist)?)/i);
+          if (match) {
+            let res = match[1].replace(/\/$/, '');
+            if (!res.endsWith('/dist')) res += '/dist';
+            return res;
+          }
+          return '/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
+        }
+      } catch {}
+    }
+
+    // 2. Check window.location.hostname / href for jsDelivr
+    if (window.location.hostname === 'cdn.jsdelivr.net' || window.location.href.includes('cdn.jsdelivr.net')) {
       const match = window.location.pathname.match(/^(\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?(?:\/dist)?)/i);
       if (match) {
-        return match[1].replace(/\/$/, '');
+        let res = match[1].replace(/\/$/, '');
+        if (!res.endsWith('/dist')) res += '/dist';
+        return res;
       }
-      const path = window.location.pathname.replace(/\/index\.html?$/i, '').replace(/\/$/, '');
-      return path || '';
+      return '/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
     }
+
+    // 3. Check window.parent if in iframe / srcdoc
+    try {
+      if (window.parent && window.parent !== window && window.parent.location?.href) {
+        const pHref = window.parent.location.href;
+        if (pHref.includes('cdn.jsdelivr.net')) {
+          const match = window.parent.location.pathname.match(/^(\/gh\/[^/]+\/[^/@]+(?:@[^/]+)?(?:\/dist)?)/i);
+          if (match) {
+            let res = match[1].replace(/\/$/, '');
+            if (!res.endsWith('/dist')) res += '/dist';
+            return res;
+          }
+          return '/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
+        }
+      }
+    } catch {}
+
     if (window.__uv$config?.loc) {
       return window.__uv$config.loc.replace(/\/$/, '');
     }
@@ -311,7 +346,10 @@ export function encodeUvUrl(rawUrl: string): string {
 
   try {
     if (window.__uv$config && typeof window.__uv$config.encodeUrl === 'function') {
-      const prefix = window.__uv$config.prefix || defaultPrefix;
+      let prefix = window.__uv$config.prefix || defaultPrefix;
+      if (base && !prefix.startsWith(base)) {
+        prefix = `${base}${prefix.startsWith('/') ? '' : '/'}${prefix}`;
+      }
       return prefix + window.__uv$config.encodeUrl(url);
     }
     if (window.Ultraviolet?.codec?.xor?.encode) {
@@ -326,7 +364,14 @@ export function encodeUvUrl(rawUrl: string): string {
 
 export function decodeUvUrl(encodedPath: string): string {
   try {
-    const stripped = encodedPath.replace(/^\/uv\/service\//, '');
+    const base = getBasePrefix();
+    const prefix = `${base}/uv/service/`;
+    let stripped = encodedPath;
+    if (stripped.startsWith(prefix)) {
+      stripped = stripped.slice(prefix.length);
+    } else {
+      stripped = stripped.replace(/^\/uv\/service\//, '');
+    }
     if (window.__uv$config && typeof window.__uv$config.decodeUrl === 'function') {
       return window.__uv$config.decodeUrl(stripped);
     }
@@ -448,7 +493,14 @@ export function encodeSwBridgeUrl(rawUrl: string): string {
 
 export function decodeSwBridgeUrl(encodedPath: string): string {
   try {
-    const stripped = encodedPath.replace(/^\/sw-service\//, '');
+    const base = getBasePrefix();
+    const prefix = `${base}/sw-service/`;
+    let stripped = encodedPath;
+    if (stripped.startsWith(prefix)) {
+      stripped = stripped.slice(prefix.length);
+    } else {
+      stripped = stripped.replace(/^\/sw-service\//, '');
+    }
     if (window.__uv$config && typeof window.__uv$config.decodeUrl === 'function') {
       return window.__uv$config.decodeUrl(stripped);
     }

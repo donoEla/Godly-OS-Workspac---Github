@@ -100,7 +100,7 @@ async function handleRequest(event) {
     }
 
     // 1. Scramjet Route Check (/scramjet/)
-    if (relPath.startsWith('/scramjet/')) {
+    if (relPath.startsWith('/scramjet/') || pathname.startsWith('/scramjet/')) {
       const fullPrefix = (baseLoc || '') + '/scramjet/';
       if (scramjet) {
         try {
@@ -159,7 +159,7 @@ async function handleRequest(event) {
       // Scramjet fallback to Ultraviolet
       if (uv) {
         try {
-          const rawDest = decodeURIComponent(relPath.slice('/scramjet/'.length));
+          const rawDest = decodeURIComponent(relPath.replace(/^\/scramjet\//, ''));
           if (rawDest.startsWith('http://') || rawDest.startsWith('https://')) {
             const uvEncoded = uv.codec.xor.encode(rawDest);
             const redirectPrefix = self.__uv$config?.prefix || ((baseLoc || '') + '/uv/service/');
@@ -175,7 +175,7 @@ async function handleRequest(event) {
     }
 
     // 2. Service Worker Bridge Route Check (/sw-service/)
-    if (relPath.startsWith('/sw-service/')) {
+    if (relPath.startsWith('/sw-service/') || pathname.startsWith('/sw-service/')) {
       if (swBridge) {
         try {
           return await swBridge.fetch(event);
@@ -188,11 +188,14 @@ async function handleRequest(event) {
           return await uv.fetch(event);
         } catch {}
       }
-      return new Response('SW Bridge routing failure', { status: 502 });
+      return new Response(
+        `<!DOCTYPE html><html><body style="background:#0b0f19;color:#e2e8f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;padding:24px;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:rgba(255,255,255,0.03);"><h3 style="color:#2dd4bf;margin-top:0;">Godly SW Bridge Connecting...</h3><p style="font-size:13px;color:#94a3b8;">Initializing Service Worker Bridge. Please reload or switch proxy engine in browser settings.</p><button onclick="location.reload()" style="background:#0d9488;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">Reload</button></div></body></html>`,
+        { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }
+      );
     }
 
     // 3. Ultraviolet Route Check (/uv/service/)
-    if (relPath.startsWith('/uv/service/')) {
+    if (relPath.startsWith('/uv/service/') || pathname.startsWith('/uv/service/') || relPath.startsWith('/uv/') || pathname.startsWith('/uv/')) {
       if (uv) {
         try {
           return await uv.fetch(event);
@@ -200,7 +203,25 @@ async function handleRequest(event) {
           console.warn('[Godly SW] UV route error:', err);
         }
       }
-      return new Response('Ultraviolet routing failure', { status: 502 });
+      return new Response(
+        `<!DOCTYPE html><html><body style="background:#0b0f19;color:#e2e8f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;padding:24px;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:rgba(255,255,255,0.03);"><h3 style="color:#34d399;margin-top:0;">Godly Ultraviolet Proxy Connecting...</h3><p style="font-size:13px;color:#94a3b8;">Connecting to Epoxy Wisp transport. Please reload or switch proxy engine in browser settings.</p><button onclick="location.reload()" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">Reload</button></div></body></html>`,
+        { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }
+      );
+    }
+
+    // Guard: Never fetch /uv/, /sw-service/, or /scramjet/ directly from CDN origins like jsDelivr
+    if (
+      pathname.startsWith('/uv/') ||
+      pathname.startsWith('/sw-service/') ||
+      pathname.startsWith('/scramjet/') ||
+      relPath.startsWith('/uv/') ||
+      relPath.startsWith('/sw-service/') ||
+      relPath.startsWith('/scramjet/')
+    ) {
+      return new Response(
+        `<!DOCTYPE html><html><body style="background:#0b0f19;color:#e2e8f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;padding:24px;border:1px solid rgba(255,255,255,0.1);border-radius:16px;background:rgba(255,255,255,0.03);"><h3 style="color:#a855f7;margin-top:0;">Godly OS Proxy Channel</h3><p style="font-size:13px;color:#94a3b8;">Proxy endpoint connecting. Switch transport in browser settings or use the GitHub Pages live mirror for unrestricted external proxy access.</p><a href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_blank" style="display:inline-block;margin-top:12px;background:#9333ea;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Open Live Mirror ↗</a></div></body></html>`,
+        { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }
+      );
     }
 
     // Fallback to network

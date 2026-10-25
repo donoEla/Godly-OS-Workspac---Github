@@ -25,13 +25,13 @@ interface PinnedTaskbarItem {
 
 const PINNED_ITEMS: PinnedTaskbarItem[] = [
   { id: 'zen',             name: 'Godly Browser',   icon: getAssetUrl('assets/icons/zen.jpg') },
-  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.svg') },
-  { id: 'widgets',         name: 'Widgets Studio',  icon: getAssetUrl('assets/icons/widgets.svg') },
+  { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.png') },
+  { id: 'widgets',         name: 'Widgets Studio',  icon: getAssetUrl('assets/icons/widgets.jpeg') },
   { id: 'code-editor',     name: 'Code Studio',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'app-store',    name: 'Godly Store',    icon: getAssetUrl('assets/icons/app-store.jpg') },
-  { id: 'extensions',   name: 'Extensions',     icon: getAssetUrl('assets/icons/app-store.jpg') },
-  { id: 'theme-studio', name: 'Theme Studio',   icon: getAssetUrl('assets/icons/settings.jpg') },
-  { id: 'voice-memos',  name: 'Voice Memos',    icon: getAssetUrl('assets/icons/spotify.jpg') },
+  { id: 'extensions',   name: 'Extensions',     icon: getAssetUrl('assets/icons/extensions.jpg') },
+  { id: 'theme-studio', name: 'Theme Studio',   icon: getAssetUrl('assets/icons/themes.png') },
+  { id: 'voice-memos',  name: 'Voice Memos',    icon: getAssetUrl('assets/icons/voice-memos.jpg') },
   { id: 'spotify',      name: 'Music',          icon: getAssetUrl('assets/icons/spotify.jpg') },
   { id: 'file-manager', name: 'Files',          icon: getAssetUrl('assets/icons/file-manager.jpg') },
   { id: 'games',        name: 'Arcade',         icon: getAssetUrl('assets/icons/games.jpg') },

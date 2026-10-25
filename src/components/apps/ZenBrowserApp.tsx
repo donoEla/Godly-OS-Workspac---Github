@@ -58,7 +58,7 @@ export interface ZenTab {
   displayUrl?: string;
   icon?: string;
   workspaceId: string;
-  tunnelMode: 'scramjet' | 'uv' | 'sw' | 'direct';
+  tunnelMode: 'scramjet' | 'uv' | 'sw';
   isLoading: boolean;
   isPinned?: boolean;
   containerId?: 'default' | 'personal' | 'work' | 'banking' | 'shopping';
@@ -643,10 +643,7 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
     setShowTroubleshoot(false);
 
     if (iframeRef.current) {
-      if (activeTab.tunnelMode === 'direct') {
-        const sep = activeTab.url.includes('?') ? '&' : '?';
-        iframeRef.current.src = `${activeTab.url}${sep}_t=${Date.now()}`;
-      } else if (activeTab.tunnelMode === 'scramjet') {
+      if (activeTab.tunnelMode === 'scramjet') {
         iframeRef.current.src = `${encodeScramjetUrl(activeTab.url)}#${Date.now()}`;
       } else if (activeTab.tunnelMode === 'sw') {
         iframeRef.current.src = `${encodeSwBridgeUrl(activeTab.url)}#${Date.now()}`;
@@ -704,8 +701,8 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
     setSidebarOmnibarInput(targetUrl);
   };
 
-  // Toggle Tab Tunnel Mode (Scramjet vs UV vs Root SW vs Direct)
-  const handleSetTabTunnelMode = (mode: 'scramjet' | 'uv' | 'sw' | 'direct') => {
+  // Toggle Tab Tunnel Mode (Scramjet vs UV vs Root SW)
+  const handleSetTabTunnelMode = (mode: 'scramjet' | 'uv' | 'sw') => {
     sound.playClick();
     if (mode === 'scramjet') {
       initScramjetProxy();
@@ -760,9 +757,6 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
   // Frame source calculation
   const getComputedFrameSrc = (tab: ZenTab | undefined) => {
     if (!tab || !tab.url) return '';
-    if (tab.tunnelMode === 'direct') {
-      return tab.url;
-    }
     if (tab.tunnelMode === 'scramjet') {
       return encodeScramjetUrl(tab.url);
     }
@@ -1245,8 +1239,6 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                         ? 'bg-violet-600/20 border-violet-500/40 text-violet-300'
                         : activeTab?.tunnelMode === 'sw'
                         ? 'bg-teal-600/20 border-teal-500/40 text-teal-300'
-                        : activeTab?.tunnelMode === 'direct'
-                        ? 'bg-blue-600/20 border-blue-500/40 text-blue-300'
                         : 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300'
                     }`}
                     title="Proxy Engine Pipeline"
@@ -1254,8 +1246,7 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                     <Zap size={10} />
                     <span className="hidden sm:inline font-semibold">
                       {activeTab?.tunnelMode === 'scramjet' ? 'Scramjet v2.0' :
-                       activeTab?.tunnelMode === 'sw' ? 'SW Bridge (sw.js)' :
-                       activeTab?.tunnelMode === 'direct' ? 'Direct Sandbox' : 'Ultraviolet Proxy'}
+                       activeTab?.tunnelMode === 'sw' ? 'SW Bridge (sw.js)' : 'Ultraviolet Proxy'}
                     </span>
                     <ChevronDown size={9} />
                   </button>
@@ -1321,22 +1312,6 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                           <div className="text-[9px] text-slate-400">UV Service Worker + Epoxy Wisp</div>
                         </div>
                         {activeTab?.tunnelMode === 'uv' && <Check size={12} className="text-emerald-400 flex-shrink-0" />}
-                      </button>
-
-                      {/* Direct Sandbox Option */}
-                      <button
-                        onClick={() => handleSetTabTunnelMode('direct')}
-                        className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs text-left transition-all ${
-                          activeTab?.tunnelMode === 'direct'
-                            ? 'bg-blue-500/20 text-blue-200 border border-blue-500/40 font-semibold'
-                            : 'text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <div>
-                          <div className="font-medium">Direct Sandbox</div>
-                          <div className="text-[9px] text-slate-400">Direct embedded iframe (raw)</div>
-                        </div>
-                        {activeTab?.tunnelMode === 'direct' && <Check size={12} className="text-blue-400 flex-shrink-0" />}
                       </button>
                     </div>
                   )}
@@ -1440,13 +1415,6 @@ export const ZenBrowserApp: React.FC<ZenBrowserAppProps> = ({
                         >
                           <Radio size={12} className="text-teal-400" />
                           SW Bridge (sw.js)
-                        </button>
-                        <button
-                          onClick={() => handleSetTabTunnelMode('direct')}
-                          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-blue-600/25 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 text-[11px] font-semibold transition-all"
-                        >
-                          <Globe size={12} className="text-blue-400" />
-                          Direct Sandbox
                         </button>
                         <button
                           onClick={handleCycleWisp}

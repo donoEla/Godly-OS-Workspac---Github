@@ -189,7 +189,11 @@ export function encodeScramjetUrl(rawUrl: string): string {
 
   try {
     if (scramjetInstance && typeof scramjetInstance.encodeUrl === 'function') {
-      return scramjetInstance.encodeUrl(url);
+      const res = scramjetInstance.encodeUrl(url);
+      if (base && !res.startsWith(base)) {
+        return `${base}${res.startsWith('/') ? '' : '/'}${res}`;
+      }
+      return res;
     }
   } catch (e) {
     console.warn('[Godly Scramjet] Controller encoder note:', e);

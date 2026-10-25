@@ -19,6 +19,7 @@ import { useOS } from '../../context/OSContext';
 import { WALLPAPERS, CLOAK_PRESETS } from '../../constants/assets';
 import { AppId } from '../../types/os';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 interface PaletteItem {
   id: string;
@@ -69,18 +70,20 @@ export const CommandPalette: React.FC = () => {
 
     // 1. Applications
     const apps: { id: AppId; name: string; desc: string; icon: string }[] = [
-      { id: 'zen', name: 'Godly Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: '/assets/icons/zen.jpg' },
-      { id: 'virtual-machine', name: 'Virtual Machine', desc: 'In-browser x86 Linux VM & CheerpX WebAssembly sandbox', icon: '/assets/icons/vm.svg' },
-      { id: 'widgets', name: 'Widgets Studio', desc: 'Add, remove, configure, and customize desktop widgets & layouts', icon: '/assets/icons/widgets.svg' },
-      { id: 'app-store', name: 'Godly Store', desc: 'Browse games, proxies & dev utilities', icon: '/assets/icons/app-store.jpg' },
-      { id: 'extensions', name: 'Desktop Extensions Hub', desc: 'Genie minimize, physics, particle trails & custom mods', icon: '/assets/icons/app-store.jpg' },
-      { id: 'terminal', name: 'Terminal', desc: 'Interactive Godly OS command shell & network tools', icon: '/assets/icons/terminal.jpg' },
-      { id: 'notes', name: 'Notes Studio', desc: 'Rich markdown and code notepad', icon: '/assets/icons/notes.jpg' },
-      { id: 'spotify', name: 'Spotify Ambient', desc: 'Web audio harmonic synthesizer player', icon: '/assets/icons/spotify.jpg' },
-      { id: 'file-manager', name: 'File Manager', desc: 'Local simulated storage filesystem', icon: '/assets/icons/file-manager.jpg' },
-      { id: 'games', name: 'Godly Arcade', desc: 'nowgg.fun cloud gaming hub & classic emulators', icon: '/assets/icons/games.jpg' },
-      { id: 'calculator', name: 'Calculator Pro', desc: 'Scientific & graph calculator', icon: '/assets/icons/calculator.jpg' },
-      { id: 'settings', name: 'Settings', desc: 'Personalization, themes, cloaking & sound', icon: '/assets/icons/settings.jpg' },
+      { id: 'zen', name: 'Godly Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: getAssetUrl('assets/icons/zen.jpg') },
+      { id: 'virtual-machine', name: 'Virtual Machine', desc: 'In-browser x86 Linux VM & CheerpX WebAssembly sandbox', icon: getAssetUrl('assets/icons/vm.png') },
+      { id: 'widgets', name: 'Widgets Studio', desc: 'Add, remove, configure, and customize desktop widgets & layouts', icon: getAssetUrl('assets/icons/widgets.jpeg') },
+      { id: 'app-store', name: 'Godly Store', desc: 'Browse games, proxies & dev utilities', icon: getAssetUrl('assets/icons/app-store.jpg') },
+      { id: 'extensions', name: 'Desktop Extensions Hub', desc: 'Genie minimize, physics, particle trails & custom mods', icon: getAssetUrl('assets/icons/extensions.jpg') },
+      { id: 'theme-studio', name: 'Theme Studio', desc: 'System-wide visual themes, Frosted Glass, Liquid Metal & accents', icon: getAssetUrl('assets/icons/themes.png') },
+      { id: 'voice-memos', name: 'Voice Memos Studio', desc: 'Voice recording, audio waveforms & studio memos', icon: getAssetUrl('assets/icons/voice-memos.jpg') },
+      { id: 'terminal', name: 'Terminal', desc: 'Interactive Godly OS command shell & network tools', icon: getAssetUrl('assets/icons/terminal.jpg') },
+      { id: 'notes', name: 'Notes Studio', desc: 'Rich markdown and code notepad', icon: getAssetUrl('assets/icons/notes.jpg') },
+      { id: 'spotify', name: 'Spotify Ambient', desc: 'Web audio harmonic synthesizer player', icon: getAssetUrl('assets/icons/spotify.jpg') },
+      { id: 'file-manager', name: 'File Manager', desc: 'Local simulated storage filesystem', icon: getAssetUrl('assets/icons/file-manager.jpg') },
+      { id: 'games', name: 'Godly Arcade', desc: 'nowgg.fun cloud gaming hub & classic emulators', icon: getAssetUrl('assets/icons/games.jpg') },
+      { id: 'calculator', name: 'Calculator Pro', desc: 'Scientific & graph calculator', icon: getAssetUrl('assets/icons/calculator.jpg') },
+      { id: 'settings', name: 'Settings', desc: 'Personalization, themes, cloaking & sound', icon: getAssetUrl('assets/icons/settings.jpg') },
     ];
 
     apps.forEach((app) => {

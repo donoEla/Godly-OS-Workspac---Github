@@ -17,17 +17,19 @@ import { getAssetUrl } from '../../utils/assetHelper';
 
 const PINNED_APPS: { id: AppId; name: string; category: string; icon: string }[] = [
   { id: 'zen',             name: 'Godly Browser',   category: 'Web',     icon: getAssetUrl('assets/icons/zen.jpg') },
-  { id: 'virtual-machine', name: 'Virtual Machine', category: 'Dev',     icon: getAssetUrl('assets/icons/vm.svg') },
-  { id: 'widgets',         name: 'Widgets Studio',  category: 'Utility', icon: getAssetUrl('assets/icons/widgets.svg') },
+  { id: 'virtual-machine', name: 'Virtual Machine', category: 'Dev',     icon: getAssetUrl('assets/icons/vm.png') },
+  { id: 'widgets',         name: 'Widgets Studio',  category: 'Utility', icon: getAssetUrl('assets/icons/widgets.jpeg') },
   { id: 'app-store',       name: 'Godly Store',     category: 'Hub',     icon: getAssetUrl('assets/icons/app-store.jpg') },
-  { id: 'extensions',   name: 'Extensions',    category: 'System',  icon: getAssetUrl('assets/icons/app-store.jpg') },
-  { id: 'terminal',     name: 'Terminal',       category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
-  { id: 'notes',        name: 'Notes Studio',   category: 'Work',    icon: getAssetUrl('assets/icons/notes.jpg') },
-  { id: 'spotify',      name: 'Music',          category: 'Media',   icon: getAssetUrl('assets/icons/spotify.jpg') },
-  { id: 'file-manager', name: 'Files',          category: 'System',  icon: getAssetUrl('assets/icons/file-manager.jpg') },
-  { id: 'games',        name: 'Arcade',         category: 'Gaming',  icon: getAssetUrl('assets/icons/games.jpg') },
-  { id: 'calculator',   name: 'Calculator',     category: 'Utility', icon: getAssetUrl('assets/icons/calculator.jpg') },
-  { id: 'settings',     name: 'Settings',       category: 'System',  icon: getAssetUrl('assets/icons/settings.jpg') },
+  { id: 'extensions',      name: 'Extensions',      category: 'System',  icon: getAssetUrl('assets/icons/extensions.jpg') },
+  { id: 'theme-studio',    name: 'Theme Studio',    category: 'System',  icon: getAssetUrl('assets/icons/themes.png') },
+  { id: 'voice-memos',     name: 'Voice Memos',     category: 'Utility', icon: getAssetUrl('assets/icons/voice-memos.jpg') },
+  { id: 'terminal',        name: 'Terminal',        category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
+  { id: 'notes',           name: 'Notes Studio',    category: 'Work',    icon: getAssetUrl('assets/icons/notes.jpg') },
+  { id: 'spotify',         name: 'Music',           category: 'Media',   icon: getAssetUrl('assets/icons/spotify.jpg') },
+  { id: 'file-manager',    name: 'Files',           category: 'System',  icon: getAssetUrl('assets/icons/file-manager.jpg') },
+  { id: 'games',           name: 'Arcade',          category: 'Gaming',  icon: getAssetUrl('assets/icons/games.jpg') },
+  { id: 'calculator',      name: 'Calculator',      category: 'Utility', icon: getAssetUrl('assets/icons/calculator.jpg') },
+  { id: 'settings',        name: 'Settings',        category: 'System',  icon: getAssetUrl('assets/icons/settings.jpg') },
 ];
 
 export const StartMenu: React.FC = () => {

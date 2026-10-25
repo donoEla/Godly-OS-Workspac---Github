@@ -108,7 +108,7 @@
             // Handle jsDelivr direct streaming:
             if (isJsDelivr) {
               try {
-                let tag = 'v4.4.7';
+                let tag = 'v4.4.8';
                 const tagMatch = loc.match(/@([^/]+)/);
                 if (tagMatch && tagMatch[1] && tagMatch[1] !== 'main') {
                   tag = tagMatch[1];

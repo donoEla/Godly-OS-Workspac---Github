@@ -309,7 +309,7 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'widgets-studio', name: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpeg'), category: 'Utilities', appId: 'widgets' },
   { id: 'web-emulator', name: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/emulator.png'), category: 'Games', appId: 'emulator' },
   { id: 'p2p-multiplayer', name: 'Multiplayer Arena', icon: getAssetUrl('assets/icons/multiplayer.jpg'), category: 'Games', appId: 'multiplayer' },
-  { id: 'eaglercraft-studio', name: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'eaglercraft' },
+  { id: 'eaglercraft-studio', name: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/eaglercraft.jpg'), category: 'Games', appId: 'eaglercraft' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
@@ -321,7 +321,7 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 920, height: 670 },
   'emulator': { title: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/emulator.png'), width: 1040, height: 680 },
   'multiplayer': { title: 'P2P Multiplayer Arena', icon: getAssetUrl('assets/icons/multiplayer.jpg'), width: 920, height: 620 },
-  'eaglercraft': { title: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/games.jpg'), width: 1060, height: 700 },
+  'eaglercraft': { title: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/eaglercraft.jpg'), width: 1060, height: 700 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
   'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 880, height: 640 },
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },

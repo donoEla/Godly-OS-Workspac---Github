@@ -45,7 +45,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'mgba',
     systemName: 'Game Boy Advance',
     author: 'Maddy Thorson / Port by lemon32767',
-    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_celeste.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy%20Advance/Celeste%20Classic%20%28v1.0%29.zip',
     description: 'Precision climbing platformer demake built from the ground up for the Game Boy Advance hardware.',
     year: '2020',
@@ -57,7 +57,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'fceumm',
     systemName: 'NES 8-Bit',
     author: 'RogerBidon',
-    cover: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_tilt_bro.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Super%20Tilt%20Bro%20%28USA%29.nes',
     description: 'Acclaimed 8-bit platform brawler with fluid physics and fast-paced competitive arena fighting.',
     year: '2022',
@@ -69,7 +69,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'fceumm',
     systemName: 'NES 8-Bit',
     author: 'Shiru / Denis Grachev',
-    cover: 'https://images.unsplash.com/photo-1551103782-8ab07afd45c1?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_tilt_bro.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Alter%20Ego.nes',
     description: 'Unique dual-character puzzle platformer where you control a hero and their mirrored phantom counterpart.',
     year: '2011',
@@ -81,7 +81,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'fceumm',
     systemName: 'NES 8-Bit',
     author: 'Morphcat Games',
-    cover: 'https://images.unsplash.com/photo-1612287232269-231a44c74ea0?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_tilt_bro.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Nintendo%20Entertainment%20System/Spacegulls%20%28v1.1%29.nes',
     description: 'High-octane platform adventure from the creators of Micro Mages with colorful 8-bit sprite art.',
     year: '2021',
@@ -93,7 +93,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'snes9x',
     systemName: 'Super Nintendo',
     author: 'ChronoMoogle',
-    cover: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_snes_boss.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/Super%20Boss%20Gaiden%20%28Japan%29.zip',
     description: 'Hilarious and action-packed satirical 16-bit beat em up built exclusively for the Super Nintendo.',
     year: '2016',
@@ -105,7 +105,7 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'gambatte',
     systemName: 'Game Boy Color',
     author: 'Tangram Games',
-    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_gameboy.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy/Tobu%20Tobu%20Girl.zip',
     description: 'Adrenaline-fueled vertical action platformer with vibrant GBC pixel aesthetics and upbeat chiptune soundtrack.',
     year: '2019',
@@ -117,12 +117,135 @@ export const CURATED_ROMS: CuratedRom[] = [
     core: 'gambatte',
     systemName: 'Game Boy Classic',
     author: 'IZMA / Chris Beach',
-    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=240&fit=crop',
+    cover: getAssetUrl('assets/covers/emulator_gameboy.jpg'),
     romUrl: 'https://buildbot.libretro.com/assets/cores/Nintendo%20-%20GameBoy/Deadeus.gb',
     description: 'Critically acclaimed atmospheric psychological horror adventure featuring multiple branching endings.',
     year: '2020',
   },
 ];
+
+export const generateEmulatorSrcDoc = (core: string, romUrl?: string, fileName?: string) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetroArch WebAssembly Runner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #07090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f1f5f9; }
+    #canvas-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+    canvas { width: 100% !important; height: 100% !important; object-fit: contain; image-rendering: pixelated; outline: none; }
+    #loading-overlay { position: absolute; inset: 0; background: #07090ef2; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; transition: opacity 0.3s ease; }
+    .spinner { width: 44px; height: 44px; border: 3px solid rgba(139, 92, 246, 0.2); border-top-color: #a855f7; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-text { font-size: 14px; font-weight: 500; color: #cbd5e1; }
+    .sub-text { font-size: 12px; color: #64748b; margin-top: 6px; }
+    #error-box { display: none; position: absolute; inset: 20px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 24px; color: #fca5a5; font-size: 13px; z-index: 60; overflow: auto; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/nostalgist@0.9.1/dist/nostalgist.umd.js"></script>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div id="status" class="status-text">Booting RetroArch Core...</div>
+      <div class="sub-text">Extracting WebAssembly shaders and memory mapping</div>
+    </div>
+    <div id="error-box"></div>
+  </div>
+
+  <script>
+    let nostalgist = null;
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const statusText = document.getElementById('status');
+    const errorBox = document.getElementById('error-box');
+
+    function showError(err) {
+      loadingOverlay.style.display = 'none';
+      errorBox.style.display = 'block';
+      errorBox.innerHTML = '<strong>Emulator Error:</strong><br><pre style="margin-top:8px; white-space:pre-wrap;">' + (err.stack || err.message || err) + '</pre>';
+      window.parent.postMessage({ type: 'EMULATOR_ERROR', error: String(err) }, '*');
+    }
+
+    async function launchGame(core, romUrl, fileName, romBuffer) {
+      try {
+        if (nostalgist) {
+          await nostalgist.exit({ removeCanvas: true });
+          nostalgist = null;
+        }
+
+        loadingOverlay.style.display = 'flex';
+        loadingOverlay.style.opacity = '1';
+        errorBox.style.display = 'none';
+        statusText.textContent = 'Spinning up ' + core.toUpperCase() + ' core...';
+
+        let romSource = romUrl;
+        if (romBuffer) {
+          romSource = {
+            fileName: fileName || ('game.' + (core === 'mgba' ? 'gba' : core === 'snes9x' ? 'sfc' : 'nes')),
+            fileContent: new Blob([romBuffer])
+          };
+        }
+
+        nostalgist = await Nostalgist.launch({
+          core: core,
+          rom: romSource,
+          element: '#canvas-container',
+          style: { width: '100%', height: '100%' },
+          retroarchCoreConfig: {
+            video_smooth: false,
+            video_scale_integer: false,
+          },
+          onStatusChange: (status) => {
+            statusText.textContent = status;
+          }
+        });
+
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
+        window.parent.postMessage({ type: 'EMULATOR_READY', core: core }, '*');
+      } catch (err) {
+        showError(err);
+      }
+    }
+
+    window.addEventListener('message', async (e) => {
+      if (!e.data || !e.data.type) return;
+
+      if (e.data.type === 'LAUNCH') {
+        const { core, romUrl, fileName } = e.data;
+        launchGame(core, romUrl, fileName, null);
+      } else if (e.data.type === 'LAUNCH_BUFFER') {
+        const { core, fileName, buffer } = e.data;
+        launchGame(core, null, fileName, buffer);
+      } else if (e.data.type === 'SAVE_STATE') {
+        if (!nostalgist) return;
+        try {
+          const state = await nostalgist.saveState();
+          window.parent.postMessage({ type: 'STATE_SAVED', state: state }, '*');
+        } catch (err) {
+          window.parent.postMessage({ type: 'EMULATOR_ERROR', error: err.message }, '*');
+        }
+      } else if (e.data.type === 'LOAD_STATE') {
+        if (!nostalgist || !e.data.state) return;
+        try {
+          await nostalgist.loadState(e.data.state);
+        } catch (err) {
+          window.parent.postMessage({ type: 'EMULATOR_ERROR', error: err.message }, '*');
+        }
+      } else if (e.data.type === 'PAUSE') {
+        if (nostalgist) nostalgist.pause();
+      } else if (e.data.type === 'RESUME') {
+        if (nostalgist) nostalgist.resume();
+      } else if (e.data.type === 'RESTART') {
+        if (nostalgist) nostalgist.restart();
+      }
+    });
+
+    ${romUrl ? `window.addEventListener('load', () => { launchGame(${JSON.stringify(core)}, ${JSON.stringify(romUrl)}, ${JSON.stringify(fileName || 'game')}, null); });` : `window.parent.postMessage({ type: 'EMULATOR_PAGE_LOADED' }, '*');`}
+  </script>
+</body>
+</html>`;
 
 export const EmulatorHubApp: React.FC = () => {
   const [selectedSystem, setSelectedSystem] = useState<EmulatorSystem>('all');
@@ -384,16 +507,18 @@ export const EmulatorHubApp: React.FC = () => {
           <div className="flex-1 w-full h-full relative bg-[#000000] overflow-hidden">
             <iframe
               ref={emulatorFrameRef}
-              src={
-                customBuffer
-                  ? getAssetUrl('emulator.html')
-                  : `${getAssetUrl('emulator.html')}?core=${activeRom.core}&rom=${encodeURIComponent(activeRom.romUrl)}`
+              srcDoc={
+                activeRom
+                  ? generateEmulatorSrcDoc(activeRom.core, activeRom.romUrl, activeRom.title)
+                  : customBuffer
+                  ? generateEmulatorSrcDoc(customBuffer.core, undefined, customBuffer.filename)
+                  : undefined
               }
               onLoad={handleIframeLoad}
               className="w-full h-full border-0 block"
               allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; keyboard-map"
               allowFullScreen
-              title={activeRom.title}
+              title={activeRom?.title || 'RetroArch Runner'}
             />
           </div>
         </div>
@@ -460,6 +585,28 @@ export const EmulatorHubApp: React.FC = () => {
 
           {/* Scrollable Content Body */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+            {/* Retro Gaming Showcase Hero Banner */}
+            <div className="relative overflow-hidden rounded-2xl p-6 border border-purple-500/30 shadow-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-[#07090e]">
+              <img
+                src={getAssetUrl('assets/covers/emulator_retro_hub.jpg')}
+                alt="Retro Arcade Hub"
+                className="absolute inset-0 w-full h-full object-cover object-center opacity-40 brightness-90 hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#090a12] via-[#090a12]/80 to-transparent" />
+              <div className="relative z-10 max-w-lg space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider">
+                  <Sparkles size={11} />
+                  RetroArch WebAssembly Engine
+                </div>
+                <h2 className="text-xl font-black text-white tracking-tight">
+                  Play Authentic Classics & Drag-and-Drop ROMs
+                </h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Smooth 60 FPS hardware emulation running entirely in-browser with instantaneous save states, gamepad support, audio synth shaders, and zero latency.
+                </p>
+              </div>
+            </div>
+
             {/* Drag & Drop ROM Dropzone */}
             <div
               onDragOver={(e) => {

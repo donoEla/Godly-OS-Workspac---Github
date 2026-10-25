@@ -136,7 +136,7 @@ export const CommandPalette: React.FC = () => {
     const apps: { id: AppId; name: string; desc: string; icon: string }[] = [
       { id: 'zen', name: 'Godly Browser', desc: 'Vertical tabs, multi-search proxy engine (DuckDuckGo, Brave, Google)', icon: getAssetUrl('assets/icons/zen.jpg') },
       { id: 'games', name: 'Godly Arcade', desc: '4,000+ titles across Vault, GN-Math, Zen GS & P2P', icon: getAssetUrl('assets/icons/games.jpg') },
-      { id: 'eaglercraft', name: 'Eaglercraft Studio', desc: '12 playable Eaglercraft & Minecraft web editions (1.8.8, 1.12.2, Beta, Alpha, Resent PvP)', icon: getAssetUrl('assets/icons/games.jpg') },
+      { id: 'eaglercraft', name: 'Eaglercraft Studio', desc: '12 playable Eaglercraft & Minecraft web editions (1.8.8, 1.12.2, Beta, Alpha, Resent PvP)', icon: getAssetUrl('assets/icons/eaglercraft.jpg') },
       { id: 'emulator', name: 'Web Emulator Hub', desc: 'Lightweight RetroArch WASM core for GBA, NES, SNES, GB, GBC & Genesis', icon: getAssetUrl('assets/icons/emulator.png') },
       { id: 'multiplayer', name: 'P2P Multiplayer Arena', desc: 'Serverless WebRTC direct room multiplayer, chat & screen streaming', icon: getAssetUrl('assets/icons/multiplayer.jpg') },
       { id: 'terminal', name: 'Terminal', desc: 'Interactive Godly OS command shell & network tools', icon: getAssetUrl('assets/icons/terminal.jpg') },

@@ -24,6 +24,7 @@ dist/assets/*
 !dist/assets/index.js
 !dist/assets/index.css
 !dist/assets/icons/
+!dist/assets/covers/
 !dist/assets/backgrounds/
 !dist/assets/browser-backgrounds/
 !dist/uv/

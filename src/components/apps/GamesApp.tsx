@@ -33,6 +33,7 @@ import { fetchGameHtml } from '../../utils/gameLoader';
 import { getAssetUrl } from '../../utils/assetHelper';
 import { GameSaveManager, GameSaveSlot } from '../../utils/gameSaveManager';
 import { GamepadMapperModal } from '../games/GamepadMapperModal';
+import { EmulatorHubApp } from './EmulatorHubApp';
 import { useOS } from '../../context/OSContext';
 
 declare global {
@@ -301,11 +302,11 @@ const P2P_LOADER_HTML = `<!DOCTYPE html>
 </html>`;
 
 interface GamesAppProps {
-  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p';
+  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p' | 'emulator';
 }
 
 export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
-  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p'>(initialTab || 'vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p' | 'emulator'>(initialTab || 'vault');
   const p2pFrameRef = useRef<HTMLIFrameElement>(null);
   
   // Zen GS state (1,700+ CloudFront CDN games)
@@ -819,6 +820,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
                 {activeTab === 'lumin' && 'Lumin Engine'}
                 {activeTab === 'p2p' && '500+ P2P GameWebSight'}
+                {activeTab === 'emulator' && 'WASM Emulator Hub'}
               </span>
             </div>
             <p className="text-[10px] text-white/40 tracking-tight">
@@ -972,6 +974,30 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             >
               <Radio size={13} />
               P2P WebSight (500+)
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('emulator');
+                setActiveVaultGame(null);
+                setActiveNowGGGame(null);
+                setActiveGnGame(null);
+              }}
+              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
+              style={
+                activeTab === 'emulator'
+                  ? {
+                      background: '#a855f7',
+                      color: '#ffffff',
+                      fontWeight: 600,
+                      boxShadow: '0 2px 10px rgba(168, 85, 247, 0.5)',
+                    }
+                  : { color: 'rgba(255, 255, 255, 0.55)' }
+              }
+            >
+              <Gamepad2 size={13} />
+              Emulator Hub (WASM)
             </button>
           </div>
         </div>
@@ -2070,6 +2096,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               title="P2P GameWebSight"
             />
           </div>
+        </div>
+
+        {/* =========================================================================
+            TAB 7: WASM EMULATOR HUB (GBA / NES / SNES / N64 / NDS / PS1)
+            ========================================================================= */}
+        <div className={`w-full h-full flex flex-col relative ${activeTab === 'emulator' ? 'flex' : 'hidden'}`}>
+          <EmulatorHubApp />
         </div>
       </div>
       <GamepadMapperModal isOpen={showGamepadMapper} onClose={() => setShowGamepadMapper(false)} />

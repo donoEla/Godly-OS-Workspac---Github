@@ -17,7 +17,9 @@ export type AppId =
   | 'screen-recorder'
   | 'theme-studio'
   | 'virtual-machine'
-  | 'widgets';
+  | 'widgets'
+  | 'emulator'
+  | 'multiplayer';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 
@@ -228,4 +230,5 @@ export interface SystemSettings {
   widgets?: DesktopWidget[];
   fpsOverlayEnabled?: boolean;
   customCursor?: string;
+  username?: string;
 }

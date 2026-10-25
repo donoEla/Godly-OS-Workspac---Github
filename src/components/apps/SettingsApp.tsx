@@ -27,7 +27,9 @@ import {
   Terminal,
   Gamepad2,
   Upload,
-  MousePointer
+  MousePointer,
+  Cloud,
+  Download
 } from 'lucide-react';
 import { WALLPAPERS, ACCENT_CONFIGS, CLOAK_PRESETS } from '../../constants/assets';
 import { CURSOR_PRESETS } from '../../constants/cursorPresets';
@@ -36,8 +38,9 @@ import { sound } from '../../utils/sound';
 import { getActiveWispUrl, setActiveWispUrl, WISP_ENDPOINTS } from '../../utils/uvProxy';
 import { getAssetUrl } from '../../utils/assetHelper';
 import { useAppSettings } from '../../utils/appSettings';
+import { downloadGodlyProfile, importGodlyProfile } from '../../utils/profileSync';
 
-type SettingsSection = 'wallpapers' | 'appearance' | 'app-settings' | 'proxy' | 'desktop' | 'stealth' | 'display' | 'sound' | 'performance' | 'about';
+type SettingsSection = 'wallpapers' | 'appearance' | 'app-settings' | 'sync' | 'proxy' | 'desktop' | 'stealth' | 'display' | 'sound' | 'performance' | 'about';
 type AppSettingsSubtab = 'calculator' | 'notes' | 'zen' | 'terminal' | 'games';
 
 export const SettingsApp: React.FC = () => {
@@ -64,6 +67,8 @@ export const SettingsApp: React.FC = () => {
   const [currentWisp, setCurrentWisp] = useState<string>(() => getActiveWispUrl());
   const [customWispInput, setCustomWispInput] = useState<string>('');
   const [soundUploadMsg, setSoundUploadMsg] = useState<string>('');
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [isDraggingProfile, setIsDraggingProfile] = useState<boolean>(false);
 
   const handleSoundpackZipUpload = async (file: File) => {
     try {
@@ -74,6 +79,28 @@ export const SettingsApp: React.FC = () => {
       sound.playEvent('notification');
     } catch (err) {
       setSoundUploadMsg('Failed to extract soundpack: ' + String(err));
+    }
+  };
+
+  const handleProfileExport = () => {
+    sound.playClick();
+    const filename = downloadGodlyProfile();
+    setSyncStatus(`Exported backup bundle as ${filename}!`);
+    sound.playSuccess();
+  };
+
+  const handleProfileImport = async (file: File) => {
+    sound.playClick();
+    setSyncStatus('Validating and synchronizing profile...');
+    const res = await importGodlyProfile(file);
+    if (res.success) {
+      sound.playSuccess();
+      setSyncStatus(`Profile loaded! Restored ${res.summary?.gameSaves || 0} saves and ${res.summary?.bookmarks || 0} bookmarks. Reloading...`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } else {
+      setSyncStatus(`Error: ${res.message}`);
     }
   };
 
@@ -107,6 +134,7 @@ export const SettingsApp: React.FC = () => {
             { id: 'wallpapers', name: 'Wallpapers', icon: ImageIcon },
             { id: 'appearance', name: 'Colors & Theme', icon: Palette },
             { id: 'app-settings', name: 'Built-in Apps', icon: Sliders },
+            { id: 'sync', name: 'Cloud Save & Sync', icon: Cloud },
             { id: 'proxy', name: 'Wisp Proxy Server', icon: Server },
             { id: 'desktop', name: 'Window & Physics', icon: LayoutGrid },
             { id: 'stealth', name: 'Stealth & Cloaking', icon: Shield },
@@ -898,6 +926,138 @@ export const SettingsApp: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Cloud Save & Profile Sync Section */}
+        {activeSection === 'sync' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2 tracking-wide">
+                  <Cloud size={16} className="text-purple-400" />
+                  Cloud Save & Profile Sync
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  1-Click encrypted profile backup (.godly bundle) to preserve game saves, bookmarks, notes, and customizations across devices.
+                </p>
+              </div>
+            </div>
+
+            {/* Notification / Status Message */}
+            {syncStatus && (
+              <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-xs text-purple-200 flex items-center justify-between animate-in fade-in duration-200">
+                <span className="font-medium">{syncStatus}</span>
+                <button
+                  onClick={() => setSyncStatus(null)}
+                  className="text-purple-300 hover:text-white text-[11px] underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* 1. Export Card */}
+              <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center mb-3 border border-purple-500/30">
+                    <Download size={20} />
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-1">Export .godly Profile Backup</h4>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Creates an encrypted, checksum-verified backup file containing all your personal OS configurations and game states.
+                  </p>
+
+                  <div className="space-y-1.5 text-[11px] text-slate-300 mb-5 font-mono">
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>All Game Save States & Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>Custom Hardware Cursor Settings</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>Active Visual Themes & Wallpapers</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>Notes Studio Documents</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>Zen Browser Bookmarks & History</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={13} className="text-emerald-400" />
+                      <span>Configured Desktop Widgets</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleProfileExport}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <Download size={14} />
+                  <span>Download .godly Backup</span>
+                </button>
+              </div>
+
+              {/* 2. Import Card */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingProfile(true);
+                }}
+                onDragLeave={() => setIsDraggingProfile(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingProfile(false);
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleProfileImport(file);
+                }}
+                className={`bg-white/[0.04] backdrop-blur-xl border-2 rounded-2xl p-5 flex flex-col justify-between shadow-xl transition-all cursor-pointer ${
+                  isDraggingProfile
+                    ? 'border-purple-500 bg-purple-600/15'
+                    : 'border-dashed border-white/15 hover:border-purple-500/50 hover:bg-white/[0.06]'
+                }`}
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.godly,.json';
+                  input.onchange = (e: any) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleProfileImport(file);
+                  };
+                  input.click();
+                }}
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center mb-3 border border-cyan-500/30">
+                    <Upload size={20} />
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-1">Restore / Synchronize Profile</h4>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Drop a <code className="text-purple-300 font-mono">.godly</code> file here to instantly restore your setup on any Chromebook or device.
+                  </p>
+
+                  <div className="p-4 rounded-xl bg-black/40 border border-white/5 text-center my-4">
+                    <Sparkles size={20} className="text-cyan-400 mx-auto mb-2 animate-pulse" />
+                    <span className="text-xs font-semibold text-white block">Drop profile file here</span>
+                    <span className="text-[10px] text-slate-400">or click to browse from disk</span>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    Checksum & manifest verified client-side
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

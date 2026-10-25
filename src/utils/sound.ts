@@ -554,6 +554,10 @@ class SoundEngine {
     this.playEvent('notification');
   }
 
+  public playSuccess() {
+    this.playEvent('notification');
+  }
+
   public playSnap() {
     this.playEvent('click');
   }

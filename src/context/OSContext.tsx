@@ -307,6 +307,8 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'extensions-hub', name: 'Extensions Hub', icon: getAssetUrl('assets/icons/extensions.jpg'), category: 'System', appId: 'extensions' },
   { id: 'virtual-machine', name: 'Virtual Machine', icon: getAssetUrl('assets/icons/vm.png'), category: 'Utilities', appId: 'virtual-machine' },
   { id: 'widgets-studio', name: 'Widgets Studio', icon: getAssetUrl('assets/icons/widgets.jpeg'), category: 'Utilities', appId: 'widgets' },
+  { id: 'web-emulator', name: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'emulator' },
+  { id: 'p2p-multiplayer', name: 'Multiplayer Arena', icon: getAssetUrl('assets/icons/extensions.jpg'), category: 'Games', appId: 'multiplayer' },
   { id: 'settings', name: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), category: 'System', appId: 'settings' },
 ];
 
@@ -316,6 +318,8 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'extensions': { title: 'Extensions Hub', icon: getAssetUrl('assets/icons/extensions.jpg'), width: 980, height: 640 },
   'file-manager': { title: 'File Manager', icon: getAssetUrl('assets/icons/file-manager.jpg'), width: 880, height: 580 },
   'games': { title: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), width: 920, height: 670 },
+  'emulator': { title: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/games.jpg'), width: 1040, height: 680 },
+  'multiplayer': { title: 'P2P Multiplayer Arena', icon: getAssetUrl('assets/icons/extensions.jpg'), width: 920, height: 620 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
   'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 880, height: 640 },
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
@@ -805,16 +809,47 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         sound.playClick();
         return;
       }
-      // Ctrl + Space -> toggle start menu
-      if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
-        e.preventDefault();
-        setStartMenuOpen((prev) => !prev);
-        sound.playClick();
-      }
-      // Ctrl + K or Cmd + K -> toggle Command Palette
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      // Global Spotlight Command Palette: Ctrl + K, Cmd + K, Cmd + Space, or Ctrl + Space
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'k' || e.code === 'Space')) {
         e.preventDefault();
         toggleCommandPalette();
+        return;
+      }
+
+      // FancyZones Keyboard-Driven Window Tiling (Win/Meta/Alt + Arrow Keys or Ctrl+Alt+1-8)
+      if (activeWindowId) {
+        if ((e.metaKey || e.altKey) && !e.ctrlKey) {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            snapWindow(activeWindowId, e.shiftKey ? 'split-70' : 'left');
+            return;
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            snapWindow(activeWindowId, e.shiftKey ? 'split-30' : 'right');
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            maximizeWindow(activeWindowId);
+            return;
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            minimizeWindow(activeWindowId);
+            return;
+          }
+        }
+
+        // Quick Layout Number Presets (Ctrl + Alt + [1-6])
+        if (e.ctrlKey && e.altKey) {
+          if (e.key === '1') { e.preventDefault(); snapWindow(activeWindowId, 'left'); return; }
+          if (e.key === '2') { e.preventDefault(); snapWindow(activeWindowId, 'right'); return; }
+          if (e.key === '3') { e.preventDefault(); snapWindow(activeWindowId, 'split-70'); return; }
+          if (e.key === '4') { e.preventDefault(); snapWindow(activeWindowId, 'split-30'); return; }
+          if (e.key === '5') { e.preventDefault(); snapWindow(activeWindowId, 'col-1-of-3'); return; }
+          if (e.key === '6') { e.preventDefault(); snapWindow(activeWindowId, 'top-left'); return; }
+        }
       }
       // Panic Key: Backquote / Tilde (~)
       if (e.key === '`' || e.key === '~') {

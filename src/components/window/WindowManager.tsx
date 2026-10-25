@@ -20,6 +20,8 @@ import { VoiceMemosApp } from '../apps/VoiceMemosApp';
 import { ThemeStudioApp } from '../apps/ThemeStudioApp';
 import { VirtualMachineApp } from '../apps/VirtualMachineApp';
 import { WidgetsApp } from '../apps/WidgetsApp';
+import { EmulatorHubApp } from '../apps/EmulatorHubApp';
+import { MultiplayerLobbyApp } from '../apps/MultiplayerLobbyApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -109,6 +111,10 @@ export const WindowManager: React.FC = () => {
         return <TerminalApp />;
       case 'widgets':
         return <WidgetsApp />;
+      case 'emulator':
+        return <EmulatorHubApp />;
+      case 'multiplayer':
+        return <MultiplayerLobbyApp />;
       default:
         return (
           <div className="p-6 text-white text-center">

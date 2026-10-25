@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Minus, Square, X, Copy, PictureInPicture2, Maximize2, Plus } from 'lucide-react';
+import { Minus, Square, X, Copy, PictureInPicture2, Maximize2, Plus, LayoutGrid } from 'lucide-react';
 import { WindowInstance, SnapRegion } from '../../types/os';
 import { useOS } from '../../context/OSContext';
 import { useExtensions } from '../../context/ExtensionsContext';
@@ -36,6 +36,8 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
   const { isExtensionEnabled } = useExtensions();
   const [isGenieMinimizing, setIsGenieMinimizing] = useState(false);
   const [mergeTargetWindowId, setMergeTargetWindowId] = useState<string | null>(null);
+  const [showFancyZones, setShowFancyZones] = useState(false);
+  const fancyZonesTimerRef = useRef<any>(null);
 
   const handleMinimize = () => {
     if (isExtensionEnabled('mac-genie-minimizer')) {
@@ -517,18 +519,137 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
           >
             <Minus size={7} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
           </button>
-          <button
-            onClick={() => maximizeWindow(win.id)}
-            className="w-3 h-3 rounded-full traffic-light-btn traffic-light-max flex items-center justify-center transition-all hover:scale-110 active:scale-90"
-            title={isMax ? 'Restore' : 'Maximize'}
+          <div
+            className="relative"
+            onMouseEnter={() => {
+              fancyZonesTimerRef.current = setTimeout(() => setShowFancyZones(true), 300);
+            }}
+            onMouseLeave={() => {
+              if (fancyZonesTimerRef.current) clearTimeout(fancyZonesTimerRef.current);
+              fancyZonesTimerRef.current = setTimeout(() => setShowFancyZones(false), 400);
+            }}
           >
-            {isMax ? (
-              <Copy size={6} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
-            ) : (
-              <Square size={6} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
-            )}
-          </button>
+            <button
+              onClick={() => maximizeWindow(win.id)}
+              className="w-3 h-3 rounded-full traffic-light-btn traffic-light-max flex items-center justify-center transition-all hover:scale-110 active:scale-90"
+              title={isMax ? 'Restore' : 'Maximize (Hover for FancyZones)'}
+            >
+              {isMax ? (
+                <Copy size={6} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
+              ) : (
+                <Square size={6} strokeWidth={2.5} className={`transition-opacity ${controlsHovered ? 'opacity-100' : 'opacity-0'}`} style={{ color: 'rgba(0,0,0,0.7)' }} />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* FancyZones Magnetic Tiling Popover Overlay */}
+        {showFancyZones && (
+          <div
+            onMouseEnter={() => {
+              if (fancyZonesTimerRef.current) clearTimeout(fancyZonesTimerRef.current);
+            }}
+            onMouseLeave={() => setShowFancyZones(false)}
+            className="absolute top-10 left-3 z-[100] bg-[#0c0d18]/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-3 shadow-2xl shadow-black/80 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150"
+            style={{ minWidth: '240px' }}
+          >
+            <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+              <span className="text-[11px] font-bold text-white tracking-tight flex items-center gap-1.5">
+                <LayoutGrid size={12} className="text-purple-400" />
+                FancyZones Magnetic Layouts
+              </span>
+              <span className="text-[9px] text-white/40 font-mono">Win + Arrows</span>
+            </div>
+
+            {/* Presets Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* 50 / 50 Split */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-white/60 font-medium">Split 50/50</span>
+                <div className="h-10 rounded-lg bg-black/40 border border-white/10 p-1 flex gap-1">
+                  <button
+                    onClick={() => { snapWindow(win.id, 'left'); setShowFancyZones(false); }}
+                    className="flex-1 rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Snap Left 50%"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'right'); setShowFancyZones(false); }}
+                    className="flex-1 rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Snap Right 50%"
+                  />
+                </div>
+              </div>
+
+              {/* 70 / 30 Focus */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-white/60 font-medium">Focus 70/30</span>
+                <div className="h-10 rounded-lg bg-black/40 border border-white/10 p-1 flex gap-1">
+                  <button
+                    onClick={() => { snapWindow(win.id, 'split-70'); setShowFancyZones(false); }}
+                    style={{ flex: 7 }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Snap Left 70%"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'split-30'); setShowFancyZones(false); }}
+                    style={{ flex: 3 }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Snap Right 30%"
+                  />
+                </div>
+              </div>
+
+              {/* 3-Column Split */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-white/60 font-medium">3-Column Split</span>
+                <div className="h-10 rounded-lg bg-black/40 border border-white/10 p-1 flex gap-1">
+                  <button
+                    onClick={() => { snapWindow(win.id, 'col-1-of-3'); setShowFancyZones(false); }}
+                    className="flex-1 rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Column 1 of 3"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'col-2-of-3'); setShowFancyZones(false); }}
+                    className="flex-1 rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Column 2 of 3"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'col-3-of-3'); setShowFancyZones(false); }}
+                    className="flex-1 rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Column 3 of 3"
+                  />
+                </div>
+              </div>
+
+              {/* 2x2 Quad Grid */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-white/60 font-medium">2x2 Quad Grid</span>
+                <div className="h-10 rounded-lg bg-black/40 border border-white/10 p-1 grid grid-cols-2 grid-rows-2 gap-1">
+                  <button
+                    onClick={() => { snapWindow(win.id, 'top-left'); setShowFancyZones(false); }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Top-Left Quad"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'top-right'); setShowFancyZones(false); }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Top-Right Quad"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'bottom-left'); setShowFancyZones(false); }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Bottom-Left Quad"
+                  />
+                  <button
+                    onClick={() => { snapWindow(win.id, 'bottom-right'); setShowFancyZones(false); }}
+                    className="rounded bg-white/10 hover:bg-purple-500/50 transition-colors border border-white/5 hover:border-purple-400"
+                    title="Bottom-Right Quad"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Centered Title */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-20">
@@ -548,8 +669,15 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ window: win, children 
           </div>
         </div>
 
-        {/* Right Tools: PiP and Live Status Indicator */}
-        <div className="flex items-center gap-2 z-10 window-control-btn">
+        {/* Right Tools: FancyZones button, PiP and Live Status Indicator */}
+        <div className="flex items-center gap-1.5 z-10 window-control-btn">
+          <button
+            onClick={() => setShowFancyZones((prev) => !prev)}
+            className="p-1 rounded-md hover:bg-white/10 text-white/50 hover:text-white/90 transition-colors"
+            title="FancyZones Magnetic Window Tiling"
+          >
+            <LayoutGrid size={13} />
+          </button>
           <button
             onClick={() => toggleWindowPip(win.id)}
             className="p-1 rounded-md hover:bg-white/10 text-white/50 hover:text-white/90 transition-colors"

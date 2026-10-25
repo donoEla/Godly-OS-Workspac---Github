@@ -40,23 +40,23 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'modern',
     categoryLabel: 'Modern Release',
     banner: getAssetUrl('assets/covers/eaglercraft_banner.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/1.8.8/',
+    url: 'https://gx-launcher.github.io/game/1.8.8/index.html',
     description: 'The definitive modern HTML5 Minecraft client. Supports cross-platform WebSocket multiplayer (ArchMC, Asspixel, Ayunboom, Zentic), OptiFine shaders, 3D capes, and 60 FPS JIT.',
-    year: '2023',
+    year: '2024',
     features: ['Multiplayer (WSS)', 'OptiFine Shaders', 'Custom Skins', 'Voice Chat'],
     isFeatured: true,
   },
   {
     id: 'eagler-1-8-8-wasm',
-    name: 'EaglercraftX 1.8.8 WASM JIT',
-    versionTag: 'v1.8.8 • WebAssembly',
+    name: 'EaglercraftX 1.8.8 WASM-GC',
+    versionTag: 'v1.8.8 • WebAssembly GC',
     category: 'modern',
     categoryLabel: 'Modern Release',
     banner: getAssetUrl('assets/covers/eaglercraft_banner.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/1.8.8-wasm/',
-    description: 'Pure WebAssembly compilation for ultra-low latency, smooth chunk loading, and optimized execution on low-end Chromebooks.',
-    year: '2024',
-    features: ['WASM JIT Engine', 'Low Latency', 'Chunk Boost', '60 FPS'],
+    url: 'https://gx-launcher.github.io/game/1.8.8-wasm/index.html',
+    description: 'Hardware-accelerated WebAssembly GC compilation for ultra-low latency, smooth chunk loading, and highest FPS.',
+    year: '2026',
+    features: ['WASM-GC Engine', 'Zero Latency', 'Chunk Boost', 'Ultra FPS'],
     isFeatured: true,
   },
   {
@@ -66,10 +66,22 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'modern',
     categoryLabel: 'Modern Release',
     banner: getAssetUrl('assets/covers/eaglercraft_classic.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/1.5.2/',
-    description: 'The historic Redstone Update with original hopper and comparator mechanics, quartz blocks, nether fortresses, and classic pre-1.9 spam PvP.',
-    year: '2022',
+    url: 'https://gx-launcher.github.io/game/1.5.2/index.html',
+    description: 'The classic Redstone Update featuring hoppers, comparators, quartz blocks, nether fortresses, and original spam-click PvP mechanics.',
+    year: '2023',
     features: ['Original Redstone', 'Pre-1.9 PvP', 'Nether Quests', 'Survival'],
+  },
+  {
+    id: 'eagler-1-5-2-wasm',
+    name: 'Eaglercraft 1.5.2 WASM',
+    versionTag: 'v1.5.2 • WebAssembly',
+    category: 'modern',
+    categoryLabel: 'Modern Release',
+    banner: getAssetUrl('assets/covers/eaglercraft_classic.jpg'),
+    url: 'https://gx-launcher.github.io/game/1.5.2-wasm/index.html',
+    description: 'Modern WebAssembly compiler port for 1.5.2 providing silky smooth 60 FPS gameplay on any device.',
+    year: '2024',
+    features: ['WASM Speed', 'Classic PvP', 'Fast Redstone', 'Low RAM'],
   },
   {
     id: 'eagler-1-12-2',
@@ -78,7 +90,7 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'modern',
     categoryLabel: 'Modern Release',
     banner: getAssetUrl('assets/covers/eaglercraft_color.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/1.12.2/',
+    url: 'https://gx-launcher.github.io/game/1.12.2/index.html',
     description: 'The World of Color update featuring concrete, glazed terracotta, colored beds, parrots, illusioners, and advanced crafting recipe book.',
     year: '2024',
     features: ['Concrete & Terracotta', 'Parrots', 'Recipe Book', 'New Colors'],
@@ -86,13 +98,13 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
   },
   {
     id: 'eagler-1-12-2-wasm',
-    name: 'Eaglercraft 1.12.2 WASM Edition',
+    name: 'Eaglercraft 1.12.2 WASM',
     versionTag: 'v1.12.2 • WebAssembly',
     category: 'modern',
     categoryLabel: 'Modern Release',
     banner: getAssetUrl('assets/covers/eaglercraft_color.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/1.12.2-wasm/',
-    description: 'Hardware accelerated WebAssembly compiler build for 1.12.2 featuring improved memory management.',
+    url: 'https://gx-launcher.github.io/game/1.12.2-wasm/index.html',
+    description: 'Hardware accelerated WebAssembly compiler build for 1.12.2 featuring improved memory heap management and fast chunks.',
     year: '2024',
     features: ['WASM Compiler', 'Optimized Heap', 'World of Color', 'Fast Chunks'],
   },
@@ -103,7 +115,7 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'classic',
     categoryLabel: 'Classic & Beta',
     banner: getAssetUrl('assets/covers/eaglercraft_classic.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/b1.3/',
+    url: 'https://gx-launcher.github.io/game/beta-1.3/index.html',
     description: 'Pure 2011 Golden Age nostalgia. Classic neon green grass, old cobblestone, no hunger bar, old punch-tree physics, and C418 ambient music.',
     year: '2022',
     features: ['Neon Grass', 'No Hunger Bar', 'C418 Soundtrack', 'Classic Terrain'],
@@ -116,8 +128,8 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'classic',
     categoryLabel: 'Classic & Beta',
     banner: getAssetUrl('assets/covers/eaglercraft_classic.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/b1.7.3/',
-    description: 'The fan-favorite Minecraft Beta version. Introduces piston mechanics, shears, tall grass, and authentic beta world generation.',
+    url: 'https://gx-launcher.github.io/game/beta-1.7.3/index.html',
+    description: 'The community favorite Minecraft Beta version. Introduces piston mechanics, shears, tall grass, and authentic beta world generation.',
     year: '2023',
     features: ['Piston Redstone', 'Pre-Adventure Combat', 'Old World Gen', 'Shears'],
   },
@@ -128,7 +140,7 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'classic',
     categoryLabel: 'Classic & Beta',
     banner: getAssetUrl('assets/covers/eaglercraft_nether.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/a1.2.6/',
+    url: 'https://gx-launcher.github.io/game/alpha-1.2.6/index.html',
     description: 'The eerie Alpha update that introduced the Nether dimension, portals, Ghasts, Zombie Pigmen, and Jack-o-Lanterns.',
     year: '2023',
     features: ['The Nether', 'Ghasts & Portals', 'Retro Alpha Lighting', 'Spooky Vibe'],
@@ -140,47 +152,59 @@ export const EAGLERCRAFT_VERSIONS: EaglercraftVersion[] = [
     category: 'classic',
     categoryLabel: 'Classic & Beta',
     banner: getAssetUrl('assets/covers/eaglercraft_classic.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/c0.30/',
+    url: 'https://gx-launcher.github.io/game/classic-0.3.0-wasm/index.html',
     description: 'The original 2009 creative sandbox mode. 32 building blocks, instant block breaking, floating islands, and simple building.',
     year: '2022',
     features: ['32 Classic Blocks', 'Instant Mining', 'Creative Sandboxing', 'Human Test Mobs'],
   },
   {
-    id: 'resent-client',
-    name: 'Resent Client (PvP Tournament)',
+    id: 'gx-client',
+    name: 'GX-Client (Tournament PvP)',
     versionTag: '1.8.8 • Competitive PvP',
     category: 'client',
     categoryLabel: 'Modded & PvP',
     banner: getAssetUrl('assets/covers/eaglercraft_pvp.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/resentclient/',
-    description: 'Competitive PvP edition with keystrokes HUD, CPS counter, reach indicator, custom crosshairs, toggle sprint, and performance boosts.',
+    url: 'https://gx-launcher.github.io/game/GX-Client/index.html',
+    description: 'High-performance competitive PvP client with keystrokes HUD, CPS counter, reach indicator, custom crosshairs, toggle sprint, and performance boosts.',
     year: '2024',
     features: ['Keystrokes HUD', 'CPS Counter', 'Toggle Sprint', 'FPS Booster'],
     isFeatured: true,
   },
   {
-    id: 'astra-client',
-    name: 'Astra Client (Cosmetic & Shaders)',
+    id: 'precision-client',
+    name: 'Precision Client (Ultra Low-Latency)',
+    versionTag: '1.8.8 • Low Latency',
+    category: 'client',
+    categoryLabel: 'Modded & PvP',
+    banner: getAssetUrl('assets/covers/eaglercraft_pvp.jpg'),
+    url: 'https://gx-launcher.github.io/game/Precision%20Client/index.html',
+    description: 'Precision PvP build tuned for minimal input delay, instant hit registration, and fluid camera tracking in competitive 1v1 arenas.',
+    year: '2024',
+    features: ['Low Input Latency', 'Fast Hit Reg', 'Custom Crosshairs', 'HUD Customizer'],
+  },
+  {
+    id: 'eclipse-client',
+    name: 'Eclipse Client (Cosmetics & Shaders)',
     versionTag: '1.8.8 • Shaders & Capes',
     category: 'client',
     categoryLabel: 'Modded & PvP',
     banner: getAssetUrl('assets/covers/eaglercraft_pvp.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/astraclient/',
+    url: 'https://gx-launcher.github.io/game/Eclipse%20Client/index.html',
     description: 'Aesthetic cosmetic client featuring animated cape physics, dragon wings, motion blur, and integrated aesthetic shader presets.',
     year: '2024',
     features: ['Cosmetic Wings & Capes', 'Motion Blur', 'Shader Presets', 'Minimal UI'],
   },
   {
-    id: 'eagler-forge',
-    name: 'EaglerForge (Plugin Loader)',
-    versionTag: 'Modded • JavaScript API',
+    id: 'pixel-client',
+    name: 'Pixel Client (Modern 1.12.2)',
+    versionTag: '1.12.2 • Enhanced Client',
     category: 'client',
     categoryLabel: 'Modded & PvP',
     banner: getAssetUrl('assets/covers/eaglercraft_color.jpg'),
-    url: 'https://yummyfiles.github.io/Minecraft-Launcher/mc/eaglerforge/',
-    description: 'Community mod loading client enabling custom client-side JavaScript mods, resource packs, mini-maps, and HUD customization.',
+    url: 'https://gx-launcher.github.io/game/Pixel%20Client/index.html',
+    description: 'Enhanced 1.12.2 edition with performance patches, smoother chunk streaming, and quality-of-life interface improvements.',
     year: '2024',
-    features: ['Mod API Loader', 'Custom Addons', 'Resource Packs', 'Extensible'],
+    features: ['1.12.2 Enhancements', 'Fast Chunks', 'Smooth Camera', 'Modern Blocks'],
   },
 ];
 
@@ -189,6 +213,7 @@ export const EaglercraftApp: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'modern' | 'classic' | 'client'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDraggingHtml, setIsDraggingHtml] = useState(false);
+  const [isIframeLoading, setIsIframeLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const filteredVersions = EAGLERCRAFT_VERSIONS.filter((v) => {
@@ -203,16 +228,19 @@ export const EaglercraftApp: React.FC = () => {
 
   const handleLaunch = (version: EaglercraftVersion) => {
     sound.playOpen();
+    setIsIframeLoading(true);
     setActiveVersion(version);
   };
 
   const handleExit = () => {
     sound.playClick();
     setActiveVersion(null);
+    setIsIframeLoading(true);
   };
 
   const handleReload = () => {
     sound.playClick();
+    setIsIframeLoading(true);
     if (iframeRef.current) {
       iframeRef.current.src = iframeRef.current.src;
     }
@@ -241,6 +269,7 @@ export const EaglercraftApp: React.FC = () => {
       features: ['Offline HTML', 'Local Saves', 'Full Performance', 'Single-File'],
       isFeatured: true,
     };
+    setIsIframeLoading(true);
     setActiveVersion(customVersion);
   };
 
@@ -297,9 +326,17 @@ export const EaglercraftApp: React.FC = () => {
 
           {/* Unblocked Game Frame with Pointer-Lock & Full WebGL */}
           <div className="flex-1 w-full h-full relative bg-black overflow-hidden">
+            {isIframeLoading && (
+              <div className="absolute inset-0 bg-[#07090e] z-10 flex flex-col items-center justify-center pointer-events-none">
+                <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin mb-3" />
+                <span className="text-xs font-bold text-white">Initializing {activeVersion.name}...</span>
+                <span className="text-[10px] text-slate-400 font-mono mt-1">Allocating WebAssembly memory & WebGL 2.0 surface</span>
+              </div>
+            )}
             <iframe
               ref={iframeRef}
               src={activeVersion.url}
+              onLoad={() => setIsIframeLoading(false)}
               className="w-full h-full border-0 block"
               allow="autoplay; fullscreen; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write; cross-origin-isolated; microphone; camera"
               allowFullScreen
@@ -321,7 +358,7 @@ export const EaglercraftApp: React.FC = () => {
                   <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                     Eaglercraft Studio
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
-                      12 Versions Available
+                      {EAGLERCRAFT_VERSIONS.length} Editions Available
                     </span>
                   </h1>
                   <p className="text-xs text-slate-400">
@@ -346,10 +383,10 @@ export const EaglercraftApp: React.FC = () => {
           {/* Filter Pills Bar */}
           <div className="px-5 py-2.5 border-b border-white/[0.06] bg-black/30 flex items-center gap-1.5 overflow-x-auto shrink-0">
             {[
-              { id: 'all', label: 'All Versions (12)' },
-              { id: 'modern', label: 'Modern (1.8 - 1.12)' },
-              { id: 'classic', label: 'Classic & Beta Nostalgia' },
-              { id: 'client', label: 'PvP & Modded Clients' },
+              { id: 'all', label: `All Versions (${EAGLERCRAFT_VERSIONS.length})` },
+              { id: 'modern', label: `Modern Release (${EAGLERCRAFT_VERSIONS.filter(v => v.category === 'modern').length})` },
+              { id: 'classic', label: `Classic & Beta (${EAGLERCRAFT_VERSIONS.filter(v => v.category === 'classic').length})` },
+              { id: 'client', label: `PvP & Modded (${EAGLERCRAFT_VERSIONS.filter(v => v.category === 'client').length})` },
             ].map((f) => {
               const isCur = selectedFilter === f.id;
               return (
@@ -387,7 +424,7 @@ export const EaglercraftApp: React.FC = () => {
                   Godly OS Minecraft Hub
                 </div>
                 <h2 className="text-xl font-black text-white tracking-tight">
-                  12 Playable Eaglercraft & Minecraft Editions
+                  {EAGLERCRAFT_VERSIONS.length} Playable Eaglercraft & Minecraft Editions
                 </h2>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Play full Java Edition builds directly in your browser with cross-server WebSocket multiplayer, OptiFine shaders, 60 FPS JIT engines, and retro terrain generation.

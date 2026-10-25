@@ -34,6 +34,7 @@ import {
 import { DesktopWidget, AppId } from '../../types/os';
 import { useOS, getDefaultWidgets } from '../../context/OSContext';
 import { sound } from '../../utils/sound';
+import { getAssetUrl } from '../../utils/assetHelper';
 
 export const DesktopWidgetsLayer: React.FC = () => {
   const {
@@ -95,6 +96,20 @@ export const DesktopWidgetsLayer: React.FC = () => {
 
   return (
     <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none">
+      {/* SVG Optical Refraction & Lens Distortion Filter Definition */}
+      <svg
+        className="absolute w-0 h-0 pointer-events-none"
+        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id="godly-ios-warp" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015 0.015" numOctaves="2" result="warpMap" />
+            <feDisplacementMap in="SourceGraphic" in2="warpMap" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+            <feGaussianBlur in="displaced" stdDeviation="0.3" />
+          </filter>
+        </defs>
+      </svg>
       {/* Floating Widget Deck Trigger Button */}
       <div className="absolute top-4 right-16 pointer-events-auto z-40">
         <motion.button
@@ -287,6 +302,16 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
   const startPosRef = useRef({ x: 0, y: 0 });
   const startMouseRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 20 });
+
+  const handlePointerMoveCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (cardRef.current && !isDraggingRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100);
+      const y = Math.round(((e.clientY - rect.top) / Math.max(1, rect.height)) * 100);
+      setMousePos({ x, y });
+    }
+  };
 
   // High-Performance Zero-Rerender Pointer Drag Controller
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -350,21 +375,21 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
   const getAccentGlow = () => {
     switch (widget.type) {
       case 'clock':
-        return 'hover:border-purple-500/40 hover:shadow-[0_20px_50px_rgba(168,85,247,0.18)]';
+        return 'hover:border-purple-400/50 hover:shadow-[0_20px_50px_rgba(168,85,247,0.25)]';
       case 'weather':
-        return 'hover:border-sky-500/40 hover:shadow-[0_20px_50px_rgba(56,189,248,0.18)]';
+        return 'hover:border-sky-400/50 hover:shadow-[0_20px_50px_rgba(56,189,248,0.25)]';
       case 'system':
-        return 'hover:border-emerald-500/40 hover:shadow-[0_20px_50px_rgba(52,211,153,0.18)]';
+        return 'hover:border-emerald-400/50 hover:shadow-[0_20px_50px_rgba(52,211,153,0.25)]';
       case 'notes':
-        return 'hover:border-amber-500/40 hover:shadow-[0_20px_50px_rgba(251,191,36,0.18)]';
+        return 'hover:border-amber-400/50 hover:shadow-[0_20px_50px_rgba(251,191,36,0.25)]';
       case 'media':
-        return 'hover:border-pink-500/40 hover:shadow-[0_20px_50px_rgba(236,72,153,0.18)]';
+        return 'hover:border-pink-400/50 hover:shadow-[0_20px_50px_rgba(236,72,153,0.25)]';
       case 'quote':
-        return 'hover:border-fuchsia-500/40 hover:shadow-[0_20px_50px_rgba(217,70,239,0.18)]';
+        return 'hover:border-fuchsia-400/50 hover:shadow-[0_20px_50px_rgba(217,70,239,0.25)]';
       case 'launcher':
-        return 'hover:border-cyan-500/40 hover:shadow-[0_20px_50px_rgba(6,182,212,0.18)]';
+        return 'hover:border-cyan-400/50 hover:shadow-[0_20px_50px_rgba(6,182,212,0.25)]';
       default:
-        return 'hover:border-white/30';
+        return 'hover:border-white/40';
     }
   };
 
@@ -372,6 +397,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
     <div
       ref={cardRef}
       onPointerDown={handlePointerDown}
+      onPointerMoveCapture={handlePointerMoveCapture}
       style={{
         position: 'absolute',
         top: widget.y,
@@ -386,34 +412,59 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
       }}
       className={`pointer-events-auto rounded-[28px] p-3.5 flex flex-col group overflow-hidden select-none ${getAccentGlow()}`}
     >
-      {/* Luxury VisionOS Glass Backdrop with Dynamic Theme & Blur */}
+      {/* 1. iOS Liquid Glass Base Translucent Plate with High-Vibrancy Blur & Optical Refraction */}
       <div
-        className="absolute inset-0 rounded-[28px] pointer-events-none"
+        className="absolute inset-0 rounded-[28px] pointer-events-none transition-all duration-300"
         style={{
           background:
             widget.theme === 'cyber'
-              ? 'linear-gradient(135deg, rgba(6, 24, 38, 0.88) 0%, rgba(2, 10, 18, 0.96) 100%)'
+              ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(14, 165, 233, 0.04) 45%, rgba(3, 105, 161, 0.20) 100%)'
               : widget.theme === 'gold'
-              ? 'linear-gradient(135deg, rgba(38, 28, 6, 0.88) 0%, rgba(18, 12, 2, 0.96) 100%)'
+              ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.16) 0%, rgba(245, 158, 11, 0.04) 45%, rgba(180, 83, 9, 0.20) 100%)'
               : widget.theme === 'obsidian'
-              ? 'linear-gradient(135deg, rgba(5, 5, 5, 0.96) 0%, rgba(0, 0, 0, 0.98) 100%)'
-              : 'linear-gradient(135deg, rgba(14, 16, 25, 0.82) 0%, rgba(7, 8, 13, 0.92) 100%)',
-          backdropFilter: `blur(${widget.blur ?? 40}px) saturate(200%)`,
-          WebkitBackdropFilter: `blur(${widget.blur ?? 40}px) saturate(200%)`,
-          border:
-            widget.theme === 'cyber'
-              ? '1px solid rgba(56, 189, 248, 0.35)'
-              : widget.theme === 'gold'
-              ? '1px solid rgba(251, 191, 36, 0.35)'
-              : '1px solid rgba(255, 255, 255, 0.14)',
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(10, 12, 18, 0.32) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 42%, rgba(15, 23, 42, 0.22) 100%)',
+          backdropFilter: `blur(${widget.blur ?? 32}px) saturate(220%) contrast(108%) brightness(112%)`,
+          WebkitBackdropFilter: `blur(${widget.blur ?? 32}px) saturate(220%) contrast(108%) brightness(112%)`,
+          border: '1px solid rgba(255, 255, 255, 0.22)',
           boxShadow: isDragging
-            ? '0 32px 80px rgba(0,0,0,0.9), 0 0 30px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.25)'
-            : '0 18px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.12)',
+            ? '0 32px 70px -10px rgba(0,0,0,0.7), 0 0 30px rgba(168,85,247,0.35), inset 0 2px 2px rgba(255,255,255,0.75), inset 0 -2px 2px rgba(0,0,0,0.35)'
+            : '0 20px 45px -10px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15), inset 0 1.5px 2px rgba(255,255,255,0.75), inset 0 -1.5px 2px rgba(0,0,0,0.35)',
+        }}
+      />
+
+      {/* 2. Optical Lens Refraction Ring (Beveled edge bending and warping background) */}
+      <div
+        className="absolute inset-0 rounded-[28px] pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(255,255,255,0.06) 82%, rgba(255,255,255,0.22) 100%)',
+          boxShadow: 'inset 0 0 14px 2px rgba(255,255,255,0.12)',
+          mixBlendMode: 'overlay',
+        }}
+      />
+
+      {/* 3. Liquid Glass Curvature Caustics Sheen (Curved specular highlight) */}
+      <div
+        className="absolute inset-0 rounded-[28px] pointer-events-none"
+        style={{
+          background: `radial-gradient(circle 240px at ${mousePos.x}% ${mousePos.y}%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 40%, transparent 75%)`,
+          mixBlendMode: 'overlay',
+          transition: 'background 0.15s ease-out',
+        }}
+      />
+
+      {/* 4. Diagonal Glass Prism Split Highlight */}
+      <div
+        className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] pointer-events-none opacity-25"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4) 0%, transparent 45%)',
+          transform: 'rotate(-20deg)',
+          mixBlendMode: 'screen',
         }}
       />
 
       {/* Header Bar */}
-      <div className="relative z-10 h-5 flex items-center justify-between text-white/50 text-[10px] mb-2 cursor-grab active:cursor-grabbing">
+      <div className="relative z-10 h-5 flex items-center justify-between text-white/70 text-[10px] mb-2 cursor-grab active:cursor-grabbing drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
         <div className="flex items-center gap-1.5 font-semibold text-white/80">
           {widget.type === 'clock' && <Clock size={11} className="text-purple-400" />}
           {widget.type === 'weather' && <CloudSun size={11} className="text-sky-400" />}
@@ -495,8 +546,8 @@ const ClockWidgetBody: React.FC = () => {
 
           // Dial background glow
           const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
-          grad.addColorStop(0, 'rgba(168, 85, 247, 0.12)');
-          grad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+          grad.addColorStop(0, 'rgba(168, 85, 247, 0.18)');
+          grad.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
           ctx.fillStyle = grad;
           ctx.beginPath();
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -605,13 +656,13 @@ const ClockWidgetBody: React.FC = () => {
       <div className="text-left min-w-0 flex-1 pl-1">
         <div
           ref={digitalRef}
-          className="text-2xl font-mono font-bold text-white tracking-tight drop-shadow-md truncate"
+          className="text-2xl font-mono font-bold text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] truncate"
         >
           {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </div>
         <div
           ref={dateRef}
-          className="text-[11px] text-purple-300 font-medium tracking-wide mt-0.5"
+          className="text-[11px] text-purple-300 font-medium tracking-wide mt-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]"
         >
           {new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
         </div>
@@ -676,7 +727,7 @@ const WeatherWidgetBody: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold font-mono text-white tracking-tight drop-shadow-md">
+            <span className="text-3xl font-bold font-mono text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
               {displayTemp}°
             </span>
             <button
@@ -689,13 +740,13 @@ const WeatherWidgetBody: React.FC = () => {
               {isFahrenheit ? 'F' : 'C'}
             </button>
           </div>
-          <div className="text-[11px] text-sky-300 font-semibold tracking-wide">
+          <div className="text-[11px] text-sky-300 font-semibold tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
             {weather.condition}
           </div>
         </div>
 
         <div className="text-right text-[10px] text-white/50 space-y-0.5">
-          <div className="font-semibold text-white/90">{weather.city}</div>
+          <div className="font-semibold text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{weather.city}</div>
           <div className="flex items-center justify-end gap-1">
             <Wind size={10} className="text-sky-400" />
             <span>{weather.wind} km/h</span>
@@ -708,15 +759,15 @@ const WeatherWidgetBody: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-white/10 text-center text-[10px] text-white/70">
-        <div className="p-1 rounded-xl bg-white/[0.04] border border-white/5">
+        <div className="p-1 rounded-xl bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-sm">
           <div className="text-[9px] text-white/40">Today</div>
           <div className="font-semibold text-sky-300">{displayTemp}°</div>
         </div>
-        <div className="p-1 rounded-xl bg-white/[0.04] border border-white/5">
+        <div className="p-1 rounded-xl bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-sm">
           <div className="text-[9px] text-white/40">Tomorrow</div>
           <div className="font-semibold text-white/80">{displayTemp + 1}°</div>
         </div>
-        <div className="p-1 rounded-xl bg-white/[0.04] border border-white/5">
+        <div className="p-1 rounded-xl bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-sm">
           <div className="text-[9px] text-white/40">Sun</div>
           <div className="font-semibold text-white/80">{displayTemp - 2}°</div>
         </div>
@@ -758,8 +809,8 @@ const SystemWidgetBody: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col justify-between text-xs">
-      {/* Live Compute Wave Chart */}
-      <div className="relative h-9 w-full rounded-xl bg-black/40 border border-white/10 overflow-hidden flex items-center px-1">
+      {/* Live Compute Wave Chart with Translucent Glass */}
+      <div className="relative h-9 w-full rounded-xl bg-white/[0.06] backdrop-blur-md border border-white/15 overflow-hidden flex items-center px-1">
         <svg viewBox="0 0 240 32" className="w-full h-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="sysWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1104,9 +1155,9 @@ interface LauncherWidgetBodyProps {
 const LauncherWidgetBody: React.FC<LauncherWidgetBodyProps> = ({ openApp }) => {
   const dockApps: { id: AppId; name: string; icon: string }[] = [
     { id: 'zen', name: 'Browser', icon: 'assets/icons/zen.jpg' },
-    { id: 'virtual-machine', name: 'VM', icon: 'assets/icons/vm.svg' },
+    { id: 'virtual-machine', name: 'VM', icon: 'assets/icons/vm.png' },
     { id: 'code-editor', name: 'Code', icon: 'assets/icons/terminal.jpg' },
-    { id: 'widgets', name: 'Widgets', icon: 'assets/icons/widgets.svg' },
+    { id: 'widgets', name: 'Widgets', icon: 'assets/icons/widgets.jpeg' },
     { id: 'games', name: 'Arcade', icon: 'assets/icons/games.jpg' },
   ];
 
@@ -1119,13 +1170,13 @@ const LauncherWidgetBody: React.FC<LauncherWidgetBodyProps> = ({ openApp }) => {
             sound.playClick();
             openApp?.(app.id);
           }}
-          className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-white/10 transition-transform hover:scale-110 active:scale-95 group"
+          className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-white/15 transition-transform hover:scale-110 active:scale-95 group"
           title={`Launch ${app.name}`}
         >
           <img
-            src={app.icon}
+            src={getAssetUrl(app.icon)}
             alt={app.name}
-            className="w-7 h-7 rounded-xl object-cover ring-1 ring-white/15 shadow-md shadow-black/40"
+            className="w-7 h-7 rounded-xl object-cover ring-1 ring-white/20 shadow-md shadow-black/40"
           />
           <span className="text-[9px] font-medium text-white/70 group-hover:text-white truncate max-w-[44px]">
             {app.name}

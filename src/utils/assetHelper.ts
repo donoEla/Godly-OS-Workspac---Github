@@ -10,6 +10,39 @@
 
 const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
 const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
+const CURRENT_RELEASE_TAG = 'v4.4.2';
+
+export function getJsDelivrOrigin(): string {
+  const candidates: string[] = [];
+  if (typeof document !== 'undefined' && document.baseURI) candidates.push(document.baseURI);
+  if (typeof window !== 'undefined') {
+    candidates.push(window.location.href);
+    try {
+      if (window.parent && window.parent !== window && window.parent.location?.href) {
+        candidates.push(window.parent.location.href);
+      }
+    } catch {}
+    try {
+      if (window.top && window.top !== window && window.top.location?.href) {
+        candidates.push(window.top.location.href);
+      }
+    } catch {}
+  }
+  for (const c of candidates) {
+    if (c.includes('cdn.jsdelivr.net')) {
+      const match = c.match(/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^/@]+)(?:@([^/]+))?/i);
+      if (match) {
+        const user = match[1];
+        const repo = match[2];
+        const rawTag = match[3];
+        // If no tag or main, default to current release tag to avoid stale jsDelivr CDN cache
+        const tag = rawTag && rawTag !== 'main' ? rawTag : CURRENT_RELEASE_TAG;
+        return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${tag}`;
+      }
+    }
+  }
+  return `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@${CURRENT_RELEASE_TAG}`;
+}
 
 export function getAssetUrl(path: string | undefined | null): string {
   if (!path) return '';
@@ -62,11 +95,16 @@ export function getAssetUrl(path: string | undefined | null): string {
     (typeof window !== 'undefined' && window.location.hostname === 'cdn.jsdelivr.net') ||
     (typeof document !== 'undefined' && document.baseURI && document.baseURI.includes('cdn.jsdelivr.net'));
 
+  const cleanQuery = query
+    ? query.split('&').filter((p) => !p.startsWith('v=')).join('&')
+    : '';
+
   if (isJsDelivr) {
-    // When on jsDelivr, all build output lives under /dist/
+    const baseOrigin = getJsDelivrOrigin();
     const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
-    const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
-    return query ? `${url}?${query}` : url;
+    const url = `${baseOrigin}/${distPath}`;
+    const versionQuery = `v=${CURRENT_RELEASE_TAG}`;
+    return cleanQuery ? `${url}?${cleanQuery}&${versionQuery}` : `${url}?${versionQuery}`;
   }
 
   // Detect about:srcdoc sandboxed frame
@@ -77,10 +115,12 @@ export function getAssetUrl(path: string | undefined | null): string {
       window.location.pathname.includes('/srcdoc'));
 
   if (isSrcDoc) {
-    if (isJsDelivr) {
+    const baseOrigin = getJsDelivrOrigin();
+    if (isJsDelivr || baseOrigin.includes('cdn.jsdelivr.net')) {
       const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
-      const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
-      return query ? `${url}?${query}` : url;
+      const url = `${baseOrigin}/${distPath}`;
+      const versionQuery = `v=${CURRENT_RELEASE_TAG}`;
+      return cleanQuery ? `${url}?${cleanQuery}&${versionQuery}` : `${url}?${versionQuery}`;
     }
     // Check parent frame origin if accessible
     try {
@@ -89,15 +129,16 @@ export function getAssetUrl(path: string | undefined | null): string {
         if (parentOrigin && !parentOrigin.startsWith('null') && !parentOrigin.startsWith('about:')) {
           if (window.parent.location.hostname === 'cdn.jsdelivr.net') {
             const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
-            const url = `https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/${distPath}`;
-            return query ? `${url}?${query}` : url;
+            const url = `${baseOrigin}/${distPath}`;
+            const versionQuery = `v=${CURRENT_RELEASE_TAG}`;
+            return cleanQuery ? `${url}?${cleanQuery}&${versionQuery}` : `${url}?${versionQuery}`;
           }
         }
       }
     } catch {}
 
     const url = `${GITHUB_PAGES_ORIGIN}/${cleanPath}`;
-    return query ? `${url}?${query}` : url;
+    return cleanQuery ? `${url}?${cleanQuery}` : url;
   }
 
   // If document.baseURI is set to a valid HTTP(S) URL, resolve against it

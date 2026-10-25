@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppId } from '../../types/os';
-import { useOS } from '../../context/OSContext';
+import { useOS, DEFAULT_INSTALLED_APPS, APP_META } from '../../context/OSContext';
 import { sound } from '../../utils/sound';
 import { getAssetUrl } from '../../utils/assetHelper';
 
@@ -49,7 +49,10 @@ export const DesktopIcon: React.FC<DesktopIconProps> = ({
     openContextMenu(e, 'item', { id, name });
   };
 
-  const resolvedIcon = getAssetUrl(icon);
+  const canonicalApp = DEFAULT_INSTALLED_APPS.find((a) => a.id === id || a.appId === id || a.name === name);
+  const canonicalMeta = (APP_META as any)[id] || (canonicalApp?.appId && (APP_META as any)[canonicalApp.appId]);
+  const effectiveIcon = canonicalMeta?.icon || canonicalApp?.icon || icon;
+  const resolvedIcon = getAssetUrl(effectiveIcon);
 
   return (
     <div
@@ -76,10 +79,12 @@ export const DesktopIcon: React.FC<DesktopIconProps> = ({
           className="w-full h-full object-cover"
           draggable={false}
           onError={(e) => {
-            // If cache-busted or path fails, fallback to direct path
             const target = e.currentTarget;
             if (target.src.includes('?v=')) {
               target.src = target.src.split('?')[0];
+            } else if (!target.src.includes('raw.githubusercontent.com')) {
+              const clean = effectiveIcon.replace(/^dist\//, '').replace(/^\.\//, '');
+              target.src = `https://raw.githubusercontent.com/donoEla/Godly-OS-Workspac---Github/main/dist/${clean}`;
             }
           }}
         />

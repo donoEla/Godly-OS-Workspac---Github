@@ -397,12 +397,36 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const version = localStorage.getItem('godly_apps_version');
       const saved = localStorage.getItem('godly_installed_apps');
 
-      if (saved && version === '4.4') {
-        return JSON.parse(saved);
+      let apps: InstalledApp[] = DEFAULT_INSTALLED_APPS;
+      if (saved && version === '4.4.2') {
+        apps = JSON.parse(saved);
       }
-      localStorage.setItem('godly_apps_version', '4.4');
-      localStorage.setItem('godly_installed_apps', JSON.stringify(DEFAULT_INSTALLED_APPS));
-      return DEFAULT_INSTALLED_APPS;
+
+      // Always update known apps with latest icons from DEFAULT_INSTALLED_APPS
+      const updated = apps.map((app) => {
+        const defaultApp = DEFAULT_INSTALLED_APPS.find(
+          (d) => d.id === app.id || (d.appId && d.appId === app.appId) || d.name === app.name
+        );
+        if (defaultApp) {
+          return {
+            ...app,
+            icon: defaultApp.icon,
+            name: defaultApp.name,
+          };
+        }
+        return app;
+      });
+
+      // Ensure newly added default apps exist
+      DEFAULT_INSTALLED_APPS.forEach((d) => {
+        if (!updated.some((u) => u.id === d.id || (u.appId && u.appId === d.appId))) {
+          updated.push(d);
+        }
+      });
+
+      localStorage.setItem('godly_apps_version', '4.4.2');
+      localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
+      return updated;
     } catch {
       return DEFAULT_INSTALLED_APPS;
     }

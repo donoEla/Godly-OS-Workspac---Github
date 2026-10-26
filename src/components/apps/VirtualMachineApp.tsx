@@ -363,7 +363,7 @@ export const VirtualMachineApp: React.FC = () => {
               src={iframeSrc}
               title="Godly OS Virtual Machine"
               onLoad={() => setLoading(false)}
-              allow="cross-origin-isolated; autoplay; camera; microphone; clipboard-read; clipboard-write; fullscreen"
+              allow="cross-origin-isolated; autoplay; clipboard-read; clipboard-write; fullscreen"
               sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
               className="w-full h-full border-none bg-black"
             />

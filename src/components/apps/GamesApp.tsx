@@ -296,7 +296,27 @@ const P2P_LOADER_HTML = `<!DOCTYPE html>
                 }
             } catch (error) {
                 console.error("P2P GameWebSight loader failed:", error);
-                document.body.innerHTML = '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#f97316;font-family:system-ui,sans-serif;gap:14px;"><div style="font-size:32px;">⚠️</div><div style="font-size:16px;font-weight:700;">Failed to connect to P2P GameWebSight</div><div style="font-size:12px;color:#94a3b8;max-width:400px;">' + (error.message || 'Please check your connection and reload.') + '</div><button onclick="location.reload()" style="padding:8px 16px;background:#f97316;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button></div>';
+                document.body.replaceChildren();
+                const errBox = document.createElement('div');
+                errBox.style.cssText = 'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#f97316;font-family:system-ui,sans-serif;gap:14px;';
+                const icon = document.createElement('div');
+                icon.style.fontSize = '32px';
+                icon.textContent = '⚠️';
+                const title = document.createElement('div');
+                title.style.cssText = 'font-size:16px;font-weight:700;';
+                title.textContent = 'Failed to connect to P2P GameWebSight';
+                const desc = document.createElement('div');
+                desc.style.cssText = 'font-size:12px;color:#94a3b8;max-width:400px;';
+                desc.textContent = String(error.message || 'Please check your connection and reload.');
+                const btn = document.createElement('button');
+                btn.style.cssText = 'padding:8px 16px;background:#f97316;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;';
+                btn.textContent = 'Retry';
+                btn.onclick = () => location.reload();
+                errBox.appendChild(icon);
+                errBox.appendChild(title);
+                errBox.appendChild(desc);
+                errBox.appendChild(btn);
+                document.body.appendChild(errBox);
             }
         })();
     </script>
@@ -1159,6 +1179,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                       srcDoc={vaultHtmlContent}
                       title={activeVaultGame.title}
                       className="w-full h-full border-0 bg-black"
+                      sandbox="allow-scripts allow-forms allow-pointer-lock"
                       allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
                     />
                   ) : !vaultLoadingGame ? (
@@ -1606,7 +1627,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     src={!gnHtmlContent && !gnLoadingGame ? encodeUvUrl(activeGnGame.url) : undefined}
                     title={activeGnGame.title}
                     className="w-full h-full border-0 bg-black"
-                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; camera; microphone; accelerometer; gyroscope"
+                    sandbox="allow-scripts allow-forms allow-pointer-lock"
+                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
                   />
                 </div>
               </div>
@@ -2118,6 +2140,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               id="p2p-websight-frame"
               className="w-full h-full border-0 block"
               srcDoc={P2P_LOADER_HTML}
+              sandbox="allow-scripts allow-forms allow-pointer-lock"
               allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; keyboard-map"
               allowFullScreen
               title="P2P GameWebSight"

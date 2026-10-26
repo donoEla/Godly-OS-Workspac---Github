@@ -545,7 +545,7 @@ export const EaglercraftApp: React.FC = () => {
               src={activeVersion.url}
               onLoad={() => setIsIframeLoading(false)}
               className="w-full h-full border-0 block"
-              allow="autoplay; fullscreen; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write; cross-origin-isolated; microphone; camera"
+              allow="autoplay; fullscreen; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write; cross-origin-isolated; microphone"
               allowFullScreen
               title={activeVersion.name}
             />

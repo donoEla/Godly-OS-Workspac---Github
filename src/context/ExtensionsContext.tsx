@@ -143,37 +143,23 @@ const ExtensionsContext = createContext<ExtensionsContextType | null>(null);
 export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [extensions, setExtensions] = useState<DesktopExtension[]>(() => {
     try {
-      // 1. Check if extensions are embedded in URL hash e.g. #extensions=...
+      // Security (F03): Never auto-install or auto-execute extensions from URL fragment/hash
       if (typeof window !== 'undefined' && window.location.hash.includes('extensions=')) {
         try {
-          const hashParam = window.location.hash.split('extensions=')[1];
-          const decoded = decodeURIComponent(hashParam);
-          const parsed: DesktopExtension[] = JSON.parse(decoded);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log('[Extensions] Loaded shared extensions from URL hash');
-            // Merge with builtins
-            const merged = [...BUILTIN_EXTENSIONS];
-            parsed.forEach((p) => {
-              const idx = merged.findIndex((m) => m.id === p.id);
-              if (idx >= 0) merged[idx] = { ...merged[idx], ...p };
-              else merged.push(p);
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-            return merged;
-          }
-        } catch (e) {
-          console.warn('[Extensions] Hash parse note:', e);
-        }
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch {}
       }
 
-      // 2. Load from localStorage
+      // Load from localStorage
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: DesktopExtension[] = JSON.parse(saved);
         // Ensure all built-in extensions exist
         const map = new Map<string, DesktopExtension>();
         BUILTIN_EXTENSIONS.forEach((b) => map.set(b.id, b));
-        parsed.forEach((p) => map.set(p.id, p));
+        parsed.forEach((p) => {
+          if (p && p.id && p.name) map.set(p.id, p);
+        });
         return Array.from(map.values());
       }
       return BUILTIN_EXTENSIONS;
@@ -302,15 +288,31 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       glanceCard.className = 'fixed z-[9999999] pointer-events-none transition-all duration-200 select-none';
       glanceCard.style.left = `${Math.min(x + 18, window.innerWidth - 280)}px`;
       glanceCard.style.top = `${Math.min(y + 18, window.innerHeight - 100)}px`;
-      glanceCard.innerHTML = `
-        <div style="background: rgba(15, 15, 26, 0.88); backdrop-filter: blur(28px) saturate(190%); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 10px 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 20px rgba(168, 85, 247, 0.2); display: flex; items-center; gap: 10px; color: #fff; font-family: sans-serif; font-size: 12px; min-width: 180px; max-width: 260px;">
-          <div style="font-size: 18px; line-height: 1; flex-shrink: 0;">${icon}</div>
-          <div style="overflow: hidden;">
-            <div style="font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${text}</div>
-            <div style="font-size: 10px; color: #a855f7; margin-top: 2px; font-family: monospace;">Zen Glance Peek ⚡</div>
-          </div>
-        </div>
-      `;
+
+      const cardBox = document.createElement('div');
+      cardBox.style.cssText = 'background: rgba(15, 15, 26, 0.88); backdrop-filter: blur(28px) saturate(190%); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 10px 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 20px rgba(168, 85, 247, 0.2); display: flex; align-items: center; gap: 10px; color: #fff; font-family: sans-serif; font-size: 12px; min-width: 180px; max-width: 260px;';
+
+      const iconElem = document.createElement('div');
+      iconElem.style.cssText = 'font-size: 18px; line-height: 1; flex-shrink: 0;';
+      iconElem.textContent = icon;
+
+      const textWrapper = document.createElement('div');
+      textWrapper.style.overflow = 'hidden';
+
+      const titleElem = document.createElement('div');
+      titleElem.style.cssText = 'font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+      titleElem.textContent = text;
+
+      const subElem = document.createElement('div');
+      subElem.style.cssText = 'font-size: 10px; color: #a855f7; margin-top: 2px; font-family: monospace;';
+      subElem.textContent = 'Zen Glance Peek ⚡';
+
+      textWrapper.appendChild(titleElem);
+      textWrapper.appendChild(subElem);
+      cardBox.appendChild(iconElem);
+      cardBox.appendChild(textWrapper);
+      glanceCard.appendChild(cardBox);
+
       document.body.appendChild(glanceCard);
     };
 
@@ -368,16 +370,48 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     );
   }, []);
 
+  const sanitizeExtension = useCallback((ext: any): DesktopExtension | null => {
+    if (!ext || typeof ext !== 'object') return null;
+    const rawId = String(ext.id || '').trim();
+    const rawName = String(ext.name || '').trim();
+    if (!rawId || !rawName || !/^[a-zA-Z0-9_\-]{1,64}$/.test(rawId)) {
+      return null;
+    }
+    const isBuiltIn = BUILTIN_EXTENSIONS.some((b) => b.id === rawId);
+    return {
+      id: rawId,
+      name: rawName.slice(0, 100),
+      author: String(ext.author || 'Custom Author').slice(0, 100),
+      version: String(ext.version || '1.0.0').slice(0, 30),
+      description: String(ext.description || '').slice(0, 500),
+      icon: String(ext.icon || '✨').slice(0, 10),
+      category: ['Animations', 'Visuals', 'Productivity', 'Audio', 'Custom'].includes(ext.category)
+        ? ext.category
+        : 'Custom',
+      enabled: false, // Security (F02): Always default imported extensions to disabled!
+      isBuiltIn: isBuiltIn,
+      customCss: typeof ext.customCss === 'string' ? ext.customCss.slice(0, 50000) : undefined,
+      customJs: typeof ext.customJs === 'string' ? ext.customJs.slice(0, 50000) : undefined,
+      tags: Array.isArray(ext.tags) ? ext.tags.map((t: any) => String(t).slice(0, 30)) : [],
+    };
+  }, []);
+
   const installExtension = useCallback((ext: DesktopExtension) => {
+    const sanitized = sanitizeExtension(ext);
+    if (!sanitized) return;
     sound.playClick();
     setExtensions((prev) => {
-      const exists = prev.some((e) => e.id === ext.id);
-      if (exists) {
-        return prev.map((e) => (e.id === ext.id ? { ...ext, enabled: true } : e));
+      const idx = prev.findIndex((e) => e.id === sanitized.id);
+      if (idx >= 0) {
+        // Keep existing user preference if already installed
+        const existing = prev[idx];
+        const updated = [...prev];
+        updated[idx] = { ...sanitized, enabled: existing.enabled };
+        return updated;
       }
-      return [...prev, { ...ext, enabled: true }];
+      return [...prev, sanitized];
     });
-  }, []);
+  }, [sanitizeExtension]);
 
   const uninstallExtension = useCallback((id: string) => {
     sound.playClick();
@@ -401,8 +435,15 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setExtensions((prev) => {
           const map = new Map<string, DesktopExtension>();
           prev.forEach((e) => map.set(e.id, e));
-          parsed.forEach((p: DesktopExtension) => {
-            if (p.id && p.name) map.set(p.id, p);
+          parsed.forEach((p: any) => {
+            const sanitized = sanitizeExtension(p);
+            if (sanitized) {
+              const existing = map.get(sanitized.id);
+              map.set(sanitized.id, {
+                ...sanitized,
+                enabled: existing ? existing.enabled : false, // Defaults to disabled
+              });
+            }
           });
           return Array.from(map.values());
         });
@@ -413,13 +454,10 @@ export const ExtensionsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } catch {
       return false;
     }
-  }, []);
+  }, [sanitizeExtension]);
 
   const getShareableLink = useCallback(() => {
-    const encoded = encodeURIComponent(JSON.stringify(extensions));
-    const url = new URL(window.location.href);
-    url.hash = `extensions=${encoded}`;
-    return url.toString();
+    return JSON.stringify(extensions, null, 2);
   }, [extensions]);
 
   const isExtensionEnabled = useCallback(

@@ -172,8 +172,18 @@ export const generateEmulatorSrcDoc = (core: string, fileName?: string) => `<!DO
     function showError(err) {
       loadingOverlay.style.display = 'none';
       errorBox.style.display = 'block';
-      errorBox.innerHTML = '<strong>Emulator Error:</strong><br><pre style="margin-top:8px; white-space:pre-wrap;">' + (err.stack || err.message || err) + '</pre>';
-      window.parent.postMessage({ type: 'EMULATOR_ERROR', error: String(err) }, '*');
+      errorBox.textContent = '';
+      const strong = document.createElement('strong');
+      strong.textContent = 'Emulator Error:';
+      const br = document.createElement('br');
+      const pre = document.createElement('pre');
+      pre.style.marginTop = '8px';
+      pre.style.whiteSpace = 'pre-wrap';
+      pre.textContent = String(err && (err.stack || err.message || err));
+      errorBox.appendChild(strong);
+      errorBox.appendChild(br);
+      errorBox.appendChild(pre);
+      window.parent.postMessage({ type: 'EMULATOR_ERROR', error: String(err && (err.message || err)) }, '*');
     }
 
     async function launchGameBuffer(targetCore, fileName, romBuffer) {
@@ -215,7 +225,9 @@ export const generateEmulatorSrcDoc = (core: string, fileName?: string) => `<!DO
     }
 
     window.addEventListener('message', async (e) => {
-      if (!e.data || !e.data.type) return;
+      // Authenticate message sender: strictly accept messages from parent window
+      if (e.source !== window.parent) return;
+      if (!e.data || typeof e.data !== 'object' || !e.data.type) return;
 
       if (e.data.type === 'LAUNCH_BUFFER') {
         const { core, fileName, buffer } = e.data;
@@ -328,7 +340,9 @@ export const EmulatorHubApp: React.FC = () => {
   // Listen to messages from Nostalgist runner inside iframe
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      if (!e.data || !e.data.type) return;
+      // Authenticate message sender: strictly accept messages from our emulator iframe
+      if (e.source !== emulatorFrameRef.current?.contentWindow) return;
+      if (!e.data || typeof e.data !== 'object' || !e.data.type) return;
 
       if (e.data.type === 'EMULATOR_IFRAME_READY') {
         if (activeGame && emulatorFrameRef.current?.contentWindow) {
@@ -551,6 +565,7 @@ export const EmulatorHubApp: React.FC = () => {
               srcDoc={generateEmulatorSrcDoc(activeGame.core, activeGame.filename)}
               onLoad={handleIframeLoad}
               className="w-full h-full border-0 block"
+              sandbox="allow-scripts allow-forms allow-pointer-lock"
               allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; keyboard-map"
               allowFullScreen
               title={activeGame.filename}

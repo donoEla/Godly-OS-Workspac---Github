@@ -5,8 +5,45 @@ import https from 'node:https'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// Allow self-signed and internal certificates for proxied destinations like watch.streamflix.one
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function isProhibitedDestination(url: URL): boolean {
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return true
+  const host = url.hostname.toLowerCase()
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    host === '[::1]' ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host.endsWith('.localhost')
+  ) {
+    return true
+  }
+
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4Match) {
+    const o = [Number(ipv4Match[1]), Number(ipv4Match[2]), Number(ipv4Match[3]), Number(ipv4Match[4])]
+    if (o[0] === 127) return true // Loopback
+    if (o[0] === 0) return true // Current network
+    if (o[0] === 10) return true // RFC 1918 Private
+    if (o[0] === 169 && o[1] === 254) return true // Link-local / Cloud Metadata
+    if (o[0] === 172 && o[1] >= 16 && o[1] <= 31) return true // RFC 1918 Private
+    if (o[0] === 192 && o[1] === 168) return true // RFC 1918 Private
+    if (o[0] === 100 && o[1] >= 64 && o[1] <= 127) return true // CGNAT
+  }
+
+  return false
+}
 
 function godlyOsProxyPlugin(): Plugin {
   return {
@@ -113,6 +150,13 @@ function godlyOsProxyPlugin(): Plugin {
             effectiveUrl = parsedTarget.toString()
           }
 
+          if (isProhibitedDestination(parsedTarget)) {
+            res.statusCode = 403
+            res.setHeader('Content-Type', 'text/plain')
+            res.end('Godly OS Proxy: Connection to private or local network destination is forbidden.')
+            return
+          }
+
           const isNowGG = parsedTarget.hostname.includes('nowgg.fun')
           const isStreamFlix = parsedTarget.hostname.includes('streamflix.one')
           const isOctave = parsedTarget.hostname.includes('octavestreaming.com')
@@ -136,14 +180,13 @@ function godlyOsProxyPlugin(): Plugin {
             requestHeaders['Origin'] = 'https://octavestreaming.com'
           }
 
-          const proxyAgent = parsedTarget.protocol === 'https:' ? new https.Agent({ rejectUnauthorized: false }) : undefined
+          const proxyAgent = parsedTarget.protocol === 'https:' ? new https.Agent({ keepAlive: true }) : undefined
 
           const proxyReq = client.request(
             effectiveUrl,
             {
               method: req.method || 'GET',
               headers: requestHeaders,
-              rejectUnauthorized: false,
               agent: proxyAgent,
             },
             (remoteRes) => {
@@ -198,10 +241,26 @@ function godlyOsProxyPlugin(): Plugin {
                 headers['content-type'] = 'text/html; charset=utf-8'
                 delete headers['x-content-type-options']
 
-                // Buffer HTML to neutralize rogue HTTPS redirects and inject base href
+                // Buffer HTML to neutralize rogue HTTPS redirects and inject base href (capped at 15 MB)
+                const MAX_HTML_BUFFER_SIZE = 15 * 1024 * 1024
+                let totalBufferedBytes = 0
+                let bufferExceeded = false
                 const chunks: Buffer[] = []
-                remoteRes.on('data', (c) => chunks.push(c))
+
+                remoteRes.on('data', (c) => {
+                  if (bufferExceeded) return
+                  totalBufferedBytes += c.length
+                  if (totalBufferedBytes > MAX_HTML_BUFFER_SIZE) {
+                    bufferExceeded = true
+                    res.writeHead(413, { 'Content-Type': 'text/plain' })
+                    res.end('Godly OS Proxy: Response exceeded maximum buffer size limit (15 MB)')
+                    proxyReq.destroy()
+                    return
+                  }
+                  chunks.push(c)
+                })
                 remoteRes.on('end', () => {
+                  if (bufferExceeded) return
                   let html = Buffer.concat(chunks).toString('utf-8')
 
                   // 1. Route nowgg.fun https://${prefix}.ip.${window.location.host} through /os-proxy
@@ -276,8 +335,8 @@ function godlyOsProxyPlugin(): Plugin {
               <body>
                 <div class="box">
                   <h2>Godly OS Proxy Tunnel Notice</h2>
-                  <p>Target URL: <code>${targetUrl}</code></p>
-                  <p>The host server could not be reached via proxy tunnel: ${err.message}</p>
+                  <p>Target URL: <code>${escapeHtml(targetUrl)}</code></p>
+                  <p>The host server could not be reached via proxy tunnel: ${escapeHtml(err.message)}</p>
                 </div>
               </body>
               </html>

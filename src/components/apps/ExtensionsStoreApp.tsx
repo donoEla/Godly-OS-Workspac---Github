@@ -69,10 +69,10 @@ export const ExtensionsStoreApp: React.FC = () => {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed)) {
           importExtensions(content);
-          addNotification('Extensions Imported', `Loaded ${parsed.length} extensions.`, 'success');
+          addNotification('Extensions Imported', `Loaded ${parsed.length} extensions (disabled by default for review).`, 'success');
         } else if (parsed.id && parsed.name) {
           installExtension(parsed);
-          addNotification('Extension Installed', `Installed ${parsed.name}.`, 'success');
+          addNotification('Extension Installed', `Installed ${parsed.name} (disabled by default for review).`, 'success');
         }
       } catch (err) {
         addNotification('Upload Failed', 'Invalid extension JSON format.', 'alert');
@@ -283,7 +283,7 @@ export const ExtensionsStoreApp: React.FC = () => {
 
               {/* Tags */}
               {ext.tags && (
-                <div className="flex flex-wrap gap-1 mb-3">
+                <div className="flex flex-wrap gap-1 mb-2.5">
                   {ext.tags.map((t, idx) => (
                     <span
                       key={idx}
@@ -292,6 +292,14 @@ export const ExtensionsStoreApp: React.FC = () => {
                       {t}
                     </span>
                   ))}
+                </div>
+              )}
+
+              {/* Security indicator for extensions executing JavaScript */}
+              {ext.customJs && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[10px] mb-3 font-medium">
+                  <Code size={11} className="text-amber-400 shrink-0" />
+                  <span>Executes Custom JavaScript</span>
                 </div>
               )}
             </div>

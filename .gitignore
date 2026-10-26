@@ -17,6 +17,7 @@ dist/*
 !dist/icons.svg
 !dist/gn_math_games.json
 !dist/local_games.json
+!dist/catalog.json
 !dist/sw.js
 !dist/bareworker.js
 !dist/assets/

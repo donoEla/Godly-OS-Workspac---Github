@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { 
   Gamepad2, 
   RotateCcw, 
@@ -31,8 +31,13 @@ import {
   Target,
   Globe,
   Flame,
-  ArrowRight
+  ArrowRight,
+  ArrowUpDown,
+  SlidersHorizontal,
+  Tag,
+  FolderGit2
 } from 'lucide-react';
+import { fetchPlayableGameHtml, CatalogGame } from '../../utils/catalogGameLoader';
 import sixKhoCatalogData from '../../data/sixKho_games.json';
 import ynrbsuCatalogData from '../../data/ynrbsu_games.json';
 import { sound } from '../../utils/sound';
@@ -333,24 +338,75 @@ const P2P_LOADER_HTML = `<!DOCTYPE html>
 
 export type GameSourceTab = 
   | 'all'
+  // Major catalog sources:
+  | 'nebula'
+  | 'ugs'
+  | 'js13kgames'
+  | 'cvk'
+  | 'hydra'
+  | 'lumin'
+  | 'diesmos'
+  | 'gnmath'
+  | 'ghostproxy'
+  | 'alexr'
+  | 'gamezone'
+  | 'petezah'
+  | 'daknux'
+  | 'seraph'
+  | 'truffled'
+  | 'duckmath'
+  // Core Godly OS platforms:
   | 'vault'
+  | 'zengs'
   | 'sixkho'
   | 'ynrbsu'
-  | 'gnmath'
-  | 'zengs'
   | 'nettleweb'
   | 'nowgg'
-  | 'lumin'
   | 'p2p'
   | 'emulator'
-  | 'eaglercraft';
+  | 'eaglercraft'
+  // Other smaller sources combined:
+  | 'other';
+
+export interface MajorSourceMeta {
+  id: GameSourceTab;
+  sourceKey: string;
+  name: string;
+  badge: string;
+  count: number;
+  repo: string;
+  repoUrl: string;
+  color: string;
+  desc: string;
+}
+
+export const MAJOR_SOURCES_CONFIG: MajorSourceMeta[] = [
+  { id: 'nebula', sourceKey: 'Nebula', name: 'Nebula CDN', badge: '3,062 Games', count: 3062, repo: 'GoatTech-42/NEBULA-CDN', repoUrl: 'https://github.com/GoatTech-42/NEBULA-CDN', color: '#818cf8', desc: 'Massive unblocked HTML5 game repository & CDN mirror' },
+  { id: 'ugs', sourceKey: 'UGS', name: 'UGS Library', badge: '2,823 Games', count: 2823, repo: 'bubbls/ugs-singlefile', repoUrl: 'https://github.com/bubbls/ugs-singlefile', color: '#38bdf8', desc: 'Single-file optimized unblocked games archive' },
+  { id: 'js13kgames', sourceKey: 'js13kGames', name: 'js13kGames', badge: '2,800 Games', count: 2800, repo: 'js13kGames/games', repoUrl: 'https://github.com/js13kGames/games', color: '#facc15', desc: 'Ultra-lightweight 13kB game jam masterpieces' },
+  { id: 'cvk', sourceKey: 'CVK', name: "Chicken King's Vault", badge: '1,655 Games', count: 1655, repo: 'WanoCapy/ChickenKingsVault', repoUrl: 'https://github.com/WanoCapy/ChickenKingsVault', color: '#fb923c', desc: 'Comprehensive unblocked vault with full thumbnails' },
+  { id: 'hydra', sourceKey: 'Hydra', name: 'Hydra Network', badge: '1,643 Games', count: 1643, repo: 'zennedu/hydra', repoUrl: 'https://github.com/zennedu/hydra', color: '#4ade80', desc: 'Hydra unblocked game mirror collection' },
+  { id: 'lumin', sourceKey: 'Lumin', name: 'Lumin Engine', badge: '1,249 Games', count: 1249, repo: '3kh0/3kh0-lite + seraph', repoUrl: 'https://github.com/3kh0/3kh0-lite', color: '#a78bfa', desc: 'Lumin retro arcade and waflash collection' },
+  { id: 'diesmos', sourceKey: 'Diesmos', name: 'Diesmos HTML Files', badge: '1,038 Games', count: 1038, repo: 'aDiesmos/HTMLFILES', repoUrl: 'https://github.com/aDiesmos/HTMLFILES', color: '#ec4899', desc: 'Complete HTML5 standalone game preservation files' },
+  { id: 'gnmath', sourceKey: 'GN-Math', name: 'GN-Math Archive', badge: '840 Games', count: 840, repo: 'freebuisness/html', repoUrl: 'https://github.com/freebuisness/html', color: '#06b6d4', desc: 'School-unblocked math disguise library' },
+  { id: 'ghostproxy', sourceKey: 'GhostProxy', name: 'GhostProxy Hub', badge: '760 Games', count: 760, repo: 'freebuisness/html', repoUrl: 'https://github.com/freebuisness/html', color: '#94a3b8', desc: 'Ghost unblocked game releases and proxies' },
+  { id: 'alexr', sourceKey: 'Alexr', name: "Alexr's World", badge: '676 Games', count: 676, repo: 'dskjfoisjfsjio/alexrsworld', repoUrl: 'https://github.com/dskjfoisjfsjio/alexrsworld', color: '#f43f5e', desc: 'Standalone games from Alexr World' },
+  { id: 'gamezone', sourceKey: 'GameZone', name: 'GameZone Library', badge: '607 Games', count: 607, repo: 'pavitraag/GameZone_gssoc', repoUrl: 'https://github.com/pavitraag/GameZone_gssoc', color: '#2dd4bf', desc: 'Open-source web games curated archive' },
+  { id: 'petezah', sourceKey: 'Petezah', name: 'PeteZah Games', badge: '570 Games', count: 570, repo: 'PeteZah-Games/PeteZahGames', repoUrl: 'https://github.com/PeteZah-Games/PeteZahGames', color: '#f59e0b', desc: 'Classic PeteZah unblocked library mirror' },
+  { id: 'daknux', sourceKey: 'Daknux', name: 'Daknux HTML', badge: '521 Games', count: 521, repo: 'daknux/html', repoUrl: 'https://github.com/daknux/html', color: '#10b981', desc: 'Verified HTML5 games pack' },
+  { id: 'seraph', sourceKey: 'Seraph', name: 'Seraph Games', badge: '512 Games', count: 512, repo: 'a456pur/seraph', repoUrl: 'https://github.com/a456pur/seraph', color: '#8b5cf6', desc: 'Curated high-performance web games' },
+  { id: 'truffled', sourceKey: 'Truffled', name: 'Truffled Network', badge: '505 Games', count: 505, repo: 'truffled.lol', repoUrl: 'https://truffled.lol', color: '#d946ef', desc: 'Independent CDN with instant playables' },
+  { id: 'duckmath', sourceKey: 'DuckMath', name: 'DuckMath Arcade', badge: '471 Games', count: 471, repo: 'db2.duckmath.org', repoUrl: 'https://db2.duckmath.org', color: '#eab308', desc: 'DuckMath API games with Ruffle Flash player support' },
+];
+
+export type SortOption = 'name_asc' | 'name_desc' | 'source_asc' | 'source_desc' | 'default';
 
 export interface WebGameItem {
   id: string;
   title: string;
   url: string;
-  thumbnail: string;
-  source: '6kh0' | 'ynrbsu' | 'nettleweb' | 'gnmath' | 'vault';
+  thumbnail?: string;
+  source: string;
   category?: string;
   description?: string;
 }
@@ -362,6 +418,10 @@ export interface ActiveUniversalGame {
   thumbnail?: string;
   source: string;
   category?: string;
+  fetchGame?: boolean;
+  frameFallback?: boolean;
+  crispScript?: string;
+  sourceColor?: string;
 }
 
 const NETTLEWEB_POPULAR_GAMES: WebGameItem[] = [
@@ -483,8 +543,22 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [activeUniversalGame, setActiveUniversalGame] = useState<ActiveUniversalGame | null>(null);
   const universalFrameRef = useRef<HTMLIFrameElement>(null);
   const [universalRefreshKey, setUniversalRefreshKey] = useState<number>(0);
+  const [universalBlobUrl, setUniversalBlobUrl] = useState<string | null>(null);
+  const [universalLoading, setUniversalLoading] = useState<boolean>(false);
+  const [universalError, setUniversalError] = useState<string | null>(null);
 
-  const handleLaunchUniversalGame = (game: { id: string; title: string; url: string; thumbnail?: string; source: any; category?: string }) => {
+  const handleLaunchUniversalGame = (game: {
+    id: string;
+    title: string;
+    url: string;
+    thumbnail?: string;
+    source: any;
+    category?: string;
+    fetchGame?: boolean;
+    frameFallback?: boolean;
+    crispScript?: string;
+    sourceColor?: string;
+  }) => {
     sound.playOpen();
     setActiveUniversalGame({
       id: game.id,
@@ -493,9 +567,193 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       thumbnail: game.thumbnail,
       source: game.source,
       category: game.category,
+      fetchGame: game.fetchGame,
+      frameFallback: game.frameFallback,
+      crispScript: game.crispScript,
+      sourceColor: game.sourceColor,
     });
     setUniversalRefreshKey((k) => k + 1);
   };
+
+  // ── Unified 26,123 Games Catalog (Nebula, UGS, js13kGames, CVK, Hydra, Lumin, Diesmos, GN-Math, GhostProxy, Alexr, GameZone, Petezah, Daknux, Seraph, Truffled, DuckMath, Other) ──
+  const [catalogGames, setCatalogGames] = useState<CatalogGame[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCatalog = async () => {
+      try {
+        const url = getAssetUrl('catalog.json');
+        const res = await fetch(url);
+        if (res.ok) {
+          const data: CatalogGame[] = await res.json();
+          if (isMounted) {
+            setCatalogGames(data);
+            setCatalogLoading(false);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load catalog.json:', e);
+        if (isMounted) setCatalogLoading(false);
+      }
+    };
+    loadCatalog();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Split catalog into major sources and other sources
+  const { gamesBySource, otherSourcesGames, otherSourceNames, allUniqueSources } = useMemo(() => {
+    const bySrc: Record<string, CatalogGame[]> = {};
+    const other: CatalogGame[] = [];
+    const otherSrcSet = new Set<string>();
+    const allSrcSet = new Set<string>();
+    const largeKeys = new Set(MAJOR_SOURCES_CONFIG.map(s => s.sourceKey));
+
+    for (const g of catalogGames) {
+      const src = g.source || 'Other';
+      allSrcSet.add(src);
+      if (!bySrc[src]) bySrc[src] = [];
+      bySrc[src].push(g);
+
+      if (!largeKeys.has(src)) {
+        other.push(g);
+        otherSrcSet.add(src);
+      }
+    }
+
+    return {
+      gamesBySource: bySrc,
+      otherSourcesGames: other,
+      otherSourceNames: Array.from(otherSrcSet).sort((a, b) => (bySrc[b]?.length || 0) - (bySrc[a]?.length || 0)),
+      allUniqueSources: Array.from(allSrcSet).sort((a, b) => (bySrc[b]?.length || 0) - (bySrc[a]?.length || 0))
+    };
+  }, [catalogGames]);
+
+  // Universal Player Sandbox fetch effect
+  useEffect(() => {
+    let isMounted = true;
+    if (!activeUniversalGame) {
+      if (universalBlobUrl) {
+        URL.revokeObjectURL(universalBlobUrl);
+        setUniversalBlobUrl(null);
+      }
+      return;
+    }
+
+    if (activeUniversalGame.fetchGame) {
+      setUniversalLoading(true);
+      setUniversalError(null);
+      fetchPlayableGameHtml({
+        id: activeUniversalGame.id,
+        name: activeUniversalGame.title,
+        url: activeUniversalGame.url,
+        image: activeUniversalGame.thumbnail,
+        source: activeUniversalGame.source,
+        category: activeUniversalGame.category,
+        fetchGame: true,
+        frameFallback: activeUniversalGame.frameFallback,
+        crispScript: activeUniversalGame.crispScript,
+      })
+        .then(({ blobUrl }) => {
+          if (isMounted) {
+            setUniversalBlobUrl(blobUrl);
+            setUniversalLoading(false);
+          }
+        })
+        .catch((err) => {
+          console.warn('Sandbox fetch error, falling back to direct URL:', err);
+          if (isMounted) {
+            setUniversalBlobUrl(null);
+            setUniversalLoading(false);
+          }
+        });
+    } else {
+      setUniversalBlobUrl(null);
+      setUniversalLoading(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeUniversalGame, universalRefreshKey]);
+
+  // All Sources Unified State
+  const [allSearch, setAllSearch] = useState('');
+  const [allSort, setAllSort] = useState<SortOption>('name_asc');
+  const [allSourceFilter, setAllSourceFilter] = useState<string>('all');
+  const [allPage, setAllPage] = useState<number>(1);
+
+  // Other Sources State
+  const [otherSearch, setOtherSearch] = useState('');
+  const [otherSort, setOtherSort] = useState<SortOption>('name_asc');
+  const [otherSubFilter, setOtherSubFilter] = useState<string>('all');
+  const [otherPage, setOtherPage] = useState<number>(1);
+
+  // Major Sources Dedicated View State
+  const [majorSourceSearch, setMajorSourceSearch] = useState('');
+  const [majorSourceSort, setMajorSourceSort] = useState<SortOption>('name_asc');
+  const [majorSourcePage, setMajorSourcePage] = useState<number>(1);
+
+  // Reset page when switching tabs or filters
+  useEffect(() => {
+    setMajorSourceSearch('');
+    setMajorSourcePage(1);
+    setOtherPage(1);
+  }, [activeTab]);
+
+  useEffect(() => {
+    setAllPage(1);
+  }, [allSearch, allSourceFilter, allSort]);
+
+  useEffect(() => {
+    setOtherPage(1);
+  }, [otherSearch, otherSubFilter, otherSort]);
+
+  useEffect(() => {
+    setMajorSourcePage(1);
+  }, [majorSourceSearch, majorSourceSort]);
+
+  const filteredAndSortedAllGames = useMemo(() => {
+    let list = catalogGames;
+    if (allSourceFilter !== 'all') {
+      list = list.filter(g => g.source === allSourceFilter);
+    }
+    const q = allSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter(g => g.name.toLowerCase().includes(q) || (g.source && g.source.toLowerCase().includes(q)));
+    }
+    if (allSort === 'name_asc') {
+      list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (allSort === 'name_desc') {
+      list = [...list].sort((a, b) => b.name.localeCompare(a.name));
+    } else if (allSort === 'source_asc') {
+      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || a.name.localeCompare(b.name));
+    } else if (allSort === 'source_desc') {
+      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || a.name.localeCompare(b.name));
+    }
+    return list;
+  }, [catalogGames, allSourceFilter, allSearch, allSort]);
+
+  const filteredAndSortedOtherGames = useMemo(() => {
+    let list = otherSourcesGames;
+    if (otherSubFilter !== 'all') {
+      list = list.filter(g => g.source === otherSubFilter);
+    }
+    const q = otherSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter(g => g.name.toLowerCase().includes(q) || (g.source && g.source.toLowerCase().includes(q)));
+    }
+    if (otherSort === 'name_asc') {
+      list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (otherSort === 'name_desc') {
+      list = [...list].sort((a, b) => b.name.localeCompare(a.name));
+    } else if (otherSort === 'source_asc') {
+      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || a.name.localeCompare(b.name));
+    } else if (otherSort === 'source_desc') {
+      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || a.name.localeCompare(b.name));
+    }
+    return list;
+  }, [otherSourcesGames, otherSubFilter, otherSearch, otherSort]);
 
   // 6kh0 State (145 Games)
   const [sixKhoGames] = useState<WebGameItem[]>(sixKhoCatalogData as WebGameItem[]);
@@ -506,9 +764,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [ynrbsuGames] = useState<WebGameItem[]>(ynrbsuCatalogData as WebGameItem[]);
   const [ynrbsuSearch, setYnrbsuSearch] = useState('');
   const [ynrbsuPage, setYnrbsuPage] = useState(1);
-
-  // All Sources Unified State
-  const [allSearch, setAllSearch] = useState('');
   
   // Zen GS state (1,700+ CloudFront CDN games)
   const [activeZenGame, setActiveZenGame] = useState<ZenGSGameSelection | null>(null);
@@ -992,28 +1247,44 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   };
 
   // Source Dropdown Options Config
-  const sourceOptions: Array<{
+  const sourceOptions = useMemo<Array<{
     id: GameSourceTab;
     name: string;
     badge: string;
     icon: React.ReactNode;
     desc: string;
     color: string;
-    group: 'all' | 'repositories' | 'cloud' | 'consoles';
-  }> = [
-    { id: 'all', name: 'All Sources', badge: '4.9K+ Combined', icon: <Sparkles size={14} />, desc: 'Unified mega library with labeled source sections', color: '#a855f7', group: 'all' },
-    { id: 'sixkho', name: '6kh0 Projects', badge: `${sixKhoGames.length} Games`, icon: <Rocket size={14} />, desc: 'Classic unblocked web games archive (6kh0)', color: '#3b82f6', group: 'repositories' },
-    { id: 'ynrbsu', name: 'Ynrbsu Arcade', badge: `${ynrbsuGames.length} Games`, icon: <Target size={14} />, desc: 'BrunysIXLWork unblocked games collection', color: '#10b981', group: 'repositories' },
-    { id: 'vault', name: 'Game Vault', badge: `${vaultGames.length || '1.5K'} Games`, icon: <Layers size={14} />, desc: 'Local & offline vault of HTML5 and Flash games', color: '#8b5cf6', group: 'repositories' },
-    { id: 'gnmath', name: 'GN-Math', badge: `${gnMathGames.length || '840'} Games`, icon: <Sparkles size={14} />, desc: 'Action, puzzle and educational games catalog', color: '#ec4899', group: 'repositories' },
-    { id: 'zengs', name: 'Zen GS Cloud', badge: '1,700+ Games', icon: <Compass size={14} />, desc: 'CloudFront CDN dynamic arcade loader', color: '#06b6d4', group: 'repositories' },
-    { id: 'nettleweb', name: 'NettleWeb Hub', badge: 'Web Portal', icon: <Globe size={14} />, desc: 'Proxy-enabled web games and portal', color: '#0284c7', group: 'repositories' },
-    { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables', color: '#f59e0b', group: 'cloud' },
-    { id: 'lumin', name: 'Lumin SDK', badge: 'Lumin Engine', icon: <Zap size={14} />, desc: 'Lumin web game engine catalog', color: '#6366f1', group: 'cloud' },
-    { id: 'p2p', name: 'P2P WebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw arcade playables', color: '#f97316', group: 'cloud' },
-    { id: 'emulator', name: 'Emulator Hub', badge: 'WASM Studio', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
-    { id: 'eaglercraft', name: 'Eaglercraft', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
-  ];
+    group: 'all' | 'major' | 'core' | 'consoles' | 'other';
+  }>>(() => [
+    { id: 'all', name: 'All Sources Combined', badge: '26.1K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources', color: '#a855f7', group: 'all' },
+    
+    // Major Game Repositories (The Large Sources)
+    ...MAJOR_SOURCES_CONFIG.map(s => ({
+      id: s.id,
+      name: s.name,
+      badge: `${(gamesBySource[s.sourceKey]?.length || s.count).toLocaleString()} Games`,
+      icon: <Rocket size={14} />,
+      desc: s.desc,
+      color: s.color,
+      group: 'major' as const,
+    })),
+
+    // Core Godly OS Collections
+    { id: 'vault', name: 'Local Game Vault', badge: `${vaultGames.length || '1,567'} Games`, icon: <Layers size={14} />, desc: 'Local & offline vault of HTML5 and Flash games', color: '#ec4899', group: 'core' },
+    { id: 'zengs', name: 'Zen GS Cloud Library', badge: '1,700+ Games', icon: <Compass size={14} />, desc: 'CloudFront CDN dynamic arcade loader', color: '#06b6d4', group: 'core' },
+    { id: 'sixkho', name: '6kh0 Projects Hub', badge: `${sixKhoGames.length} Games`, icon: <Rocket size={14} />, desc: '145 unblocked classics & emulations', color: '#38bdf8', group: 'core' },
+    { id: 'ynrbsu', name: 'Ynrbsu Arcade', badge: `${ynrbsuGames.length} Games`, icon: <Target size={14} />, desc: '167 verified unblocked games', color: '#fb923c', group: 'core' },
+    { id: 'nettleweb', name: 'NettleWeb Games', badge: 'Web Hub', icon: <Globe size={14} />, desc: 'Slope, 1v1.LOL, Paper.io & web portal', color: '#0284c7', group: 'core' },
+    { id: 'p2p', name: 'P2P GameWebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw HTML5 arcade mirror', color: '#f97316', group: 'core' },
+
+    // Cloud & Consoles
+    { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables (Roblox)', color: '#f59e0b', group: 'consoles' },
+    { id: 'emulator', name: 'WASM Emulator Hub', badge: 'RetroArch', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
+    { id: 'eaglercraft', name: 'Eaglercraft Studio', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
+
+    // Other Sources Combined
+    { id: 'other', name: 'Other Sources Hub', badge: `${otherSourcesGames.length.toLocaleString() || '5,551'} Games`, icon: <Layers size={14} />, desc: '46 smaller repos: Selenite, Bloxy, Mini JS, Noah, etc.', color: '#64748b', group: 'other' },
+  ], [gamesBySource, otherSourcesGames.length, vaultGames.length, sixKhoGames.length, ynrbsuGames.length]);
 
   const currentSource = sourceOptions.find(s => s.id === activeTab) || sourceOptions[0];
 
@@ -1106,7 +1377,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               <span className="text-xs font-bold text-white truncate max-w-xs sm:max-w-md">
                 {activeUniversalGame.title}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono uppercase">
+              <span 
+                className="text-[10px] px-2 py-0.5 rounded-md font-mono uppercase border"
+                style={{
+                  background: activeUniversalGame.sourceColor ? `${activeUniversalGame.sourceColor}20` : 'rgba(168,85,247,0.2)',
+                  color: activeUniversalGame.sourceColor || '#c084fc',
+                  borderColor: activeUniversalGame.sourceColor ? `${activeUniversalGame.sourceColor}40` : 'rgba(168,85,247,0.3)',
+                }}
+              >
                 {activeUniversalGame.source}
               </span>
               {activeUniversalGame.category && (
@@ -1149,10 +1427,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         </div>
 
         <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
+          {universalLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20 gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+              <div className="text-center">
+                <p className="text-xs font-semibold text-white">Sandboxing {activeUniversalGame.title}...</p>
+                <p className="text-[10px] text-white/40 mt-1 font-mono">Fetching HTML & injecting base CDN resolvers</p>
+              </div>
+            </div>
+          )}
           <iframe
             ref={universalFrameRef}
             key={universalRefreshKey}
-            src={activeUniversalGame.url}
+            src={universalBlobUrl || activeUniversalGame.url}
             title={activeUniversalGame.title}
             className="w-full h-full border-0 bg-black"
             sandbox="allow-scripts allow-forms allow-pointer-lock"
@@ -1393,412 +1680,678 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     );
   };
 
-  // All Sources Mega View Renderer
-  const renderAllSourcesView = () => {
-    const searchLower = allSearch.trim().toLowerCase();
-    const isSearching = searchLower.length > 0;
+  // Source Theme Colors Mapping
+  const SOURCE_COLOR_MAP: Record<string, string> = {
+    Nebula: '#818cf8',
+    UGS: '#38bdf8',
+    js13kGames: '#facc15',
+    CVK: '#fb923c',
+    Hydra: '#4ade80',
+    Lumin: '#a78bfa',
+    Diesmos: '#ec4899',
+    'GN-Math': '#06b6d4',
+    modifiedgnmath: '#06b6d4',
+    GhostProxy: '#94a3b8',
+    Alexr: '#f43f5e',
+    GameZone: '#2dd4bf',
+    Petezah: '#f59e0b',
+    Daknux: '#10b981',
+    Seraph: '#8b5cf6',
+    Truffled: '#d946ef',
+    DuckMath: '#eab308',
+    Selenite: '#6366f1',
+    Bloxy: '#ef4444',
+    'Mini JS Games Hub': '#14b8a6',
+    Noah: '#3b82f6',
+    '3kh0 Assets': '#f97316',
+    'Offline HTML Games Pack': '#84cc16',
+    Elite: '#06b6d4',
+    SFoolsOS: '#a855f7',
+    'Space-proxy': '#ec4899',
+    'Tiny Arcade': '#f59e0b',
+    STORM0S: '#3b82f6',
+    'Unblocked Zone': '#10b981',
+    'Frogie Arcade': '#22c55e',
+    'Crisp Games': '#e11d48',
+    '3kh0': '#0ea5e9',
+    CCPorted: '#6366f1',
+    'Google Class': '#eab308',
+    'Games Hub': '#d946ef',
+    'Mini Browser Games': '#14b8a6',
+    Blox: '#f97316',
+    '100 HTML Games': '#f43f5e',
+    'YouTube Playables': '#ef4444',
+    'Void Network': '#8b5cf6',
+    'JavaScript Games for Beginners': '#facc15',
+    'LittleJS Arcade': '#ec4899',
+    'Browser Game Arcade': '#38bdf8',
+    'Web Games': '#4ade80',
+    'StrataMind Game Zone': '#a78bfa',
+    'One Page Games': '#fb923c',
+    'ZLostTK Games': '#06b6d4',
+    'WYF Games': '#10b981',
+    'Fable Arcade': '#f59e0b',
+    'One File Games': '#818cf8',
+    'Yahayuta Mini Games': '#d946ef',
+    MicroGames: '#2dd4bf',
+    'Nanhopper Mini Games': '#64748b',
+    'HTML Minigames': '#94a3b8',
+    LittleJS: '#e11d48',
+    'Chandrakant Games': '#38bdf8',
+    'PICO-8 Gallery': '#ec4899',
+    'Web Arcade': '#f59e0b',
+    'Clumsy Bird': '#10b981',
+    Tundra: '#38bdf8',
+    Extra: '#8b5cf6',
+  };
 
-    const matches6kh0 = isSearching ? sixKhoGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
-    const matchesYnrbsu = isSearching ? ynrbsuGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
-    const matchesVault = isSearching ? vaultGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
-    const matchesGn = isSearching ? gnMathGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
-    const totalMatches = matches6kh0.length + matchesYnrbsu.length + matchesVault.length + matchesGn.length;
+  const getSourceColor = (src?: string): string => {
+    if (!src) return '#818cf8';
+    if (SOURCE_COLOR_MAP[src]) return SOURCE_COLOR_MAP[src];
+    let hash = 0;
+    for (let i = 0; i < src.length; i++) {
+      hash = src.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash % 360);
+    return `hsl(${h}, 75%, 60%)`;
+  };
+
+  // Reusable Catalog Game Card (Supports Lazy Loading & Weak Device Optimization)
+  const renderCatalogGameCard = (game: CatalogGame) => {
+    const color = getSourceColor(game.source);
+    return (
+      <div
+        key={`${game.source}_${game.id}_${game.name}`}
+        onClick={() => {
+          sound.playClick();
+          handleLaunchUniversalGame({
+            id: `${game.source}_${game.id}`,
+            title: game.name,
+            url: game.url,
+            thumbnail: game.image,
+            source: game.source,
+            category: game.kind || game.source,
+            fetchGame: game.fetchGame ?? true,
+            frameFallback: game.frameFallback,
+            crispScript: game.crispScript,
+            sourceColor: color,
+          });
+        }}
+        className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-purple-500/50 bg-white/[0.03] hover:bg-white/[0.07] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-xl hover:shadow-purple-950/30"
+        style={{
+          contentVisibility: isEcoMode ? 'auto' : undefined,
+          containIntrinsicSize: isEcoMode ? '220px' : undefined,
+        }}
+      >
+        <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+          {game.image ? (
+            <img
+              src={game.image}
+              alt={game.name}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div 
+              className="w-full h-full flex flex-col items-center justify-center p-3 text-center transition-all group-hover:scale-105"
+              style={{
+                background: `linear-gradient(135deg, ${color}20 0%, #0a0b14 100%)`,
+                borderBottom: `1px solid ${color}30`
+              }}
+            >
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 text-white shadow-md border"
+                style={{
+                  background: `${color}30`,
+                  borderColor: `${color}60`,
+                  color: color
+                }}
+              >
+                <Gamepad2 size={20} />
+              </div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 truncate max-w-full">
+                {game.source}
+              </span>
+            </div>
+          )}
+
+          {/* Source Badge Pill */}
+          <div className="absolute top-2 left-2 z-10 pointer-events-none">
+            <span 
+              className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold border backdrop-blur-md shadow-sm"
+              style={{
+                background: `${color}30`,
+                color: color,
+                borderColor: `${color}60`
+              }}
+            >
+              {game.source}
+            </span>
+          </div>
+
+          {/* Hover play icon overlay */}
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+            <div className="w-10 h-10 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+              <Play size={18} className="fill-white ml-0.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card Info */}
+        <div className="p-3 flex flex-col flex-1 justify-between bg-white/[0.01]">
+          <div>
+            <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1 leading-snug" title={game.name}>
+              {game.name}
+            </h4>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[10px] text-white/40 truncate">
+                {game.kind || 'Arcade Game'}
+              </span>
+              {game.fetchGame && (
+                <span className="text-[9px] text-emerald-400 font-mono font-medium">
+                  • Blob
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Reusable Pagination Component
+  const renderCatalogPagination = (
+    currentPage: number,
+    totalPages: number,
+    setPage: React.Dispatch<React.SetStateAction<number>>,
+    totalItems: number,
+    pageSize: number = 48
+  ) => {
+    if (totalPages <= 1) return null;
+    const startIdx = (currentPage - 1) * pageSize + 1;
+    const endIdx = Math.min(currentPage * pageSize, totalItems);
+
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 pb-8 border-t border-white/[0.06] text-xs">
+        <div className="text-white/40 font-mono text-[11px]">
+          Showing <span className="text-white font-bold">{startIdx.toLocaleString()}–{endIdx.toLocaleString()}</span> of <span className="text-white font-bold">{totalItems.toLocaleString()}</span> items
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          <button
+            onClick={() => { sound.playClick(); setPage(p => Math.max(1, p - 1)); }}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none text-white/80 transition-all font-medium text-xs flex items-center gap-1"
+          >
+            <ChevronLeft size={13} /> Prev
+          </button>
+          {pages.map((p, idx) => {
+            if (p === '...') {
+              return <span key={`el_${idx}`} className="px-2 text-white/30 font-mono">…</span>;
+            }
+            const num = p as number;
+            const isActive = num === currentPage;
+            return (
+              <button
+                key={num}
+                onClick={() => { sound.playClick(); setPage(num); }}
+                className={`w-8 h-8 rounded-xl font-mono text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40 border border-purple-400'
+                    : 'border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-white/70'
+                }`}
+              >
+                {num}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => { sound.playClick(); setPage(p => Math.min(totalPages, p + 1)); }}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none text-white/80 transition-all font-medium text-xs flex items-center gap-1"
+          >
+            Next <ChevronRight size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── DEDICATED VIEW FOR EACH MAJOR SOURCE ──
+  const renderMajorSourceView = (meta: MajorSourceMeta) => {
+    const rawGames = gamesBySource[meta.sourceKey] || [];
+    const searchLower = majorSourceSearch.trim().toLowerCase();
+    
+    let filtered = rawGames;
+    if (searchLower) {
+      filtered = filtered.filter(g => g.name.toLowerCase().includes(searchLower));
+    }
+
+    if (majorSourceSort === 'name_asc') {
+      filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (majorSourceSort === 'name_desc') {
+      filtered = [...filtered].sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    const pageSize = 48;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const pagedGames = filtered.slice((majorSourcePage - 1) * pageSize, majorSourcePage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-y-auto ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
+        {/* Banner */}
+        <div 
+          className={`p-6 border-b border-white/[0.08] shrink-0 ${isEcoMode ? 'bg-[#090b14]' : 'backdrop-blur-2xl'}`}
+          style={{
+            background: isEcoMode ? undefined : `linear-gradient(180deg, ${meta.color}15 0%, rgba(10,8,24,0.4) 60%, transparent 100%)`
+          }}
+        >
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span 
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono border flex items-center gap-1.5"
+                  style={{
+                    background: `${meta.color}20`,
+                    color: meta.color,
+                    borderColor: `${meta.color}40`
+                  }}
+                >
+                  <Rocket size={11} /> {meta.name.toUpperCase()} REPOSITORY
+                </span>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  {rawGames.length.toLocaleString()} Playable Games
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>{meta.name}</span>
+              </h1>
+              <p className="text-xs text-white/50 mt-1 max-w-xl">
+                {meta.desc}
+              </p>
+            </div>
+
+            {/* Actions: GitHub Link & Live Search */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  window.open(meta.repoUrl, '_blank');
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 hover:border-white/20 bg-white/[0.04] text-white/80 hover:text-white font-semibold text-xs transition-all"
+                title={`Open repository ${meta.repo} on GitHub`}
+              >
+                <FolderGit2 size={13} />
+                <span>GitHub Repo</span>
+                <ExternalLink size={12} className="text-white/40" />
+              </button>
+
+              <div className="relative w-full sm:w-64">
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+                <input
+                  type="text"
+                  value={majorSourceSearch}
+                  onChange={(e) => setMajorSourceSearch(e.target.value)}
+                  placeholder={`Search ${rawGames.length.toLocaleString()} ${meta.name} games...`}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
+                />
+                {majorSourceSearch && (
+                  <button
+                    onClick={() => setMajorSourceSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1.5 text-xs text-white/70">
+                <ArrowUpDown size={13} className="text-white/40" />
+                <select
+                  value={majorSourceSort}
+                  onChange={(e) => setMajorSourceSort(e.target.value as SortOption)}
+                  className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
+                >
+                  <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
+                  <option value="name_desc" className="bg-[#0b0c1c] text-white">Title (Z → A)</option>
+                  <option value="default" className="bg-[#0b0c1c] text-white">Catalog Default</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Grid */}
+        <div className="p-6 max-w-7xl mx-auto w-full flex-1 flex flex-col">
+          {pagedGames.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06] rounded-2xl my-auto">
+              <Search size={32} className="text-white/20 mb-3" />
+              <p className="text-sm font-semibold text-white">No games matched "{majorSourceSearch}" in {meta.name}</p>
+              <button
+                onClick={() => setMajorSourceSearch('')}
+                className="mt-3 text-xs text-purple-400 hover:text-purple-300 font-medium"
+              >
+                Clear search filter
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 mb-6">
+                {pagedGames.map(renderCatalogGameCard)}
+              </div>
+              {renderCatalogPagination(majorSourcePage, totalPages, setMajorSourcePage, filtered.length, pageSize)}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ── DEDICATED VIEW FOR "OTHER" COMBINED SOURCES (46 Repositories, 5,551 Games) ──
+  const renderOtherSourcesView = () => {
+    const pageSize = 48;
+    const totalPages = Math.ceil(filteredAndSortedOtherGames.length / pageSize) || 1;
+    const pagedGames = filteredAndSortedOtherGames.slice((otherPage - 1) * pageSize, otherPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-y-auto ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
+        {/* Banner */}
+        <div className={`p-6 border-b border-white/[0.08] shrink-0 ${isEcoMode ? 'bg-[#090b14]' : 'bg-gradient-to-b from-[#15132d]/60 via-[#0a0818]/40 to-transparent backdrop-blur-xl'}`}>
+          <div className="max-w-7xl mx-auto flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-slate-500/20 text-slate-300 border border-slate-500/30 flex items-center gap-1.5">
+                    <Layers size={11} /> OTHER SOURCES COLLECTION
+                  </span>
+                  <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                    {otherSourcesGames.length.toLocaleString()} Games • {otherSourceNames.length} Smaller Repositories
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  Other Unblocked Game Repositories
+                </h1>
+                <p className="text-xs text-white/50 mt-1 max-w-xl">
+                  Combined collection of 46 smaller game repositories including Selenite, Bloxy, Mini JS Games Hub, Noah, Offline HTML Pack, Space-proxy, STORM0S, Tiny Arcade, Frogie Arcade, and more.
+                </p>
+              </div>
+
+              {/* Search & Sort Controls */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="relative w-full sm:w-64">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+                  <input
+                    type="text"
+                    value={otherSearch}
+                    onChange={(e) => setOtherSearch(e.target.value)}
+                    placeholder="Search across other sources..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
+                  />
+                  {otherSearch && (
+                    <button
+                      onClick={() => setOtherSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1.5 text-xs text-white/70">
+                  <ArrowUpDown size={13} className="text-white/40" />
+                  <select
+                    value={otherSort}
+                    onChange={(e) => setOtherSort(e.target.value as SortOption)}
+                    className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
+                  >
+                    <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
+                    <option value="name_desc" className="bg-[#0b0c1c] text-white">Title (Z → A)</option>
+                    <option value="source_asc" className="bg-[#0b0c1c] text-white">Source (A → Z)</option>
+                    <option value="source_desc" className="bg-[#0b0c1c] text-white">Source (Z → A)</option>
+                    <option value="default" className="bg-[#0b0c1c] text-white">Catalog Default</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Filter Chips for Smaller Repositories */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
+              <span className="text-[10px] font-mono uppercase text-white/30 tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                <Filter size={11} /> Filter:
+              </span>
+              <button
+                onClick={() => { sound.playClick(); setOtherSubFilter('all'); }}
+                className={`px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
+                  otherSubFilter === 'all'
+                    ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                    : 'bg-white/[0.04] text-white/70 hover:text-white border-white/10'
+                }`}
+              >
+                All Smaller Sources ({otherSourcesGames.length})
+              </button>
+              {otherSourceNames.map((name) => {
+                const count = gamesBySource[name]?.length || 0;
+                const isSelected = otherSubFilter === name;
+                const col = getSourceColor(name);
+                return (
+                  <button
+                    key={name}
+                    onClick={() => { sound.playClick(); setOtherSubFilter(name); }}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
+                      isSelected
+                        ? 'text-white border-white/40 shadow-sm'
+                        : 'text-white/70 hover:text-white border-white/10 bg-white/[0.03]'
+                    }`}
+                    style={{
+                      background: isSelected ? `${col}40` : undefined,
+                      borderColor: isSelected ? col : undefined,
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: col }} />
+                    <span>{name}</span>
+                    <span className="text-[9.5px] font-mono text-white/40">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Content Grid */}
+        <div className="p-6 max-w-7xl mx-auto w-full flex-1 flex flex-col">
+          {pagedGames.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06] rounded-2xl my-auto">
+              <Search size={32} className="text-white/20 mb-3" />
+              <p className="text-sm font-semibold text-white">No games matched "{otherSearch}"</p>
+              <button
+                onClick={() => { setOtherSearch(''); setOtherSubFilter('all'); }}
+                className="mt-3 text-xs text-purple-400 hover:text-purple-300 font-medium"
+              >
+                Reset all filters
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 mb-6">
+                {pagedGames.map(renderCatalogGameCard)}
+              </div>
+              {renderCatalogPagination(otherPage, totalPages, setOtherPage, filteredAndSortedOtherGames.length, pageSize)}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ── "ALL" SECTION: VIEW ALL 26,123+ GAMES FROM ALL SOURCES COMBINED & SORTED ──
+  const renderAllSourcesView = () => {
+    const pageSize = 48;
+    const totalPages = Math.ceil(filteredAndSortedAllGames.length / pageSize) || 1;
+    const pagedGames = filteredAndSortedAllGames.slice((allPage - 1) * pageSize, allPage * pageSize);
 
     return (
       <div className={`w-full h-full flex flex-col overflow-y-auto ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
         {/* Hero Banner & Search Area */}
         <div className={`p-6 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090b14]' : 'bg-gradient-to-b from-[#120d28]/60 via-[#0a0818]/40 to-transparent backdrop-blur-xl'} shrink-0`}>
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1.5">
-                  <Sparkles size={11} /> UNIFIED ARCADE ENGINE
-                </span>
-                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                  4,900+ Combined Playables
-                </span>
+          <div className="max-w-7xl mx-auto flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1.5">
+                    <Sparkles size={11} /> UNIFIED MASTER ARCHIVE
+                  </span>
+                  <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                    {catalogGames.length > 0 ? catalogGames.length.toLocaleString() : '26,123'}+ Games Combined
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  All Game Sources Combined &amp; Sorted
+                </h1>
+                <p className="text-xs text-white/50 mt-1 max-w-xl">
+                  Unified library from all 62 game repositories. Filter by source, search across all titles, or sort alphabetically by name or repository.
+                </p>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                All Arcade Sources Combined
-              </h1>
-              <p className="text-xs text-white/50 mt-1 max-w-xl">
-                Unified catalog featuring 6kh0, Ynrbsu, Godly Vault, GN-Math, NettleWeb, Zen GS, Consoles, and Eaglercraft.
-              </p>
+
+              {/* Controls: Search, Source Select, Sort Select */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {/* Search Input */}
+                <div className="relative w-full sm:w-64">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+                  <input
+                    type="text"
+                    value={allSearch}
+                    onChange={(e) => setAllSearch(e.target.value)}
+                    placeholder="Search 26,000+ games..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
+                  />
+                  {allSearch && (
+                    <button
+                      onClick={() => setAllSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Source Filter Select Dropdown */}
+                <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white/70">
+                  <Filter size={13} className="text-white/40" />
+                  <select
+                    value={allSourceFilter}
+                    onChange={(e) => setAllSourceFilter(e.target.value)}
+                    className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium max-w-[130px]"
+                  >
+                    <option value="all" className="bg-[#0b0c1c] text-white">All Sources ({catalogGames.length.toLocaleString() || '26.1K'})</option>
+                    {allUniqueSources.map((src) => (
+                      <option key={src} value={src} className="bg-[#0b0c1c] text-white">
+                        {src} ({gamesBySource[src]?.length || 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sort Order Dropdown */}
+                <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white/70">
+                  <ArrowUpDown size={13} className="text-white/40" />
+                  <select
+                    value={allSort}
+                    onChange={(e) => setAllSort(e.target.value as SortOption)}
+                    className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
+                  >
+                    <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
+                    <option value="name_desc" className="bg-[#0b0c1c] text-white">Title (Z → A)</option>
+                    <option value="source_asc" className="bg-[#0b0c1c] text-white">Source (A → Z)</option>
+                    <option value="source_desc" className="bg-[#0b0c1c] text-white">Source (Z → A)</option>
+                    <option value="default" className="bg-[#0b0c1c] text-white">Catalog Default</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
-            {/* Unified Search Input */}
-            <div className="relative w-full md:w-80">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
-              <input
-                type="text"
-                value={allSearch}
-                onChange={(e) => setAllSearch(e.target.value)}
-                placeholder="Search across all 4.9K+ games..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
-              />
-              {allSearch && (
-                <button
-                  onClick={() => setAllSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                >
-                  <X size={13} />
-                </button>
-              )}
+            {/* Quick Filter Chips to Big Sources */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
+              <span className="text-[10px] font-mono uppercase text-white/30 tracking-wider shrink-0 mr-1">Quick Select:</span>
+              <button
+                onClick={() => { sound.playClick(); setAllSourceFilter('all'); }}
+                className={`px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
+                  allSourceFilter === 'all'
+                    ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                    : 'bg-white/[0.04] text-white/70 hover:text-white border-white/10'
+                }`}
+              >
+                All Combined
+              </button>
+              {MAJOR_SOURCES_CONFIG.slice(0, 8).map((s) => {
+                const count = gamesBySource[s.sourceKey]?.length || s.count;
+                const isSelected = allSourceFilter === s.sourceKey;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => { sound.playClick(); setAllSourceFilter(s.sourceKey); }}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
+                      isSelected
+                        ? 'text-white border-white/40 shadow-sm'
+                        : 'text-white/70 hover:text-white border-white/10 bg-white/[0.03]'
+                    }`}
+                    style={{
+                      background: isSelected ? `${s.color}35` : undefined,
+                      borderColor: isSelected ? s.color : undefined,
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
+                    <span>{s.name}</span>
+                    <span className="text-[9.5px] font-mono text-white/40">({count.toLocaleString()})</span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => { sound.playClick(); setActiveTab('other'); }}
+                className="flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-500/10 hover:bg-slate-500/20 text-slate-300 border border-slate-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Layers size={11} /> View Other Sources ({otherSourcesGames.length.toLocaleString()})
+              </button>
             </div>
           </div>
-
-          {/* Quick Jump Source Chips (when not searching) */}
-          {!isSearching && (
-            <div className="max-w-7xl mx-auto flex items-center gap-2 mt-5 overflow-x-auto pb-1 no-scrollbar text-xs">
-              <span className="text-[10px] font-mono uppercase text-white/30 tracking-wider shrink-0 mr-1">Jump to:</span>
-              <button
-                onClick={() => { const el = document.getElementById('sec-6kh0'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Rocket size={12} /> 6kh0 Projects (145)
-              </button>
-              <button
-                onClick={() => { const el = document.getElementById('sec-ynrbsu'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Target size={12} /> Ynrbsu Arcade (167)
-              </button>
-              <button
-                onClick={() => { const el = document.getElementById('sec-vault'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Layers size={12} /> Game Vault (1.5K)
-              </button>
-              <button
-                onClick={() => { const el = document.getElementById('sec-gnmath'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Sparkles size={12} /> GN-Math (840)
-              </button>
-              <button
-                onClick={() => { const el = document.getElementById('sec-nettleweb'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Globe size={12} /> NettleWeb Hub
-              </button>
-              <button
-                onClick={() => { const el = document.getElementById('sec-consoles'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0 transition-all font-medium text-[11px]"
-              >
-                <Gamepad2 size={12} /> Consoles & Emulation
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Main Content Area */}
-        <div className="p-6 max-w-7xl mx-auto w-full flex flex-col gap-10">
-          {isSearching ? (
-            /* Live Search Results across all sources */
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>Search results for "{allSearch}"</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono">
-                    {totalMatches} matches found
-                  </span>
-                </h3>
-              </div>
-
-              {totalMatches === 0 ? (
-                <div className="p-12 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-                  <Search size={32} className="text-white/20 mb-3" />
-                  <p className="text-sm font-semibold text-white">No matching games found across catalogs</p>
-                  <p className="text-xs text-white/40 mt-1">Try a different search term like "1v1", "slope", "racing", or "mario".</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-8">
-                  {matches6kh0.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-blue-400 mb-3 flex items-center gap-1.5">
-                        <Rocket size={13} /> 6kh0 Projects ({matches6kh0.length})
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {matches6kh0.map(renderWebGameCard)}
-                      </div>
-                    </div>
-                  )}
-                  {matchesYnrbsu.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-1.5">
-                        <Target size={13} /> Ynrbsu Games ({matchesYnrbsu.length})
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {matchesYnrbsu.map(renderWebGameCard)}
-                      </div>
-                    </div>
-                  )}
-                  {matchesVault.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-purple-400 mb-3 flex items-center gap-1.5">
-                        <Layers size={13} /> Godly Vault Games ({matchesVault.length})
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {matchesVault.map((g) => renderWebGameCard({
-                          id: g.id,
-                          title: g.title,
-                          url: g.url,
-                          source: 'vault',
-                          category: g.category
-                        }))}
-                      </div>
-                    </div>
-                  )}
-                  {matchesGn.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-pink-400 mb-3 flex items-center gap-1.5">
-                        <Sparkles size={13} /> GN-Math Games ({matchesGn.length})
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {matchesGn.map((g) => renderWebGameCard({
-                          id: 'gn_' + g.id,
-                          title: g.title,
-                          url: g.url,
-                          thumbnail: g.cover,
-                          source: 'gnmath',
-                          category: g.author
-                        }))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* Catalog Grid & Pagination */}
+        <div className="p-6 max-w-7xl mx-auto w-full flex-1 flex flex-col">
+          {pagedGames.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06] rounded-2xl my-auto">
+              <Search size={32} className="text-white/20 mb-3" />
+              <p className="text-sm font-semibold text-white">No games matched your search</p>
+              <p className="text-xs text-white/40 mt-1">Try another keyword or reset source filter.</p>
+              <button
+                onClick={() => { setAllSearch(''); setAllSourceFilter('all'); }}
+                className="mt-3 text-xs text-purple-400 hover:text-purple-300 font-medium"
+              >
+                Reset all filters
+              </button>
             </div>
           ) : (
-            /* Labeled Sections */
             <>
-              {/* ── SECTION 1: 6kh0 Projects ── */}
-              <div id="sec-6kh0" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        <Rocket size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">6kh0 Classic Projects</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-300 font-mono border border-blue-500/20">
-                        145 Games
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">Classic unblocked web games from the 6kh0 archive</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('sixkho');
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-xl border border-blue-500/25 transition-all"
-                  >
-                    View All 145 <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {sixKhoGames.slice(0, 12).map(renderWebGameCard)}
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 mb-6">
+                {pagedGames.map(renderCatalogGameCard)}
               </div>
-
-              {/* ── SECTION 2: Ynrbsu Arcade ── */}
-              <div id="sec-ynrbsu" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        <Target size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Ynrbsu (BrunysIXLWork) Arcade</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20">
-                        167 Games
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">High-speed unblocked HTML5 arcade and action games</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('ynrbsu');
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/25 transition-all"
-                  >
-                    View All 167 <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {ynrbsuGames.slice(0, 12).map(renderWebGameCard)}
-                </div>
-              </div>
-
-              {/* ── SECTION 3: Godly Offline Vault Highlights ── */}
-              <div id="sec-vault" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                        <Layers size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Godly Vault Highlights</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20">
-                        1,567 Games
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">Zero-network offline HTML5 & Ruffle Flash vault</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('vault');
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1.5 rounded-xl border border-purple-500/25 transition-all"
-                  >
-                    View All 1.5K <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {vaultGames.slice(0, 12).map((g) => renderWebGameCard({
-                    id: g.id,
-                    title: g.title,
-                    url: g.url,
-                    source: 'vault',
-                    category: g.category
-                  }))}
-                </div>
-              </div>
-
-              {/* ── SECTION 4: GN-Math Educational & Action ── */}
-              <div id="sec-gnmath" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-pink-500/20 text-pink-400 border border-pink-500/30">
-                        <Sparkles size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">GN-Math Hits</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 font-mono border border-pink-500/20">
-                        840 Games
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">Educational puzzles, logic tests, and action titles</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('gnmath');
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-pink-400 hover:text-pink-300 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1.5 rounded-xl border border-pink-500/25 transition-all"
-                  >
-                    View All 840 <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {gnMathGames.slice(0, 12).map((g) => renderWebGameCard({
-                    id: 'gn_' + g.id,
-                    title: g.title,
-                    url: g.url,
-                    thumbnail: g.cover,
-                    source: 'gnmath',
-                    category: g.author
-                  }))}
-                </div>
-              </div>
-
-              {/* ── SECTION 5: NettleWeb Hub ── */}
-              <div id="sec-nettleweb" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                        <Globe size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">NettleWeb Web Hub</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 font-mono border border-sky-500/20">
-                        Proxy & Web Portal
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">Web games and portal playable directly within Godly OS</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('nettleweb');
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/25 transition-all"
-                  >
-                    Open NettleWeb <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {NETTLEWEB_POPULAR_GAMES.map(renderWebGameCard)}
-                </div>
-              </div>
-
-              {/* ── SECTION 6: Consoles & Minecraft ── */}
-              <div id="sec-consoles" className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                        <Gamepad2 size={14} />
-                      </span>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Consoles, Emulators & Minecraft</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20">
-                        Dedicated Studios
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/40 mt-0.5">High-performance custom ROM studio and full Minecraft web editions</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Eaglercraft Banner */}
-                  <div 
-                    onClick={() => { sound.playClick(); setActiveTab('eaglercraft'); }}
-                    className="group relative rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 bg-gradient-to-br from-emerald-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-emerald-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
-                  >
-                    <div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">12 EDITIONS</span>
-                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-emerald-300 transition-colors">Eaglercraft Minecraft</h4>
-                      <p className="text-xs text-white/50 mt-1">26.2 WASM-GC, 1.20, 1.8.8, 1.7.10, and 7 SMP multiplayer servers.</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mt-4">
-                      Launch Minecraft Studio <ArrowRight size={13} />
-                    </div>
-                  </div>
-
-                  {/* Retro Emulator Hub Banner */}
-                  <div 
-                    onClick={() => { sound.playClick(); setActiveTab('emulator'); }}
-                    className="group relative rounded-2xl border border-purple-500/30 hover:border-purple-500/60 bg-gradient-to-br from-purple-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-purple-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
-                  >
-                    <div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold">WASM EMULATOR</span>
-                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-purple-300 transition-colors">Retro Emulator Hub</h4>
-                      <p className="text-xs text-white/50 mt-1">Drag-and-drop ROM player for GBA, NES, SNES, N64, and PS1.</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 mt-4">
-                      Open Emulator Studio <ArrowRight size={13} />
-                    </div>
-                  </div>
-
-                  {/* NowGG Android Cloud Banner */}
-                  <div 
-                    onClick={() => { sound.playClick(); setActiveTab('nowgg'); }}
-                    className="group relative rounded-2xl border border-amber-500/30 hover:border-amber-500/60 bg-gradient-to-br from-amber-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-amber-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
-                  >
-                    <div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">ANDROID 60FPS</span>
-                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-amber-300 transition-colors">NowGG Cloud Arcade</h4>
-                      <p className="text-xs text-white/50 mt-1">Stream Roblox, Subway Surfers, and top mobile games without installation.</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mt-4">
-                      Launch Cloud Arcade <ArrowRight size={13} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {renderCatalogPagination(allPage, totalPages, setAllPage, filteredAndSortedAllGames.length, pageSize)}
             </>
           )}
         </div>
@@ -1835,15 +2388,17 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 }}
               >
                 {!isEcoMode && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />}
-                {activeTab === 'all' && '4,900+ Combined Mega Library'}
+                {activeTab === 'all' && `${(catalogGames.length || 26123).toLocaleString()}+ All Sources Combined`}
+                {activeTab === 'other' && `${(otherSourcesGames.length || 5551).toLocaleString()} Other Playables (${otherSourceNames.length} Sources)`}
+                {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab) && (
+                  `${(gamesBySource[MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.sourceKey]?.length || MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.count).toLocaleString()} Games • ${MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.name}`
+                )}
                 {activeTab === 'sixkho' && `${sixKhoGames.length} 6kh0 Projects`}
                 {activeTab === 'ynrbsu' && `${ynrbsuGames.length} Ynrbsu Arcade`}
                 {activeTab === 'vault' && `${vaultGames.length > 0 ? vaultGames.length : '1,567'} Vault`}
-                {activeTab === 'gnmath' && `${gnMathGames.length > 0 ? gnMathGames.length : '840'} GN-Math`}
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
                 {activeTab === 'nettleweb' && 'NettleWeb Web Hub'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
-                {activeTab === 'lumin' && 'Lumin Engine'}
                 {activeTab === 'p2p' && '500+ P2P GameWebSight'}
                 {activeTab === 'emulator' && 'WASM Emulator Hub'}
                 {activeTab === 'eaglercraft' && '12 Eaglercraft Editions'}
@@ -1942,21 +2497,22 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-white">All Sources Combined</span>
                           <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
-                            4.9K+
+                            26.1K+
                           </span>
                         </div>
-                        <p className="text-[10px] text-white/50">Unified mega library with labeled sections</p>
+                        <p className="text-[10px] text-white/50">Unified library sorted &amp; filtered across all sources</p>
                       </div>
                     </div>
                     {activeTab === 'all' && <Check size={14} className="text-purple-400 shrink-0" />}
                   </button>
                 </div>
 
-                {/* Primary Repositories Group */}
-                <div className="px-2 py-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
-                  Primary Repositories
+                {/* Major Game Repositories (The Large Sources) */}
+                <div className="px-2 py-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider flex items-center justify-between">
+                  <span>Major Repositories</span>
+                  <span className="text-white/20">16 Sources</span>
                 </div>
-                {sourceOptions.filter(s => s.group === 'repositories').map((opt) => (
+                {sourceOptions.filter(s => s.group === 'major').map((opt) => (
                   <button
                     key={opt.id}
                     onClick={() => {
@@ -2006,11 +2562,12 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   </button>
                 ))}
 
-                {/* Cloud & Web Streaming Group */}
-                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
-                  Cloud & Web Streaming
+                {/* Other Sources Combined */}
+                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider flex items-center justify-between">
+                  <span>Other Repositories</span>
+                  <span className="text-white/20">46 Sources</span>
                 </div>
-                {sourceOptions.filter(s => s.group === 'cloud').map((opt) => (
+                {sourceOptions.filter(s => s.group === 'other').map((opt) => (
                   <button
                     key={opt.id}
                     onClick={() => {
@@ -2060,9 +2617,63 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   </button>
                 ))}
 
-                {/* Dedicated Consoles Group */}
+                {/* Core Collections Group */}
                 <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
-                  Dedicated Consoles & Studios
+                  Core Collections
+                </div>
+                {sourceOptions.filter(s => s.group === 'core').map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab(opt.id);
+                      setIsSourceDropdownOpen(false);
+                      setActiveVaultGame(null);
+                      setActiveUniversalGame(null);
+                      setActiveNowGGGame(null);
+                      setActiveGnGame(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
+                      activeTab === opt.id
+                        ? 'bg-white/[0.10] text-white border border-white/20'
+                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div 
+                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+                        style={{
+                          background: `${opt.color}20`,
+                          borderColor: `${opt.color}40`,
+                          color: opt.color
+                        }}
+                      >
+                        {opt.icon}
+                      </div>
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
+                          <span 
+                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
+                            style={{
+                              background: `${opt.color}15`,
+                              borderColor: `${opt.color}35`,
+                              color: opt.color
+                            }}
+                          >
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
+                      </div>
+                    </div>
+                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
+                  </button>
+                ))}
+
+                {/* Dedicated Consoles & Cloud Group */}
+                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
+                  Dedicated Consoles &amp; Cloud
                 </div>
                 {sourceOptions.filter(s => s.group === 'consoles').map((opt) => (
                   <button
@@ -2121,12 +2732,16 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
       {/* ── Main App Content ── */}
       <div className={`flex-1 w-full h-full relative overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
-        {/* Universal Sandboxed Game Player (Active Game from 6kh0, Ynrbsu, NettleWeb, etc.) */}
+        {/* Universal Sandboxed Game Player (Active Game from 6kh0, Ynrbsu, NettleWeb, or Catalog) */}
         {activeUniversalGame ? (
           renderUniversalPlayer()
         ) : (
           <>
             {activeTab === 'all' && renderAllSourcesView()}
+            {activeTab === 'other' && renderOtherSourcesView()}
+            {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab) && (
+              renderMajorSourceView(MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!)
+            )}
             {activeTab === 'sixkho' && renderSixKhoView()}
             {activeTab === 'ynrbsu' && renderYnrbsuView()}
             {activeTab === 'nettleweb' && renderNettleWebView()}

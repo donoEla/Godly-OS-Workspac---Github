@@ -60,40 +60,24 @@ export const WindowManager: React.FC = () => {
       return <ExtensionsStoreApp />;
     }
 
+    const KNOWN_GAME_TABS = new Set([
+      'all', 'nebula', 'ugs', 'js13kgames', 'cvk', 'hydra', 'lumin', 'diesmos',
+      'gnmath', 'ghostproxy', 'alexr', 'gamezone', 'petezah', 'daknux', 'seraph',
+      'truffled', 'duckmath', 'vault', 'zengs', 'sixkho', 'ynrbsu', 'nettleweb',
+      'nowgg', 'p2p', 'emulator', 'eaglercraft', 'other'
+    ]);
+
     if (
       win.appId === 'games' ||
-      win.appId === 'lumin' ||
-      win.appId === 'gnmath' ||
-      win.appId === 'zengs' ||
-      win.appId === 'sixkho' ||
-      win.appId === 'ynrbsu' ||
-      win.appId === 'nettleweb' ||
-      win.customUrl === 'lumin' ||
-      win.customUrl === 'gnmath' ||
-      win.customUrl === 'zengs' ||
-      win.customUrl === 'vault' ||
-      win.customUrl === 'nowgg' ||
-      win.customUrl === 'sixkho' ||
-      win.customUrl === 'ynrbsu' ||
-      win.customUrl === 'nettleweb'
+      KNOWN_GAME_TABS.has(win.appId) ||
+      (win.customUrl && KNOWN_GAME_TABS.has(win.customUrl))
     ) {
-      const tab =
-        win.appId === 'lumin' || win.customUrl === 'lumin'
-          ? 'lumin'
-          : win.appId === 'gnmath' || win.customUrl === 'gnmath'
-          ? 'gnmath'
-          : win.appId === 'zengs' || win.customUrl === 'zengs'
-          ? 'zengs'
-          : win.appId === 'sixkho' || win.customUrl === 'sixkho'
-          ? 'sixkho'
-          : win.appId === 'ynrbsu' || win.customUrl === 'ynrbsu'
-          ? 'ynrbsu'
-          : win.appId === 'nettleweb' || win.customUrl === 'nettleweb'
-          ? 'nettleweb'
-          : win.customUrl === 'vault' || win.customUrl === 'nowgg'
-          ? (win.customUrl as any)
-          : undefined;
-      return <GamesApp initialTab={tab} />;
+      const tab = (win.customUrl && KNOWN_GAME_TABS.has(win.customUrl))
+        ? win.customUrl
+        : KNOWN_GAME_TABS.has(win.appId)
+        ? win.appId
+        : undefined;
+      return <GamesApp initialTab={tab as any} />;
     }
 
     if (win.appId === 'web-app' || win.customUrl) {

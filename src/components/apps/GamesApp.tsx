@@ -25,8 +25,16 @@ import {
   Gauge,
   Bookmark,
   Radio,
-  Box
+  Box,
+  ChevronDown,
+  Rocket,
+  Target,
+  Globe,
+  Flame,
+  ArrowRight
 } from 'lucide-react';
+import sixKhoCatalogData from '../../data/sixKho_games.json';
+import ynrbsuCatalogData from '../../data/ynrbsu_games.json';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 import { encodeUvUrl } from '../../utils/uvProxy';
@@ -323,13 +331,184 @@ const P2P_LOADER_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+export type GameSourceTab = 
+  | 'all'
+  | 'vault'
+  | 'sixkho'
+  | 'ynrbsu'
+  | 'gnmath'
+  | 'zengs'
+  | 'nettleweb'
+  | 'nowgg'
+  | 'lumin'
+  | 'p2p'
+  | 'emulator'
+  | 'eaglercraft';
+
+export interface WebGameItem {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail: string;
+  source: '6kh0' | 'ynrbsu' | 'nettleweb' | 'gnmath' | 'vault';
+  category?: string;
+  description?: string;
+}
+
+export interface ActiveUniversalGame {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  source: string;
+  category?: string;
+}
+
+const NETTLEWEB_POPULAR_GAMES: WebGameItem[] = [
+  {
+    id: 'nw_slope',
+    title: 'Slope 3D',
+    url: 'https://6kh0.github.io/projects/slope/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/slope/slope4.jpeg',
+    source: 'nettleweb',
+    category: 'High Speed 3D'
+  },
+  {
+    id: 'nw_1v1lol',
+    title: '1v1.LOL Building Battle',
+    url: 'https://ynrbsu.github.io/assets/games/1v1lol/',
+    thumbnail: 'https://ynrbsu.github.io/assets/games/1v1lol/splash.png',
+    source: 'nettleweb',
+    category: 'Shooter Arena'
+  },
+  {
+    id: 'nw_retrobowl',
+    title: 'Retro Bowl',
+    url: 'https://6kh0.github.io/projects/retro-bowl/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/retro-bowl/img/icon.png',
+    source: 'nettleweb',
+    category: 'Pixel Sports'
+  },
+  {
+    id: 'nw_motox3m',
+    title: 'Moto X3M Pool Party',
+    url: 'https://ynrbsu.github.io/assets/games/5-pool-party/',
+    thumbnail: 'https://ynrbsu.github.io/assets/games/5-pool-party/pp.jpeg',
+    source: 'nettleweb',
+    category: 'Trials Stunts'
+  },
+  {
+    id: 'nw_cookieclicker',
+    title: 'Cookie Clicker',
+    url: 'https://6kh0.github.io/projects/cookie-clicker/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/cookie-clicker/cookie.png',
+    source: 'nettleweb',
+    category: 'Idle Clicker'
+  },
+  {
+    id: 'nw_subway',
+    title: 'Subway Surfers',
+    url: 'https://6kh0.github.io/projects/subway-surfers/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/subway-surfers/splash.png',
+    source: 'nettleweb',
+    category: 'Endless Runner'
+  },
+  {
+    id: 'nw_geometrydash',
+    title: 'Geometry Dash Lite',
+    url: 'https://6kh0.github.io/projects/geometry-dash/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/geometry-dash/images/geometrydash.png',
+    source: 'nettleweb',
+    category: 'Rhythm Platformer'
+  },
+  {
+    id: 'nw_bitlife',
+    title: 'BitLife Life Simulator',
+    url: 'https://6kh0.github.io/projects/bitlife/index.html',
+    thumbnail: 'https://6kh0.github.io/projects/bitlife/icon.png',
+    source: 'nettleweb',
+    category: 'Simulation'
+  }
+];
+
 interface GamesAppProps {
-  initialTab?: 'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p' | 'emulator' | 'eaglercraft';
+  initialTab?: GameSourceTab;
 }
 
 export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
-  const [activeTab, setActiveTab] = useState<'vault' | 'gnmath' | 'zengs' | 'nowgg' | 'lumin' | 'p2p' | 'emulator' | 'eaglercraft'>(initialTab || 'vault');
+  const [activeTab, setActiveTab] = useState<GameSourceTab>(initialTab || 'all');
   const p2pFrameRef = useRef<HTMLIFrameElement>(null);
+
+  // Source Selector Dropdown state
+  const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
+  const sourceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Laptop Eco / Battery Saver Mode state
+  const [isEcoMode, setIsEcoMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('godly_games_eco_mode');
+      if (saved !== null) return saved === 'true';
+      if (typeof navigator !== 'undefined') {
+        const cores = navigator.hardwareConcurrency || 4;
+        const mem = (navigator as any).deviceMemory || 4;
+        return cores <= 4 || mem <= 4;
+      }
+    } catch {}
+    return false;
+  });
+
+  const toggleEcoMode = () => {
+    sound.playClick();
+    setIsEcoMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('godly_games_eco_mode', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sourceDropdownRef.current && !sourceDropdownRef.current.contains(e.target as Node)) {
+        setIsSourceDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Universal Sandboxed Game Player state (6kh0, Ynrbsu, NettleWeb, etc.)
+  const [activeUniversalGame, setActiveUniversalGame] = useState<ActiveUniversalGame | null>(null);
+  const universalFrameRef = useRef<HTMLIFrameElement>(null);
+  const [universalRefreshKey, setUniversalRefreshKey] = useState<number>(0);
+
+  const handleLaunchUniversalGame = (game: { id: string; title: string; url: string; thumbnail?: string; source: any; category?: string }) => {
+    sound.playOpen();
+    setActiveUniversalGame({
+      id: game.id,
+      title: game.title,
+      url: game.url,
+      thumbnail: game.thumbnail,
+      source: game.source,
+      category: game.category,
+    });
+    setUniversalRefreshKey((k) => k + 1);
+  };
+
+  // 6kh0 State (145 Games)
+  const [sixKhoGames] = useState<WebGameItem[]>(sixKhoCatalogData as WebGameItem[]);
+  const [sixKhoSearch, setSixKhoSearch] = useState('');
+  const [sixKhoPage, setSixKhoPage] = useState(1);
+
+  // Ynrbsu State (167 Games)
+  const [ynrbsuGames] = useState<WebGameItem[]>(ynrbsuCatalogData as WebGameItem[]);
+  const [ynrbsuSearch, setYnrbsuSearch] = useState('');
+  const [ynrbsuPage, setYnrbsuPage] = useState(1);
+
+  // All Sources Unified State
+  const [allSearch, setAllSearch] = useState('');
   
   // Zen GS state (1,700+ CloudFront CDN games)
   const [activeZenGame, setActiveZenGame] = useState<ZenGSGameSelection | null>(null);
@@ -680,6 +859,18 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
   };
 
+  const handleFullscreenGame = (frameRef?: React.RefObject<HTMLIFrameElement | null>) => {
+    sound.playClick();
+    const target = frameRef?.current || gameFrameRef.current || universalFrameRef.current;
+    if (target) {
+      if (target.requestFullscreen) {
+        target.requestFullscreen();
+      } else if ((target as any).webkitRequestFullscreen) {
+        (target as any).webkitRequestFullscreen();
+      }
+    }
+  };
+
   const handleFullscreenZen = () => {
     sound.playClick();
     const viewer = document.getElementById('zg-viewer');
@@ -800,26 +991,834 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
   };
 
-  const handleFullscreenGame = (ref: React.RefObject<HTMLIFrameElement | null>) => {
-    sound.playClick();
-    if (ref.current && ref.current.requestFullscreen) {
-      ref.current.requestFullscreen();
-    }
+  // Source Dropdown Options Config
+  const sourceOptions: Array<{
+    id: GameSourceTab;
+    name: string;
+    badge: string;
+    icon: React.ReactNode;
+    desc: string;
+    color: string;
+    group: 'all' | 'repositories' | 'cloud' | 'consoles';
+  }> = [
+    { id: 'all', name: 'All Sources', badge: '4.9K+ Combined', icon: <Sparkles size={14} />, desc: 'Unified mega library with labeled source sections', color: '#a855f7', group: 'all' },
+    { id: 'sixkho', name: '6kh0 Projects', badge: `${sixKhoGames.length} Games`, icon: <Rocket size={14} />, desc: 'Classic unblocked web games archive (6kh0)', color: '#3b82f6', group: 'repositories' },
+    { id: 'ynrbsu', name: 'Ynrbsu Arcade', badge: `${ynrbsuGames.length} Games`, icon: <Target size={14} />, desc: 'BrunysIXLWork unblocked games collection', color: '#10b981', group: 'repositories' },
+    { id: 'vault', name: 'Game Vault', badge: `${vaultGames.length || '1.5K'} Games`, icon: <Layers size={14} />, desc: 'Local & offline vault of HTML5 and Flash games', color: '#8b5cf6', group: 'repositories' },
+    { id: 'gnmath', name: 'GN-Math', badge: `${gnMathGames.length || '840'} Games`, icon: <Sparkles size={14} />, desc: 'Action, puzzle and educational games catalog', color: '#ec4899', group: 'repositories' },
+    { id: 'zengs', name: 'Zen GS Cloud', badge: '1,700+ Games', icon: <Compass size={14} />, desc: 'CloudFront CDN dynamic arcade loader', color: '#06b6d4', group: 'repositories' },
+    { id: 'nettleweb', name: 'NettleWeb Hub', badge: 'Web Portal', icon: <Globe size={14} />, desc: 'Proxy-enabled web games and portal', color: '#0284c7', group: 'repositories' },
+    { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables', color: '#f59e0b', group: 'cloud' },
+    { id: 'lumin', name: 'Lumin SDK', badge: 'Lumin Engine', icon: <Zap size={14} />, desc: 'Lumin web game engine catalog', color: '#6366f1', group: 'cloud' },
+    { id: 'p2p', name: 'P2P WebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw arcade playables', color: '#f97316', group: 'cloud' },
+    { id: 'emulator', name: 'Emulator Hub', badge: 'WASM Studio', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
+    { id: 'eaglercraft', name: 'Eaglercraft', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
+  ];
+
+  const currentSource = sourceOptions.find(s => s.id === activeTab) || sourceOptions[0];
+
+  // Reusable card renderer optimized for low-power devices & laptops
+  const renderWebGameCard = (game: { id: string; title: string; url: string; thumbnail?: string; source: string; category?: string }) => {
+    return (
+      <div
+        key={game.id}
+        onClick={() => handleLaunchUniversalGame(game)}
+        className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-purple-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-purple-900/20"
+        style={{
+          contentVisibility: isEcoMode ? 'auto' : undefined,
+          containIntrinsicSize: isEcoMode ? '220px' : undefined,
+        }}
+      >
+        <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+          {game.thumbnail ? (
+            <img
+              src={game.thumbnail}
+              alt={game.title}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <Gamepad2 size={32} className="text-white/20" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+          
+          {/* Source Badge */}
+          <span className="absolute top-2 left-2 text-[9.5px] px-2 py-0.5 rounded-full font-mono font-bold bg-black/60 backdrop-blur-md border border-white/10 text-white/80 uppercase">
+            {game.source}
+          </span>
+
+          {/* Hover Play Icon */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+            <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+              <Play size={16} className="ml-0.5 fill-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 flex flex-col justify-between flex-1">
+          <div>
+            <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
+              {game.title}
+            </h4>
+            {game.category && (
+              <p className="text-[10px] text-white/40 truncate mt-0.5">
+                {game.category}
+              </p>
+            )}
+          </div>
+          <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+            <span className="text-[10px] text-purple-400 font-medium flex items-center gap-1">
+              <Play size={10} /> Instant Play
+            </span>
+            <span className="text-[9px] font-mono text-white/30">Sandboxed</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Universal Player Renderer
+  const renderUniversalPlayer = () => {
+    if (!activeUniversalGame) return null;
+    return (
+      <div className="w-full h-full flex flex-col bg-black">
+        <div 
+          className={`flex items-center justify-between px-4 py-2 border-b border-white/[0.08] ${isEcoMode ? 'bg-[#08080f]' : 'bg-[#09090fc0] backdrop-blur-xl'} flex-shrink-0 z-10`}
+          style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveUniversalGame(null);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white/80 hover:text-white bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.08] transition-all"
+            >
+              <ChevronLeft size={14} />
+              Back to Arcade
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white truncate max-w-xs sm:max-w-md">
+                {activeUniversalGame.title}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono uppercase">
+                {activeUniversalGame.source}
+              </span>
+              {activeUniversalGame.category && (
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.06] text-white/60 border border-white/[0.06] font-mono hidden sm:inline">
+                  {activeUniversalGame.category}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                sound.playClick();
+                setUniversalRefreshKey((k) => k + 1);
+              }}
+              className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+              title="Reload Game"
+            >
+              <RotateCcw size={14} />
+            </button>
+            <button
+              onClick={() => handleFullscreenGame(universalFrameRef)}
+              className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+              title="Fullscreen"
+            >
+              <Maximize2 size={14} />
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                window.open(activeUniversalGame.url, '_blank');
+              }}
+              className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+              title="Popout Window"
+            >
+              <ExternalLink size={14} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
+          <iframe
+            ref={universalFrameRef}
+            key={universalRefreshKey}
+            src={activeUniversalGame.url}
+            title={activeUniversalGame.title}
+            className="w-full h-full border-0 bg-black"
+            sandbox="allow-scripts allow-forms allow-pointer-lock"
+            allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // 6kh0 Projects View Renderer
+  const renderSixKhoView = () => {
+    const filtered = sixKhoGames.filter((g) => {
+      return (
+        sixKhoSearch.trim() === '' ||
+        g.title.toLowerCase().includes(sixKhoSearch.toLowerCase()) ||
+        g.category?.toLowerCase().includes(sixKhoSearch.toLowerCase())
+      );
+    });
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((sixKhoPage - 1) * pageSize, sixKhoPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <Rocket size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">6kh0 Classic Projects</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono border border-blue-500/30">
+                  {filtered.length} Games
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">Verified unblocked web classics from 6kh0.github.io</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={sixKhoSearch}
+                onChange={(e) => { setSixKhoSearch(e.target.value); setSixKhoPage(1); }}
+                placeholder="Search 6kh0 games..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-blue-500/50"
+              />
+              {sixKhoSearch && (
+                <button onClick={() => setSixKhoSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={sixKhoPage <= 1}
+                onClick={() => setSixKhoPage((p) => Math.max(1, p - 1))}
+                className="p-1.5 rounded-lg border border-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/50 px-1">
+                {sixKhoPage} / {totalPages}
+              </span>
+              <button
+                disabled={sixKhoPage >= totalPages}
+                onClick={() => setSixKhoPage((p) => Math.min(totalPages, p + 1))}
+                className="p-1.5 rounded-lg border border-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map(renderWebGameCard)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Ynrbsu Arcade View Renderer
+  const renderYnrbsuView = () => {
+    const filtered = ynrbsuGames.filter((g) => {
+      return (
+        ynrbsuSearch.trim() === '' ||
+        g.title.toLowerCase().includes(ynrbsuSearch.toLowerCase()) ||
+        g.category?.toLowerCase().includes(ynrbsuSearch.toLowerCase())
+      );
+    });
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((ynrbsuPage - 1) * pageSize, ynrbsuPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Target size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">Ynrbsu (BrunysIXLWork) Arcade</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
+                  {filtered.length} Games
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">High-speed unblocked HTML5 arcade and action games collection</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={ynrbsuSearch}
+                onChange={(e) => { setYnrbsuSearch(e.target.value); setYnrbsuPage(1); }}
+                placeholder="Search Ynrbsu games..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-emerald-500/50"
+              />
+              {ynrbsuSearch && (
+                <button onClick={() => setYnrbsuSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={ynrbsuPage <= 1}
+                onClick={() => setYnrbsuPage((p) => Math.max(1, p - 1))}
+                className="p-1.5 rounded-lg border border-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/50 px-1">
+                {ynrbsuPage} / {totalPages}
+              </span>
+              <button
+                disabled={ynrbsuPage >= totalPages}
+                onClick={() => setYnrbsuPage((p) => Math.min(totalPages, p + 1))}
+                className="p-1.5 rounded-lg border border-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map(renderWebGameCard)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // NettleWeb Hub View Renderer
+  const renderNettleWebView = () => {
+    return (
+      <div className={`w-full h-full flex flex-col overflow-y-auto p-6 gap-6 ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
+        {/* NettleWeb Hero Launcher Card */}
+        <div className="relative rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-[#070b18] to-black p-6 shadow-xl overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                <Globe size={16} />
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono font-bold">
+                NETTLEWEB INTEGRATION
+              </span>
+            </div>
+            <h2 className="text-xl font-black text-white tracking-tight">NettleWeb Gaming & Apps Portal</h2>
+            <p className="text-xs text-white/60 mt-1.5 leading-relaxed">
+              Play web games, access proxy tools, and launch unblocked HTML5 applications. NettleWeb is sandboxed inside Godly OS with full window control and low-latency execution.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => {
+                sound.playClick();
+                handleLaunchUniversalGame({
+                  id: 'nettleweb_portal',
+                  title: 'NettleWeb Portal',
+                  url: encodeUvUrl('https://nettleweb.com/'),
+                  source: 'nettleweb',
+                  category: 'Web Portal'
+                });
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition-all hover:scale-105"
+            >
+              <Play size={14} className="fill-white" />
+              Launch Sandboxed Portal
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                window.open('https://nettleweb.com/', '_blank');
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/[0.04] text-white/80 hover:text-white font-semibold text-xs transition-all"
+            >
+              <ExternalLink size={14} />
+              Open Direct
+            </button>
+          </div>
+        </div>
+
+        {/* Curated NettleWeb Games */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Popular NettleWeb Playables</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono">
+                  {NETTLEWEB_POPULAR_GAMES.length} Highlights
+                </span>
+              </h3>
+              <p className="text-[11px] text-white/40">Verified high-speed HTML5 games playable instantly</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {NETTLEWEB_POPULAR_GAMES.map(renderWebGameCard)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // All Sources Mega View Renderer
+  const renderAllSourcesView = () => {
+    const searchLower = allSearch.trim().toLowerCase();
+    const isSearching = searchLower.length > 0;
+
+    const matches6kh0 = isSearching ? sixKhoGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
+    const matchesYnrbsu = isSearching ? ynrbsuGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
+    const matchesVault = isSearching ? vaultGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
+    const matchesGn = isSearching ? gnMathGames.filter(g => g.title.toLowerCase().includes(searchLower)).slice(0, 16) : [];
+    const totalMatches = matches6kh0.length + matchesYnrbsu.length + matchesVault.length + matchesGn.length;
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-y-auto ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
+        {/* Hero Banner & Search Area */}
+        <div className={`p-6 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090b14]' : 'bg-gradient-to-b from-[#120d28]/60 via-[#0a0818]/40 to-transparent backdrop-blur-xl'} shrink-0`}>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1.5">
+                  <Sparkles size={11} /> UNIFIED ARCADE ENGINE
+                </span>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  4,900+ Combined Playables
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                All Arcade Sources Combined
+              </h1>
+              <p className="text-xs text-white/50 mt-1 max-w-xl">
+                Unified catalog featuring 6kh0, Ynrbsu, Godly Vault, GN-Math, NettleWeb, Zen GS, Consoles, and Eaglercraft.
+              </p>
+            </div>
+
+            {/* Unified Search Input */}
+            <div className="relative w-full md:w-80">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={allSearch}
+                onChange={(e) => setAllSearch(e.target.value)}
+                placeholder="Search across all 4.9K+ games..."
+                className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
+              />
+              {allSearch && (
+                <button
+                  onClick={() => setAllSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Jump Source Chips (when not searching) */}
+          {!isSearching && (
+            <div className="max-w-7xl mx-auto flex items-center gap-2 mt-5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <span className="text-[10px] font-mono uppercase text-white/30 tracking-wider shrink-0 mr-1">Jump to:</span>
+              <button
+                onClick={() => { const el = document.getElementById('sec-6kh0'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Rocket size={12} /> 6kh0 Projects (145)
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('sec-ynrbsu'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Target size={12} /> Ynrbsu Arcade (167)
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('sec-vault'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Layers size={12} /> Game Vault (1.5K)
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('sec-gnmath'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Sparkles size={12} /> GN-Math (840)
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('sec-nettleweb'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Globe size={12} /> NettleWeb Hub
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('sec-consoles'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0 transition-all font-medium text-[11px]"
+              >
+                <Gamepad2 size={12} /> Consoles & Emulation
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="p-6 max-w-7xl mx-auto w-full flex flex-col gap-10">
+          {isSearching ? (
+            /* Live Search Results across all sources */
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Search results for "{allSearch}"</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono">
+                    {totalMatches} matches found
+                  </span>
+                </h3>
+              </div>
+
+              {totalMatches === 0 ? (
+                <div className="p-12 text-center flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.06] rounded-2xl">
+                  <Search size={32} className="text-white/20 mb-3" />
+                  <p className="text-sm font-semibold text-white">No matching games found across catalogs</p>
+                  <p className="text-xs text-white/40 mt-1">Try a different search term like "1v1", "slope", "racing", or "mario".</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-8">
+                  {matches6kh0.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-blue-400 mb-3 flex items-center gap-1.5">
+                        <Rocket size={13} /> 6kh0 Projects ({matches6kh0.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {matches6kh0.map(renderWebGameCard)}
+                      </div>
+                    </div>
+                  )}
+                  {matchesYnrbsu.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-1.5">
+                        <Target size={13} /> Ynrbsu Games ({matchesYnrbsu.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {matchesYnrbsu.map(renderWebGameCard)}
+                      </div>
+                    </div>
+                  )}
+                  {matchesVault.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-purple-400 mb-3 flex items-center gap-1.5">
+                        <Layers size={13} /> Godly Vault Games ({matchesVault.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {matchesVault.map((g) => renderWebGameCard({
+                          id: g.id,
+                          title: g.title,
+                          url: g.url,
+                          source: 'vault',
+                          category: g.category
+                        }))}
+                      </div>
+                    </div>
+                  )}
+                  {matchesGn.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-pink-400 mb-3 flex items-center gap-1.5">
+                        <Sparkles size={13} /> GN-Math Games ({matchesGn.length})
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {matchesGn.map((g) => renderWebGameCard({
+                          id: 'gn_' + g.id,
+                          title: g.title,
+                          url: g.url,
+                          thumbnail: g.cover,
+                          source: 'gnmath',
+                          category: g.author
+                        }))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Labeled Sections */
+            <>
+              {/* ── SECTION 1: 6kh0 Projects ── */}
+              <div id="sec-6kh0" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        <Rocket size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">6kh0 Classic Projects</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-300 font-mono border border-blue-500/20">
+                        145 Games
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">Classic unblocked web games from the 6kh0 archive</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('sixkho');
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-xl border border-blue-500/25 transition-all"
+                  >
+                    View All 145 <ArrowRight size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {sixKhoGames.slice(0, 12).map(renderWebGameCard)}
+                </div>
+              </div>
+
+              {/* ── SECTION 2: Ynrbsu Arcade ── */}
+              <div id="sec-ynrbsu" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <Target size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">Ynrbsu (BrunysIXLWork) Arcade</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20">
+                        167 Games
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">High-speed unblocked HTML5 arcade and action games</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('ynrbsu');
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/25 transition-all"
+                  >
+                    View All 167 <ArrowRight size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {ynrbsuGames.slice(0, 12).map(renderWebGameCard)}
+                </div>
+              </div>
+
+              {/* ── SECTION 3: Godly Offline Vault Highlights ── */}
+              <div id="sec-vault" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        <Layers size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">Godly Vault Highlights</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20">
+                        1,567 Games
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">Zero-network offline HTML5 & Ruffle Flash vault</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('vault');
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1.5 rounded-xl border border-purple-500/25 transition-all"
+                  >
+                    View All 1.5K <ArrowRight size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {vaultGames.slice(0, 12).map((g) => renderWebGameCard({
+                    id: g.id,
+                    title: g.title,
+                    url: g.url,
+                    source: 'vault',
+                    category: g.category
+                  }))}
+                </div>
+              </div>
+
+              {/* ── SECTION 4: GN-Math Educational & Action ── */}
+              <div id="sec-gnmath" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-pink-500/20 text-pink-400 border border-pink-500/30">
+                        <Sparkles size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">GN-Math Hits</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 font-mono border border-pink-500/20">
+                        840 Games
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">Educational puzzles, logic tests, and action titles</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('gnmath');
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-pink-400 hover:text-pink-300 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1.5 rounded-xl border border-pink-500/25 transition-all"
+                  >
+                    View All 840 <ArrowRight size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {gnMathGames.slice(0, 12).map((g) => renderWebGameCard({
+                    id: 'gn_' + g.id,
+                    title: g.title,
+                    url: g.url,
+                    thumbnail: g.cover,
+                    source: 'gnmath',
+                    category: g.author
+                  }))}
+                </div>
+              </div>
+
+              {/* ── SECTION 5: NettleWeb Hub ── */}
+              <div id="sec-nettleweb" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                        <Globe size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">NettleWeb Web Hub</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 font-mono border border-sky-500/20">
+                        Proxy & Web Portal
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">Web games and portal playable directly within Godly OS</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('nettleweb');
+                    }}
+                    className="flex items-center gap-1 text-xs font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/25 transition-all"
+                  >
+                    Open NettleWeb <ArrowRight size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {NETTLEWEB_POPULAR_GAMES.map(renderWebGameCard)}
+                </div>
+              </div>
+
+              {/* ── SECTION 6: Consoles & Minecraft ── */}
+              <div id="sec-consoles" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <Gamepad2 size={14} />
+                      </span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">Consoles, Emulators & Minecraft</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20">
+                        Dedicated Studios
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-0.5">High-performance custom ROM studio and full Minecraft web editions</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Eaglercraft Banner */}
+                  <div 
+                    onClick={() => { sound.playClick(); setActiveTab('eaglercraft'); }}
+                    className="group relative rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 bg-gradient-to-br from-emerald-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-emerald-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
+                  >
+                    <div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">12 EDITIONS</span>
+                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-emerald-300 transition-colors">Eaglercraft Minecraft</h4>
+                      <p className="text-xs text-white/50 mt-1">26.2 WASM-GC, 1.20, 1.8.8, 1.7.10, and 7 SMP multiplayer servers.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mt-4">
+                      Launch Minecraft Studio <ArrowRight size={13} />
+                    </div>
+                  </div>
+
+                  {/* Retro Emulator Hub Banner */}
+                  <div 
+                    onClick={() => { sound.playClick(); setActiveTab('emulator'); }}
+                    className="group relative rounded-2xl border border-purple-500/30 hover:border-purple-500/60 bg-gradient-to-br from-purple-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-purple-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
+                  >
+                    <div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold">WASM EMULATOR</span>
+                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-purple-300 transition-colors">Retro Emulator Hub</h4>
+                      <p className="text-xs text-white/50 mt-1">Drag-and-drop ROM player for GBA, NES, SNES, N64, and PS1.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 mt-4">
+                      Open Emulator Studio <ArrowRight size={13} />
+                    </div>
+                  </div>
+
+                  {/* NowGG Android Cloud Banner */}
+                  <div 
+                    onClick={() => { sound.playClick(); setActiveTab('nowgg'); }}
+                    className="group relative rounded-2xl border border-amber-500/30 hover:border-amber-500/60 bg-gradient-to-br from-amber-950/40 to-black p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-md hover:shadow-amber-900/20 overflow-hidden flex flex-col justify-between min-h-[160px]"
+                  >
+                    <div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">ANDROID 60FPS</span>
+                      <h4 className="text-base font-bold text-white mt-2 group-hover:text-amber-300 transition-colors">NowGG Cloud Arcade</h4>
+                      <p className="text-xs text-white/50 mt-1">Stream Roblox, Subway Surfers, and top mobile games without installation.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mt-4">
+                      Launch Cloud Arcade <ArrowRight size={13} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#050508] text-[#f4f4f8] select-none overflow-hidden font-sans">
+    <div className={`flex flex-col h-full w-full ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} text-[#f4f4f8] select-none overflow-hidden font-sans`}>
       {/* ── Top Header Toolbar with Frosted Glass & Dynamic Accent ── */}
       <div 
-        className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-[#08080eb8] backdrop-blur-2xl flex-shrink-0 z-20"
+        className={`flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] ${isEcoMode ? 'bg-[#08080f]' : 'bg-[#08080eb8] backdrop-blur-2xl'} flex-shrink-0 z-20`}
         style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
       >
         <div className="flex items-center gap-3">
           <div 
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white border border-white/20 transition-all"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-white border border-white/20 transition-all shrink-0"
             style={{
               background: 'linear-gradient(135deg, var(--accent), #4338ca)',
-              boxShadow: '0 4px 16px var(--accent-glow)',
+              boxShadow: isEcoMode ? 'none' : '0 4px 16px var(--accent-glow)',
             }}
           >
             <Gamepad2 size={16} />
@@ -835,10 +1834,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   borderColor: 'var(--accent-border)',
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />
+                {!isEcoMode && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />}
+                {activeTab === 'all' && '4,900+ Combined Mega Library'}
+                {activeTab === 'sixkho' && `${sixKhoGames.length} 6kh0 Projects`}
+                {activeTab === 'ynrbsu' && `${ynrbsuGames.length} Ynrbsu Arcade`}
                 {activeTab === 'vault' && `${vaultGames.length > 0 ? vaultGames.length : '1,567'} Vault`}
                 {activeTab === 'gnmath' && `${gnMathGames.length > 0 ? gnMathGames.length : '840'} GN-Math`}
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
+                {activeTab === 'nettleweb' && 'NettleWeb Web Hub'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
                 {activeTab === 'lumin' && 'Lumin Engine'}
                 {activeTab === 'p2p' && '500+ P2P GameWebSight'}
@@ -847,215 +1850,291 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               </span>
             </div>
             <p className="text-[10px] text-white/40 tracking-tight">
-              Achroma OS Engine • Zero Raw iFrames • Sandboxed Performance
+              Achroma OS Engine • Sandboxed Performance • {isEcoMode ? '⚡ Eco Mode Active' : 'Full Glassmorphism'}
             </p>
           </div>
         </div>
 
-        {/* ── Segmented Pill Mode Switcher (All Sources) ── */}
+        {/* ── Controls: Laptop Eco Mode & Modern Source Selector Dropdown ── */}
         <div className="flex items-center gap-2">
-          <div 
-            className="flex items-center p-1 rounded-xl border border-white/[0.08] text-xs"
-            style={{ background: 'rgba(255, 255, 255, 0.03)' }}
+          {/* Laptop / Low-Power Eco Mode Toggle */}
+          <button
+            onClick={toggleEcoMode}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              isEcoMode
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                : 'bg-white/[0.04] border-white/10 text-white/50 hover:text-white hover:bg-white/[0.08]'
+            }`}
+            title="Toggle Eco Mode: optimizes performance on laptops & Chromebooks by disabling GPU blurs, enabling lazy rendering, and reducing background overhead"
           >
+            <Zap size={13} className={isEcoMode ? 'text-amber-400 fill-amber-400' : ''} />
+            <span className="hidden sm:inline">{isEcoMode ? 'Eco Mode ON' : 'Eco Mode'}</span>
+          </button>
+
+          {/* Source Dropdown Selector */}
+          <div className="relative" ref={sourceDropdownRef}>
             <button
               onClick={() => {
                 sound.playClick();
-                setActiveTab('vault');
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
+                setIsSourceDropdownOpen(!isSourceDropdownOpen);
               }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'vault'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-white/10 hover:border-purple-500/40 bg-white/[0.04] hover:bg-white/[0.08] transition-all text-xs font-semibold text-white shadow-sm"
             >
-              <Layers size={13} />
-              Game Vault ({vaultGames.length || '1.5K'})
+              <span 
+                className="w-6 h-6 rounded-lg border text-white flex items-center justify-center shrink-0"
+                style={{
+                  background: `${currentSource.color}25`,
+                  borderColor: `${currentSource.color}50`,
+                  color: currentSource.color
+                }}
+              >
+                {currentSource.icon}
+              </span>
+              <div className="flex flex-col text-left">
+                <span className="text-[8.5px] text-white/40 uppercase tracking-wider font-mono">Source</span>
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  {currentSource.name}
+                  <span 
+                    className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border"
+                    style={{
+                      background: `${currentSource.color}15`,
+                      color: currentSource.color,
+                      borderColor: `${currentSource.color}35`,
+                    }}
+                  >
+                    {currentSource.badge}
+                  </span>
+                </span>
+              </div>
+              <ChevronDown size={14} className={`text-white/40 ml-1 transition-transform duration-200 ${isSourceDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('gnmath');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'gnmath'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Sparkles size={13} />
-              GN-Math ({gnMathGames.length || '840'})
-            </button>
+            {/* Dropdown Menu */}
+            {isSourceDropdownOpen && (
+              <div 
+                className={`absolute right-0 mt-2 w-80 max-h-[75vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 custom-scrollbar ${
+                  isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
+                }`}
+              >
+                {/* All Sources Featured Item */}
+                <div className="mb-2">
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab('all');
+                      setIsSourceDropdownOpen(false);
+                      setActiveVaultGame(null);
+                      setActiveUniversalGame(null);
+                      setActiveNowGGGame(null);
+                      setActiveGnGame(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
+                      activeTab === 'all'
+                        ? 'bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-purple-500/50 shadow-md shadow-purple-950/30'
+                        : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.06]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0">
+                        <Sparkles size={16} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white">All Sources Combined</span>
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
+                            4.9K+
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/50">Unified mega library with labeled sections</p>
+                      </div>
+                    </div>
+                    {activeTab === 'all' && <Check size={14} className="text-purple-400 shrink-0" />}
+                  </button>
+                </div>
 
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('zengs');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'zengs'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Compass size={13} />
-              Zen GS (1.7K)
-            </button>
+                {/* Primary Repositories Group */}
+                <div className="px-2 py-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
+                  Primary Repositories
+                </div>
+                {sourceOptions.filter(s => s.group === 'repositories').map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab(opt.id);
+                      setIsSourceDropdownOpen(false);
+                      setActiveVaultGame(null);
+                      setActiveUniversalGame(null);
+                      setActiveNowGGGame(null);
+                      setActiveGnGame(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
+                      activeTab === opt.id
+                        ? 'bg-white/[0.10] text-white border border-white/20'
+                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div 
+                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+                        style={{
+                          background: `${opt.color}20`,
+                          borderColor: `${opt.color}40`,
+                          color: opt.color
+                        }}
+                      >
+                        {opt.icon}
+                      </div>
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
+                          <span 
+                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
+                            style={{
+                              background: `${opt.color}15`,
+                              borderColor: `${opt.color}35`,
+                              color: opt.color
+                            }}
+                          >
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
+                      </div>
+                    </div>
+                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
+                  </button>
+                ))}
 
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('nowgg');
-                setActiveVaultGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'nowgg'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Cloud size={13} />
-              Cloud Arcade
-            </button>
+                {/* Cloud & Web Streaming Group */}
+                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
+                  Cloud & Web Streaming
+                </div>
+                {sourceOptions.filter(s => s.group === 'cloud').map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab(opt.id);
+                      setIsSourceDropdownOpen(false);
+                      setActiveVaultGame(null);
+                      setActiveUniversalGame(null);
+                      setActiveNowGGGame(null);
+                      setActiveGnGame(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
+                      activeTab === opt.id
+                        ? 'bg-white/[0.10] text-white border border-white/20'
+                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div 
+                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+                        style={{
+                          background: `${opt.color}20`,
+                          borderColor: `${opt.color}40`,
+                          color: opt.color
+                        }}
+                      >
+                        {opt.icon}
+                      </div>
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
+                          <span 
+                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
+                            style={{
+                              background: `${opt.color}15`,
+                              borderColor: `${opt.color}35`,
+                              color: opt.color
+                            }}
+                          >
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
+                      </div>
+                    </div>
+                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
+                  </button>
+                ))}
 
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('lumin');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'lumin'
-                  ? {
-                      background: 'var(--accent)',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px var(--accent-glow)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Zap size={13} />
-              Lumin SDK
-            </button>
-
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('p2p');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'p2p'
-                  ? {
-                      background: '#f97316',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px rgba(249, 115, 22, 0.5)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Radio size={13} />
-              P2P WebSight (500+)
-            </button>
-
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('emulator');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'emulator'
-                  ? {
-                      background: '#a855f7',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px rgba(168, 85, 247, 0.5)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Gamepad2 size={13} />
-              Emulator Hub (WASM)
-            </button>
-
-            <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('eaglercraft');
-                setActiveVaultGame(null);
-                setActiveNowGGGame(null);
-                setActiveGnGame(null);
-              }}
-              className="px-2.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
-              style={
-                activeTab === 'eaglercraft'
-                  ? {
-                      background: '#10b981',
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      boxShadow: '0 2px 10px rgba(16, 185, 129, 0.5)',
-                    }
-                  : { color: 'rgba(255, 255, 255, 0.55)' }
-              }
-            >
-              <Box size={13} />
-              Eaglercraft Studio
-            </button>
+                {/* Dedicated Consoles Group */}
+                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
+                  Dedicated Consoles & Studios
+                </div>
+                {sourceOptions.filter(s => s.group === 'consoles').map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveTab(opt.id);
+                      setIsSourceDropdownOpen(false);
+                      setActiveVaultGame(null);
+                      setActiveUniversalGame(null);
+                      setActiveNowGGGame(null);
+                      setActiveGnGame(null);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
+                      activeTab === opt.id
+                        ? 'bg-white/[0.10] text-white border border-white/20'
+                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div 
+                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+                        style={{
+                          background: `${opt.color}20`,
+                          borderColor: `${opt.color}40`,
+                          color: opt.color
+                        }}
+                      >
+                        {opt.icon}
+                      </div>
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
+                          <span 
+                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
+                            style={{
+                              background: `${opt.color}15`,
+                              borderColor: `${opt.color}35`,
+                              color: opt.color
+                            }}
+                          >
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
+                      </div>
+                    </div>
+                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* ── Main App Content ── */}
-      <div className="flex-1 w-full h-full relative overflow-hidden bg-[#050508]">
-        {/* =========================================================================
-            TAB 1: LOCAL GAME VAULT (1,567 Games from /home/dono/Downloads/Game Files/)
-           ========================================================================= */}
-        {activeTab === 'vault' && (
+      <div className={`flex-1 w-full h-full relative overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Universal Sandboxed Game Player (Active Game from 6kh0, Ynrbsu, NettleWeb, etc.) */}
+        {activeUniversalGame ? (
+          renderUniversalPlayer()
+        ) : (
+          <>
+            {activeTab === 'all' && renderAllSourcesView()}
+            {activeTab === 'sixkho' && renderSixKhoView()}
+            {activeTab === 'ynrbsu' && renderYnrbsuView()}
+            {activeTab === 'nettleweb' && renderNettleWebView()}
+
+            {/* =========================================================================
+                TAB 1: LOCAL GAME VAULT (1,567 Games from /home/dono/Downloads/Game Files/)
+               ========================================================================= */}
+            {activeTab === 'vault' && (
           <div className="w-full h-full flex flex-col overflow-hidden">
             {activeVaultGame ? (
               /* Active Game Player View */
@@ -2161,8 +3240,11 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         <div className={`w-full h-full flex flex-col relative ${activeTab === 'eaglercraft' ? 'flex' : 'hidden'}`}>
           <EaglercraftApp />
         </div>
+          </>
+        )}
       </div>
       <GamepadMapperModal isOpen={showGamepadMapper} onClose={() => setShowGamepadMapper(false)} />
     </div>
   );
 };
+

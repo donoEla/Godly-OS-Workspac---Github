@@ -802,13 +802,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       list = list.filter(g => g.name.toLowerCase().includes(q) || (g.source && g.source.toLowerCase().includes(q)));
     }
     if (allSort === 'name_asc') {
-      list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     } else if (allSort === 'name_desc') {
-      list = [...list].sort((a, b) => b.name.localeCompare(a.name));
+      list = [...list].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
     } else if (allSort === 'source_asc') {
-      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || (a.name || '').localeCompare(b.name || ''));
     } else if (allSort === 'source_desc') {
-      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || (a.name || '').localeCompare(b.name || ''));
     }
     return list;
   }, [catalogGames, deduplicatedAllGames, isDeduplicated, allSourceFilter, allSearch, allSort]);
@@ -820,16 +820,16 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
     const q = otherSearch.trim().toLowerCase();
     if (q) {
-      list = list.filter(g => g.name.toLowerCase().includes(q) || (g.source && g.source.toLowerCase().includes(q)));
+      list = list.filter(g => (g.name || '').toLowerCase().includes(q) || (g.source && g.source.toLowerCase().includes(q)));
     }
     if (otherSort === 'name_asc') {
-      list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     } else if (otherSort === 'name_desc') {
-      list = [...list].sort((a, b) => b.name.localeCompare(a.name));
+      list = [...list].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
     } else if (otherSort === 'source_asc') {
-      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (a.source || '').localeCompare(b.source || '') || (a.name || '').localeCompare(b.name || ''));
     } else if (otherSort === 'source_desc') {
-      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || a.name.localeCompare(b.name));
+      list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || (a.name || '').localeCompare(b.name || ''));
     }
     return list;
   }, [otherSourcesGames, otherSubFilter, otherSearch, otherSort]);

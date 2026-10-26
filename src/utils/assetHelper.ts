@@ -10,13 +10,13 @@
 
 const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
 const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
-const CURRENT_RELEASE_TAG = 'v4.5.2';
+const CURRENT_RELEASE_TAG = 'v4.5.3';
 
 export function getJsDelivrOrigin(): string {
   const candidates: string[] = [];
   if (typeof document !== 'undefined' && document.baseURI) candidates.push(document.baseURI);
   if (typeof window !== 'undefined') {
-    candidates.push(window.location.href);
+    if (window.location?.href) candidates.push(window.location.href);
     try {
       if (window.parent && window.parent !== window && window.parent.location?.href) {
         candidates.push(window.parent.location.href);
@@ -92,8 +92,8 @@ export function getAssetUrl(path: string | undefined | null): string {
 
   // Detect jsDelivr context
   const isJsDelivr =
-    (typeof window !== 'undefined' && window.location.hostname === 'cdn.jsdelivr.net') ||
-    (typeof document !== 'undefined' && document.baseURI && document.baseURI.includes('cdn.jsdelivr.net'));
+    (typeof window !== 'undefined' && window.location?.hostname === 'cdn.jsdelivr.net') ||
+    (typeof document !== 'undefined' && Boolean(document.baseURI && document.baseURI.includes('cdn.jsdelivr.net')));
 
   const cleanQuery = query
     ? query.split('&').filter((p) => !p.startsWith('v=')).join('&')
@@ -110,9 +110,10 @@ export function getAssetUrl(path: string | undefined | null): string {
   // Detect about:srcdoc sandboxed frame
   const isSrcDoc =
     typeof window !== 'undefined' &&
-    (window.location.href.startsWith('about:') ||
+    window.location &&
+    (window.location.href?.startsWith('about:') ||
       window.location.pathname === 'srcdoc' ||
-      window.location.pathname.includes('/srcdoc'));
+      window.location.pathname?.includes('/srcdoc'));
 
   if (isSrcDoc) {
     const baseOrigin = getJsDelivrOrigin();
@@ -127,7 +128,7 @@ export function getAssetUrl(path: string | undefined | null): string {
       if (window.parent && window.parent !== window && window.parent.location?.origin) {
         const parentOrigin = window.parent.location.origin;
         if (parentOrigin && !parentOrigin.startsWith('null') && !parentOrigin.startsWith('about:')) {
-          if (window.parent.location.hostname === 'cdn.jsdelivr.net') {
+          if (window.parent.location?.hostname === 'cdn.jsdelivr.net') {
             const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
             const url = `${baseOrigin}/${distPath}`;
             const versionQuery = `v=${CURRENT_RELEASE_TAG}`;
@@ -151,7 +152,7 @@ export function getAssetUrl(path: string | undefined | null): string {
 
   let resolved = cleanPath;
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.location?.pathname) {
     const pathname = window.location.pathname;
     const segments = pathname
       .split('/')
@@ -169,7 +170,7 @@ export function getAssetUrl(path: string | undefined | null): string {
     }
   }
 
-  const base = import.meta.env.BASE_URL || './';
+  const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || './';
   if (base === './' || base === '') {
     resolved = `./${cleanPath}`;
   } else if (base.endsWith('/')) {

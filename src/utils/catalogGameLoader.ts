@@ -33,6 +33,9 @@ export function withBaseTag(htmlText: string, baseUrl: string): string {
 }
 
 export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUrl: string | null; finalUrl: string }> {
+  if (!game || !game.url) {
+    return { blobUrl: null, finalUrl: '' };
+  }
   if (game.fetchGame === false) {
     return { blobUrl: null, finalUrl: game.url };
   }

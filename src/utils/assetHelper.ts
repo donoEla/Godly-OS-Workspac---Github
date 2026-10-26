@@ -10,7 +10,7 @@
 
 const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
 const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
-const CURRENT_RELEASE_TAG = 'v4.5.1';
+const CURRENT_RELEASE_TAG = 'v4.5.2';
 
 export function getJsDelivrOrigin(): string {
   const candidates: string[] = [];

@@ -32,7 +32,11 @@ export function withBaseTag(htmlText: string, baseUrl: string): string {
   }
 }
 
-export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUrl: string; finalUrl: string }> {
+export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUrl: string | null; finalUrl: string }> {
+  if (game.fetchGame === false) {
+    return { blobUrl: null, finalUrl: game.url };
+  }
+
   const list: string[] = [game.url];
   const m = game.url.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/(.*)$/);
   if (m) {
@@ -44,7 +48,7 @@ export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUr
 
   for (const u of list) {
     try {
-      const res = await fetch(u, { signal: AbortSignal.timeout(15000) });
+      const res = await fetch(u, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) continue;
       const text = await res.text();
       if (!/<html|<!doctype|<script|<iframe/i.test(text)) continue;
@@ -55,7 +59,7 @@ export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUr
   }
 
   if (!htmlText) {
-    throw new Error('Unable to retrieve game HTML via direct fetch');
+    return { blobUrl: null, finalUrl: game.url };
   }
 
   if (game.crispScript) {

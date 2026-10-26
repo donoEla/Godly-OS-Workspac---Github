@@ -501,7 +501,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
   // Source Selector Dropdown state
   const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
+  const [dropdownSourceSearch, setDropdownSourceSearch] = useState('');
+  const [dropdownCategory, setDropdownCategory] = useState<'all' | 'major' | 'core' | 'consoles' | 'other'>('all');
   const sourceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // In-Page Source Picker state for All section
+  const [isAllSourcePickerOpen, setIsAllSourcePickerOpen] = useState(false);
+  const [allSourcePickerSearch, setAllSourcePickerSearch] = useState('');
+  const allSourcePickerRef = useRef<HTMLDivElement>(null);
 
   // Laptop Eco / Battery Saver Mode state
   const [isEcoMode, setIsEcoMode] = useState<boolean>(() => {
@@ -528,11 +535,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     });
   };
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (sourceDropdownRef.current && !sourceDropdownRef.current.contains(e.target as Node)) {
         setIsSourceDropdownOpen(false);
+      }
+      if (allSourcePickerRef.current && !allSourcePickerRef.current.contains(e.target as Node)) {
+        setIsAllSourcePickerOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -682,6 +692,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [allSort, setAllSort] = useState<SortOption>('name_asc');
   const [allSourceFilter, setAllSourceFilter] = useState<string>('all');
   const [allPage, setAllPage] = useState<number>(1);
+  const [isDeduplicated, setIsDeduplicated] = useState<boolean>(true);
 
   // Other Sources State
   const [otherSearch, setOtherSearch] = useState('');
@@ -694,6 +705,71 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [majorSourceSort, setMajorSourceSort] = useState<SortOption>('name_asc');
   const [majorSourcePage, setMajorSourcePage] = useState<number>(1);
 
+  // Deduplicate games by normalized alphanumeric title across all 62 repositories
+  const deduplicatedAllGames = useMemo<Array<CatalogGame & { mirrors?: string[] }>>(() => {
+    function cleanTitle(name: string): string {
+      return (name || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+    }
+
+    const SOURCE_PRIORITY: Record<string, number> = {
+      'GN-Math': 100,
+      'Nebula': 95,
+      'CVK': 90,
+      'UGS': 85,
+      'Diesmos': 80,
+      'Hydra': 75,
+      'Lumin': 70,
+      'DuckMath': 65,
+      'Petezah': 60,
+      'Seraph': 55,
+      'Daknux': 50,
+      'Alexr': 45,
+      'GameZone': 40,
+      'GhostProxy': 35,
+      'Truffled': 30,
+      'js13kGames': 25,
+    };
+
+    const uniqueMap = new Map<string, CatalogGame & { mirrors: string[] }>();
+
+    for (const g of catalogGames) {
+      const key = cleanTitle(g.name);
+      if (!key) continue;
+
+      const existing = uniqueMap.get(key);
+      if (!existing) {
+        uniqueMap.set(key, { ...g, mirrors: [g.source] });
+      } else {
+        if (!existing.mirrors.includes(g.source)) {
+          existing.mirrors.push(g.source);
+        }
+        const existingHasImg = Boolean(existing.image && existing.image.trim().length > 0);
+        const gHasImg = Boolean(g.image && g.image.trim().length > 0);
+
+        let shouldReplace = false;
+        if (!existingHasImg && gHasImg) {
+          shouldReplace = true;
+        } else if (existingHasImg === gHasImg) {
+          const pExisting = SOURCE_PRIORITY[existing.source] || 10;
+          const pNew = SOURCE_PRIORITY[g.source] || 10;
+          if (pNew > pExisting) {
+            shouldReplace = true;
+          }
+        }
+
+        if (shouldReplace) {
+          const mirrors = existing.mirrors;
+          uniqueMap.set(key, { ...g, mirrors });
+        }
+      }
+    }
+
+    return Array.from(uniqueMap.values());
+  }, [catalogGames]);
+
   // Reset page when switching tabs or filters
   useEffect(() => {
     setMajorSourceSearch('');
@@ -703,7 +779,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
   useEffect(() => {
     setAllPage(1);
-  }, [allSearch, allSourceFilter, allSort]);
+  }, [allSearch, allSourceFilter, allSort, isDeduplicated]);
 
   useEffect(() => {
     setOtherPage(1);
@@ -714,7 +790,10 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   }, [majorSourceSearch, majorSourceSort]);
 
   const filteredAndSortedAllGames = useMemo(() => {
-    let list = catalogGames;
+    let list: Array<CatalogGame & { mirrors?: string[] }> = (isDeduplicated && allSourceFilter === 'all')
+      ? deduplicatedAllGames
+      : catalogGames;
+
     if (allSourceFilter !== 'all') {
       list = list.filter(g => g.source === allSourceFilter);
     }
@@ -732,7 +811,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       list = [...list].sort((a, b) => (b.source || '').localeCompare(a.source || '') || a.name.localeCompare(b.name));
     }
     return list;
-  }, [catalogGames, allSourceFilter, allSearch, allSort]);
+  }, [catalogGames, deduplicatedAllGames, isDeduplicated, allSourceFilter, allSearch, allSort]);
 
   const filteredAndSortedOtherGames = useMemo(() => {
     let list = otherSourcesGames;
@@ -1256,7 +1335,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     color: string;
     group: 'all' | 'major' | 'core' | 'consoles' | 'other';
   }>>(() => [
-    { id: 'all', name: 'All Sources Combined', badge: '26.1K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources', color: '#a855f7', group: 'all' },
+    { id: 'all', name: 'All Sources Combined', badge: isDeduplicated ? '10.8K Unique' : '26.1K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources (duplicates removed)', color: '#a855f7', group: 'all' },
     
     // Major Game Repositories (The Large Sources)
     ...MAJOR_SOURCES_CONFIG.map(s => ({
@@ -1284,7 +1363,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
     // Other Sources Combined
     { id: 'other', name: 'Other Sources Hub', badge: `${otherSourcesGames.length.toLocaleString() || '5,551'} Games`, icon: <Layers size={14} />, desc: '46 smaller repos: Selenite, Bloxy, Mini JS, Noah, etc.', color: '#64748b', group: 'other' },
-  ], [gamesBySource, otherSourcesGames.length, vaultGames.length, sixKhoGames.length, ynrbsuGames.length]);
+  ], [gamesBySource, otherSourcesGames.length, vaultGames.length, sixKhoGames.length, ynrbsuGames.length, isDeduplicated]);
 
   const currentSource = sourceOptions.find(s => s.id === activeTab) || sourceOptions[0];
 
@@ -1442,7 +1521,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             src={universalBlobUrl || activeUniversalGame.url}
             title={activeUniversalGame.title}
             className="w-full h-full border-0 bg-black"
-            sandbox="allow-scripts allow-forms allow-pointer-lock"
+            sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-modals"
             allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
           />
         </div>
@@ -1847,13 +1926,21 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1 leading-snug" title={game.name}>
               {game.name}
             </h4>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className="text-[10px] text-white/40 truncate">
                 {game.kind || 'Arcade Game'}
               </span>
               {game.fetchGame && (
                 <span className="text-[9px] text-emerald-400 font-mono font-medium">
                   • Blob
+                </span>
+              )}
+              {(game as any).mirrors && (game as any).mirrors.length > 1 && (
+                <span 
+                  className="text-[9px] text-purple-300 font-mono font-bold bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.2 rounded-md" 
+                  title={`Available across ${(game as any).mirrors.length} sources: ${(game as any).mirrors.join(', ')}`}
+                >
+                  +{(game as any).mirrors.length - 1} mirrors
                 </span>
               )}
             </div>
@@ -2251,21 +2338,151 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   )}
                 </div>
 
-                {/* Source Filter Select Dropdown */}
-                <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white/70">
-                  <Filter size={13} className="text-white/40" />
-                  <select
-                    value={allSourceFilter}
-                    onChange={(e) => setAllSourceFilter(e.target.value)}
-                    className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium max-w-[130px]"
+                {/* Deduplication Mode Toggle Button */}
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setIsDeduplicated(!isDeduplicated);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm ${
+                    isDeduplicated
+                      ? 'bg-purple-600/25 border-purple-400/60 text-purple-200 hover:bg-purple-600/35'
+                      : 'bg-white/[0.04] border-white/10 text-white/60 hover:text-white hover:bg-white/[0.08]'
+                  }`}
+                  title={
+                    isDeduplicated
+                      ? 'Duplicates removed across all 62 repositories (10,854 unique titles). Click to view all 26,123 copies.'
+                      : 'Showing all mirror copies (26,123 games). Click to deduplicate.'
+                  }
+                >
+                  <Sparkles size={13} className={isDeduplicated ? 'text-purple-300' : 'text-white/40'} />
+                  <span>{isDeduplicated ? '10.8K Unique' : 'All 26.1K Mirrors'}</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
+                      isDeduplicated
+                        ? 'bg-purple-500/30 text-purple-200 border border-purple-400/40'
+                        : 'bg-white/10 text-white/50'
+                    }`}
                   >
-                    <option value="all" className="bg-[#0b0c1c] text-white">All Sources ({catalogGames.length.toLocaleString() || '26.1K'})</option>
-                    {allUniqueSources.map((src) => (
-                      <option key={src} value={src} className="bg-[#0b0c1c] text-white">
-                        {src} ({gamesBySource[src]?.length || 0})
-                      </option>
-                    ))}
-                  </select>
+                    {isDeduplicated ? 'NO DUPES' : 'ALL'}
+                  </span>
+                </button>
+
+                {/* Modern Custom Source Filter Selector Popover */}
+                <div className="relative" ref={allSourcePickerRef}>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      setIsAllSourcePickerOpen(!isAllSourcePickerOpen);
+                    }}
+                    className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-purple-500/40 rounded-xl px-3 py-1.5 text-xs text-white font-medium transition-all shadow-sm"
+                  >
+                    <Filter size={13} className="text-purple-400 shrink-0" />
+                    <span className="truncate max-w-[130px]">
+                      {allSourceFilter === 'all'
+                        ? `All Sources (${isDeduplicated ? '10.8K' : '26.1K'})`
+                        : `${allSourceFilter} (${(gamesBySource[allSourceFilter]?.length || 0).toLocaleString()})`}
+                    </span>
+                    <ChevronDown
+                      size={13}
+                      className={`text-white/40 transition-transform duration-200 shrink-0 ${
+                        isAllSourcePickerOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isAllSourcePickerOpen && (
+                    <div
+                      className={`absolute left-0 sm:right-0 sm:left-auto mt-2 w-72 sm:w-80 max-h-96 flex flex-col rounded-2xl border border-white/10 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                        isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
+                      }`}
+                    >
+                      {/* Search inside picker */}
+                      <div className="relative mb-2">
+                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+                        <input
+                          type="text"
+                          value={allSourcePickerSearch}
+                          onChange={(e) => setAllSourcePickerSearch(e.target.value)}
+                          placeholder="Filter sources (62 total)..."
+                          className="w-full pl-8 pr-7 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50"
+                          autoFocus
+                        />
+                        {allSourcePickerSearch && (
+                          <button
+                            onClick={() => setAllSourcePickerSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Sources list */}
+                      <div className="overflow-y-auto space-y-1 pr-1 custom-scrollbar max-h-64">
+                        <button
+                          onClick={() => {
+                            sound.playClick();
+                            setAllSourceFilter('all');
+                            setIsAllSourcePickerOpen(false);
+                            setAllSourcePickerSearch('');
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all text-left ${
+                            allSourceFilter === 'all'
+                              ? 'bg-purple-600/30 text-white border border-purple-500/40 font-semibold'
+                              : 'text-white/80 hover:bg-white/[0.06] hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sparkles size={14} className="text-purple-400" />
+                            <span>All Sources Combined</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-white/40">
+                              {isDeduplicated ? '10,854' : catalogGames.length.toLocaleString()}
+                            </span>
+                            {allSourceFilter === 'all' && <Check size={13} className="text-purple-400" />}
+                          </div>
+                        </button>
+
+                        {allUniqueSources
+                          .filter((src) =>
+                            src.toLowerCase().includes(allSourcePickerSearch.toLowerCase().trim())
+                          )
+                          .map((src) => {
+                            const count = gamesBySource[src]?.length || 0;
+                            const isSelected = allSourceFilter === src;
+                            return (
+                              <button
+                                key={src}
+                                onClick={() => {
+                                  sound.playClick();
+                                  setAllSourceFilter(src);
+                                  setIsAllSourcePickerOpen(false);
+                                  setAllSourcePickerSearch('');
+                                }}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all text-left ${
+                                  isSelected
+                                    ? 'bg-purple-600/30 text-white border border-purple-500/40 font-semibold'
+                                    : 'text-white/80 hover:bg-white/[0.06] hover:text-white'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                                  <span className="truncate">{src}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[10px] font-mono text-white/40">
+                                    {count.toLocaleString()}
+                                  </span>
+                                  {isSelected && <Check size={13} className="text-purple-400" />}
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sort Order Dropdown */}
@@ -2297,7 +2514,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     : 'bg-white/[0.04] text-white/70 hover:text-white border-white/10'
                 }`}
               >
-                All Combined
+                All Combined ({isDeduplicated ? '10.8K' : '26.1K'})
               </button>
               {MAJOR_SOURCES_CONFIG.slice(0, 8).map((s) => {
                 const count = gamesBySource[s.sourceKey]?.length || s.count;
@@ -2465,267 +2682,194 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             </button>
 
             {/* Dropdown Menu */}
-            {isSourceDropdownOpen && (
-              <div 
-                className={`absolute right-0 mt-2 w-80 max-h-[75vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 custom-scrollbar ${
-                  isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
-                }`}
-              >
-                {/* All Sources Featured Item */}
-                <div className="mb-2">
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab('all');
-                      setIsSourceDropdownOpen(false);
-                      setActiveVaultGame(null);
-                      setActiveUniversalGame(null);
-                      setActiveNowGGGame(null);
-                      setActiveGnGame(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
-                      activeTab === 'all'
-                        ? 'bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-purple-500/50 shadow-md shadow-purple-950/30'
-                        : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.06]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0">
-                        <Sparkles size={16} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white">All Sources Combined</span>
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
-                            26.1K+
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-white/50">Unified library sorted &amp; filtered across all sources</p>
-                      </div>
-                    </div>
-                    {activeTab === 'all' && <Check size={14} className="text-purple-400 shrink-0" />}
-                  </button>
-                </div>
+            {isSourceDropdownOpen && (() => {
+              const q = dropdownSourceSearch.trim().toLowerCase();
+              const filteredSources = sourceOptions.filter((opt) => {
+                if (opt.id === 'all') return false;
+                if (dropdownCategory !== 'all' && opt.group !== dropdownCategory) return false;
+                if (!q) return true;
+                return (
+                  opt.name.toLowerCase().includes(q) ||
+                  opt.desc.toLowerCase().includes(q) ||
+                  opt.badge.toLowerCase().includes(q)
+                );
+              });
 
-                {/* Major Game Repositories (The Large Sources) */}
-                <div className="px-2 py-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider flex items-center justify-between">
-                  <span>Major Repositories</span>
-                  <span className="text-white/20">16 Sources</span>
-                </div>
-                {sourceOptions.filter(s => s.group === 'major').map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab(opt.id);
-                      setIsSourceDropdownOpen(false);
-                      setActiveVaultGame(null);
-                      setActiveUniversalGame(null);
-                      setActiveNowGGGame(null);
-                      setActiveGnGame(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
-                      activeTab === opt.id
-                        ? 'bg-white/[0.10] text-white border border-white/20'
-                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div 
-                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
-                        style={{
-                          background: `${opt.color}20`,
-                          borderColor: `${opt.color}40`,
-                          color: opt.color
-                        }}
-                      >
-                        {opt.icon}
-                      </div>
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
-                          <span 
-                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
-                            style={{
-                              background: `${opt.color}15`,
-                              borderColor: `${opt.color}35`,
-                              color: opt.color
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
-                      </div>
-                    </div>
-                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
-                  </button>
-                ))}
+              const counts = {
+                all: sourceOptions.filter((s) => s.id !== 'all').length,
+                major: sourceOptions.filter((s) => s.group === 'major').length,
+                core: sourceOptions.filter((s) => s.group === 'core').length,
+                consoles: sourceOptions.filter((s) => s.group === 'consoles').length,
+                other: sourceOptions.filter((s) => s.group === 'other').length,
+              };
 
-                {/* Other Sources Combined */}
-                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider flex items-center justify-between">
-                  <span>Other Repositories</span>
-                  <span className="text-white/20">46 Sources</span>
-                </div>
-                {sourceOptions.filter(s => s.group === 'other').map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab(opt.id);
-                      setIsSourceDropdownOpen(false);
-                      setActiveVaultGame(null);
-                      setActiveUniversalGame(null);
-                      setActiveNowGGGame(null);
-                      setActiveGnGame(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
-                      activeTab === opt.id
-                        ? 'bg-white/[0.10] text-white border border-white/20'
-                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div 
-                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
-                        style={{
-                          background: `${opt.color}20`,
-                          borderColor: `${opt.color}40`,
-                          color: opt.color
-                        }}
-                      >
-                        {opt.icon}
-                      </div>
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
-                          <span 
-                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
-                            style={{
-                              background: `${opt.color}15`,
-                              borderColor: `${opt.color}35`,
-                              color: opt.color
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
-                      </div>
-                    </div>
-                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
-                  </button>
-                ))}
+              const showAllCard =
+                (dropdownCategory === 'all' || dropdownCategory === 'major') &&
+                (!q || 'all sources combined deduplicated'.includes(q));
 
-                {/* Core Collections Group */}
-                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
-                  Core Collections
-                </div>
-                {sourceOptions.filter(s => s.group === 'core').map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab(opt.id);
-                      setIsSourceDropdownOpen(false);
-                      setActiveVaultGame(null);
-                      setActiveUniversalGame(null);
-                      setActiveNowGGGame(null);
-                      setActiveGnGame(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
-                      activeTab === opt.id
-                        ? 'bg-white/[0.10] text-white border border-white/20'
-                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div 
-                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
-                        style={{
-                          background: `${opt.color}20`,
-                          borderColor: `${opt.color}40`,
-                          color: opt.color
-                        }}
+              return (
+                <div
+                  className={`absolute right-0 mt-2 w-80 sm:w-[500px] max-h-[82vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                    isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
+                  }`}
+                >
+                  {/* Search Bar */}
+                  <div className="relative mb-2.5">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                    <input
+                      type="text"
+                      value={dropdownSourceSearch}
+                      onChange={(e) => setDropdownSourceSearch(e.target.value)}
+                      placeholder="Search repositories (Nebula, UGS, Hydra, Selenite...)"
+                      className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
+                      autoFocus
+                    />
+                    {dropdownSourceSearch && (
+                      <button
+                        onClick={() => setDropdownSourceSearch('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                       >
-                        {opt.icon}
-                      </div>
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
-                          <span 
-                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
-                            style={{
-                              background: `${opt.color}15`,
-                              borderColor: `${opt.color}35`,
-                              color: opt.color
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
-                      </div>
-                    </div>
-                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
-                  </button>
-                ))}
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
 
-                {/* Dedicated Consoles & Cloud Group */}
-                <div className="px-2 pt-2 pb-1 text-[9.5px] font-mono uppercase text-white/30 tracking-wider">
-                  Dedicated Consoles &amp; Cloud
-                </div>
-                {sourceOptions.filter(s => s.group === 'consoles').map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveTab(opt.id);
-                      setIsSourceDropdownOpen(false);
-                      setActiveVaultGame(null);
-                      setActiveUniversalGame(null);
-                      setActiveNowGGGame(null);
-                      setActiveGnGame(null);
-                    }}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl transition-all text-left mb-1 ${
-                      activeTab === opt.id
-                        ? 'bg-white/[0.10] text-white border border-white/20'
-                        : 'hover:bg-white/[0.05] text-white/80 hover:text-white border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div 
-                        className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
-                        style={{
-                          background: `${opt.color}20`,
-                          borderColor: `${opt.color}40`,
-                          color: opt.color
+                  {/* Category Filter Chips */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar border-b border-white/[0.08] mb-2.5 shrink-0">
+                    {(
+                      [
+                        { id: 'all', label: `All (${counts.all})` },
+                        { id: 'major', label: `Major (${counts.major})` },
+                        { id: 'core', label: `Core (${counts.core})` },
+                        { id: 'consoles', label: `Consoles (${counts.consoles})` },
+                        { id: 'other', label: `Other (${counts.other})` },
+                      ] as const
+                    ).map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          sound.playClick();
+                          setDropdownCategory(cat.id);
                         }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all border ${
+                          dropdownCategory === cat.id
+                            ? 'bg-purple-600/30 text-white border-purple-400/50 shadow-sm'
+                            : 'bg-white/[0.03] text-white/60 hover:text-white border-white/10'
+                        }`}
                       >
-                        {opt.icon}
-                      </div>
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white truncate">{opt.name}</span>
-                          <span 
-                            className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-medium border shrink-0"
-                            style={{
-                              background: `${opt.color}15`,
-                              borderColor: `${opt.color}35`,
-                              color: opt.color
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Scrollable Content Container */}
+                  <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar max-h-[52vh]">
+                    {/* All Sources Combined Featured Card */}
+                    {showAllCard && (
+                      <button
+                        onClick={() => {
+                          sound.playClick();
+                          setActiveTab('all');
+                          setIsSourceDropdownOpen(false);
+                          setDropdownSourceSearch('');
+                          setActiveVaultGame(null);
+                          setActiveUniversalGame(null);
+                          setActiveNowGGGame(null);
+                          setActiveGnGame(null);
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left mb-1.5 ${
+                          activeTab === 'all'
+                            ? 'bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-purple-500/50 shadow-md shadow-purple-950/30'
+                            : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.06]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center shrink-0">
+                            <Sparkles size={16} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-white">All Sources Combined</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
+                                {isDeduplicated ? '10.8K Unique' : '26.1K Mirrors'}
+                              </span>
+                              {isDeduplicated && (
+                                <span className="text-[8.5px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-medium">
+                                  No Dupes
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-white/50">Unified library across all 62 repos with duplicates cleaned</p>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-white/40 truncate">{opt.desc}</p>
+                        {activeTab === 'all' && <Check size={14} className="text-purple-400 shrink-0 ml-2" />}
+                      </button>
+                    )}
+
+                    {/* Sources Grid */}
+                    {filteredSources.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {filteredSources.map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              sound.playClick();
+                              setActiveTab(opt.id);
+                              setIsSourceDropdownOpen(false);
+                              setDropdownSourceSearch('');
+                              setActiveVaultGame(null);
+                              setActiveUniversalGame(null);
+                              setActiveNowGGGame(null);
+                              setActiveGnGame(null);
+                            }}
+                            className={`flex items-center justify-between p-2 rounded-xl transition-all text-left border ${
+                              activeTab === opt.id
+                                ? 'bg-white/[0.10] text-white border-purple-500/50 shadow-sm'
+                                : 'hover:bg-white/[0.06] text-white/80 hover:text-white border-white/[0.06] bg-white/[0.02]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+                                style={{
+                                  background: `${opt.color}20`,
+                                  borderColor: `${opt.color}40`,
+                                  color: opt.color,
+                                }}
+                              >
+                                {opt.icon}
+                              </div>
+                              <div className="truncate">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-semibold text-white truncate">{opt.name}</span>
+                                </div>
+                                <span
+                                  className="inline-block text-[8.5px] px-1.5 py-0.2 rounded-md font-mono font-medium border mt-0.5"
+                                  style={{
+                                    background: `${opt.color}15`,
+                                    borderColor: `${opt.color}35`,
+                                    color: opt.color,
+                                  }}
+                                >
+                                  {opt.badge}
+                                </span>
+                              </div>
+                            </div>
+                            {activeTab === opt.id && (
+                              <Check size={13} className="text-purple-400 shrink-0 ml-1.5" />
+                            )}
+                          </button>
+                        ))}
                       </div>
-                    </div>
-                    {activeTab === opt.id && <Check size={13} className="text-purple-400 shrink-0 ml-2" />}
-                  </button>
-                ))}
-              </div>
-            )}
+                    ) : !showAllCard ? (
+                      <div className="p-6 text-center text-white/40 text-xs">
+                        No game sources matching "{dropdownSourceSearch}"
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

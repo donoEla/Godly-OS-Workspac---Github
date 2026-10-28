@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="mangaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#mangaBg)"/>
+  <rect x="3" y="3" width="94" height="94" rx="21" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  <!-- Book / Manga pages -->
+  <path d="M22 30 C34 26, 48 30, 50 36 C52 30, 66 26, 78 30 L78 72 C66 68, 52 72, 50 76 C48 72, 34 68, 22 72 Z" fill="#ffffff" opacity="0.95"/>
+  <path d="M50 36 L50 76" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Manga action lines -->
+  <line x1="28" y1="40" x2="44" y2="40" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="28" y1="48" x2="42" y2="48" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="28" y1="56" x2="38" y2="56" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <!-- Right page illustration box -->
+  <rect x="56" y="38" width="16" height="20" rx="3" fill="#f43f5e" opacity="0.85"/>
+  <polygon points="60,52 64,46 68,52" fill="#ffffff"/>
+  <circle cx="67" cy="43" r="1.8" fill="#fef08a"/>
+  <!-- Star badge -->
+  <path d="M74 22 L76 26 L80 26 L77 29 L78 33 L74 31 L70 33 L71 29 L68 26 L72 26 Z" fill="#fbbf24" filter="url(#glow)"/>
+</svg>

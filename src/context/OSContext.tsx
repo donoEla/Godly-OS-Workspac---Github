@@ -295,7 +295,9 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'code-editor', name: 'Code Studio', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'code-editor' },
   { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
   { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
-  { id: 'movies', name: 'Movies', icon: getAssetUrl('assets/icons/movies.png'), category: 'Media', url: 'https://1337x.to/' },
+  { id: 'movies', name: 'StreamFlix', icon: getAssetUrl('assets/icons/movies.png'), category: 'Media', appId: 'movies' },
+  { id: 'godly-manga', name: 'Godly Manga', icon: getAssetUrl('assets/icons/manga.svg'), category: 'Media', appId: 'manga' },
+  { id: 'stratus-music', name: 'Stratus Music', icon: getAssetUrl('assets/icons/music.svg'), category: 'Media', appId: 'music' },
   { id: 'games-arcade', name: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'games' },
   { id: 'terminal', name: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'terminal' },
   { id: 'voice-memos', name: 'Voice Memos', icon: getAssetUrl('assets/icons/voice-memos.jpg'), category: 'Utilities', appId: 'voice-memos' },
@@ -322,6 +324,9 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'emulator': { title: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/emulator.png'), width: 1040, height: 680 },
   'multiplayer': { title: 'P2P Multiplayer Arena', icon: getAssetUrl('assets/icons/multiplayer.jpg'), width: 920, height: 620 },
   'eaglercraft': { title: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/eaglercraft.jpg'), width: 1060, height: 700 },
+  'manga': { title: 'Godly Manga & Anime Reader', icon: getAssetUrl('assets/icons/manga.svg'), width: 1040, height: 700 },
+  'movies': { title: 'StreamFlix Cinema & TV', icon: getAssetUrl('assets/icons/movies.png'), width: 1060, height: 720 },
+  'music': { title: 'Stratus Music Studio', icon: getAssetUrl('assets/icons/music.svg'), width: 940, height: 650 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
   'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 880, height: 640 },
   'spotify': { title: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), width: 920, height: 640 },
@@ -406,7 +411,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       const saved = localStorage.getItem('godly_installed_apps');
 
       let apps: InstalledApp[] = DEFAULT_INSTALLED_APPS;
-      if (saved && version === '4.4.2') {
+      if (saved && version === '4.5.6') {
         apps = JSON.parse(saved);
       }
 
@@ -432,7 +437,7 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         }
       });
 
-      localStorage.setItem('godly_apps_version', '4.4.2');
+      localStorage.setItem('godly_apps_version', '4.5.6');
       localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
       return updated;
     } catch {

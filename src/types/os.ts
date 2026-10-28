@@ -20,7 +20,10 @@ export type AppId =
   | 'widgets'
   | 'emulator'
   | 'multiplayer'
-  | 'eaglercraft';
+  | 'eaglercraft'
+  | 'manga'
+  | 'movies'
+  | 'music';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 

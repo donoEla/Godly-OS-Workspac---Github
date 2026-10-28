@@ -26,6 +26,8 @@ const PINNED_APPS: { id: AppId; name: string; category: string; icon: string }[]
   { id: 'terminal',        name: 'Terminal',        category: 'Dev',     icon: getAssetUrl('assets/icons/terminal.jpg') },
   { id: 'notes',           name: 'Notes Studio',    category: 'Work',    icon: getAssetUrl('assets/icons/notes.jpg') },
   { id: 'spotify',         name: 'Music',           category: 'Media',   icon: getAssetUrl('assets/icons/spotify.jpg') },
+  { id: 'movies',          name: 'StreamFlix',      category: 'Media',   icon: getAssetUrl('assets/icons/movies.png') },
+  { id: 'manga',           name: 'Godly Manga',     category: 'Media',   icon: getAssetUrl('assets/icons/manga.svg') },
   { id: 'file-manager',    name: 'Files',           category: 'System',  icon: getAssetUrl('assets/icons/file-manager.jpg') },
   { id: 'games',           name: 'Arcade',          category: 'Gaming',  icon: getAssetUrl('assets/icons/games.jpg') },
   { id: 'calculator',      name: 'Calculator',      category: 'Utility', icon: getAssetUrl('assets/icons/calculator.jpg') },

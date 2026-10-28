@@ -363,6 +363,7 @@ export type GameSourceTab =
   | 'ynrbsu'
   | 'nettleweb'
   | 'nowgg'
+  | 'stratus'
   | 'p2p'
   | 'emulator'
   | 'eaglercraft'
@@ -587,6 +588,26 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setUniversalRefreshKey((k) => k + 1);
   };
 
+  // ── Stratus Cloud Games (225 AAA Cloud Games from x8rr/stratus-api & RaccoonGame) ──
+  const [stratusGames, setStratusGames] = useState<Array<{
+    name: string;
+    game_key: string;
+    description: string;
+    image: string;
+    cover: string;
+    tags: string[];
+  }>>([]);
+  const [stratusSearch, setStratusSearch] = useState('');
+  const [stratusTag, setStratusTag] = useState('All');
+  const [selectedStratusGame, setSelectedStratusGame] = useState<{
+    name: string;
+    game_key: string;
+    description: string;
+    image: string;
+    cover: string;
+    tags: string[];
+  } | null>(null);
+
   // ── Unified 28,534 Games Catalog (64 Sources: Nebula, UGS, js13kGames, Godly OS, CVK, Hydra, Lumin, Diesmos, GN-Math, GhostProxy, Alexr, GameZone, Petezah, Daknux, Seraph, Truffled, DuckMath, Solstice OS, Other) ──
   const [catalogGames, setCatalogGames] = useState<CatalogGame[]>([]);
   const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
@@ -607,6 +628,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       } catch (e) {
         console.warn('Failed to load catalog.json:', e);
         if (isMounted) setCatalogLoading(false);
+      }
+
+      try {
+        const stratusUrl = getAssetUrl('stratus_cloud_games.json');
+        const stratusRes = await fetch(stratusUrl);
+        if (stratusRes.ok) {
+          const sData = await stratusRes.json();
+          if (isMounted) {
+            setStratusGames(sData);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load stratus_cloud_games.json:', e);
       }
     };
     loadCatalog();
@@ -1361,6 +1395,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     { id: 'p2p', name: 'P2P GameWebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw HTML5 arcade mirror', color: '#f97316', group: 'core' },
 
     // Cloud & Consoles
+    { id: 'stratus', name: 'Stratus Cloud Games', badge: '225 AAA Games', icon: <Cloud size={14} />, desc: 'Next-gen cloud streaming titles from Stratus & RaccoonGame', color: '#06b6d4', group: 'consoles' },
     { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables (Roblox)', color: '#f59e0b', group: 'consoles' },
     { id: 'emulator', name: 'WASM Emulator Hub', badge: 'RetroArch', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
     { id: 'eaglercraft', name: 'Eaglercraft Studio', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
@@ -2630,6 +2665,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
                 {activeTab === 'nettleweb' && 'NettleWeb Web Hub'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
+                {activeTab === 'stratus' && `${stratusGames.length || 225} Stratus Cloud AAA Titles`}
                 {activeTab === 'p2p' && '500+ P2P GameWebSight'}
                 {activeTab === 'emulator' && 'WASM Emulator Hub'}
                 {activeTab === 'eaglercraft' && '12 Eaglercraft Editions'}
@@ -3893,6 +3929,135 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB: STRATUS CLOUD GAMING (225 AAA Titles from x8rr/stratus-api)
+           ========================================================================= */}
+        {activeTab === 'stratus' && (
+          <div className="w-full h-full flex flex-col overflow-hidden">
+            {/* Stratus Hero Banner & Filter Bar */}
+            <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-[#081a28]/80 via-[#0a1220]/80 to-[#070b14]/80 shrink-0 backdrop-blur-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 p-0.5 shadow-lg shadow-cyan-950/40 flex items-center justify-center">
+                    <div className="w-full h-full rounded-[14px] bg-[#07131e] flex items-center justify-center">
+                      <Cloud size={20} className="text-cyan-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
+                        Stratus Cloud Gaming <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">RaccoonGame API</span>
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-white/50">
+                      225 Next-Gen AAA Console &amp; PC titles streamed directly to browser sandbox.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-72">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    value={stratusSearch}
+                    onChange={(e) => setStratusSearch(e.target.value)}
+                    placeholder="Search 225 cloud titles..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white/[0.05] border border-white/10 text-white placeholder-white/30 outline-none focus:border-cyan-500/60"
+                  />
+                </div>
+              </div>
+
+              {/* Tag Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
+                {['All', '3A', 'Action', 'RPG', 'Fighting', 'Adventure', 'Racing', 'Anime', 'Horror', 'Open World'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      sound.playClick();
+                      setStratusTag(tag);
+                    }}
+                    className={`px-3 py-1 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
+                      stratusTag === tag
+                        ? 'bg-cyan-600 border-cyan-400 text-white shadow-md shadow-cyan-950/30'
+                        : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cloud Games Grid */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {stratusGames
+                  .filter((g) => {
+                    const matchesSearch = !stratusSearch.trim() || g.name.toLowerCase().includes(stratusSearch.toLowerCase()) || g.description.toLowerCase().includes(stratusSearch.toLowerCase());
+                    const matchesTag = stratusTag === 'All' || g.tags.includes(stratusTag);
+                    return matchesSearch && matchesTag;
+                  })
+                  .map((game) => (
+                    <div
+                      key={game.game_key}
+                      onClick={() => {
+                        sound.playClick();
+                        handleLaunchUniversalGame({
+                          id: `stratus-${game.game_key}`,
+                          title: game.name,
+                          url: `https://www.raccoongame.com/#/game-detail?gameKey=${game.game_key}`,
+                          thumbnail: game.cover || game.image,
+                          source: 'Stratus Cloud',
+                          category: game.tags[0] || 'Cloud 3A'
+                        });
+                      }}
+                      className="group relative flex flex-col rounded-2xl border border-white/10 hover:border-cyan-400/50 bg-[#080f1a] hover:bg-[#0c1626] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-xl hover:shadow-cyan-950/40"
+                    >
+                      <div className="relative aspect-[16/10] w-full bg-black/60 overflow-hidden">
+                        <img
+                          src={game.cover || game.image}
+                          alt={game.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#080f1a] via-transparent to-transparent opacity-80" />
+                        <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-black/70 backdrop-blur-md border border-white/10 text-cyan-300 uppercase">
+                          STRATUS CLOUD
+                        </span>
+
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                          <div className="w-10 h-10 rounded-full bg-cyan-600 text-white flex items-center justify-center shadow-lg shadow-cyan-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                            <Play size={16} className="ml-0.5 fill-white" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3 flex flex-col justify-between flex-1 gap-1.5">
+                        <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                          {game.name}
+                        </h4>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {game.tags.slice(0, 2).map((t) => (
+                            <span
+                              key={t}
+                              className="text-[9px] px-1.5 py-0.2 rounded-md bg-white/[0.04] text-white/60 border border-white/[0.06]"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
         )}
 

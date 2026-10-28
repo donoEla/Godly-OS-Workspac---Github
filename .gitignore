@@ -18,6 +18,7 @@ dist/*
 !dist/gn_math_games.json
 !dist/local_games.json
 !dist/catalog.json
+!dist/stratus_cloud_games.json
 !dist/sw.js
 !dist/bareworker.js
 !dist/assets/

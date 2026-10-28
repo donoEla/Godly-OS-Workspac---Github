@@ -17,6 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
 export interface MediaItem {
   id: string;
@@ -326,15 +327,14 @@ export const MoviesApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Video Iframe Embed */}
+        {/* Video Player Content via ServiceWorkerAppView for zero-blocking & proxy tunnel */}
         <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
-          <iframe
+          <ServiceWorkerAppView
             key={`${currentEmbedUrl}-${streamUrlKey}`}
-            src={currentEmbedUrl}
-            title={selectedMedia.title}
-            className="w-full h-full border-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-            allowFullScreen
+            url={currentEmbedUrl}
+            appName={`${selectedMedia.title} (${currentProviderObj.name})`}
+            fallbackUrl={currentEmbedUrl}
+            fallbackName={currentProviderObj.name}
           />
         </div>
       </div>

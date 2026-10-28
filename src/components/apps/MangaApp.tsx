@@ -19,6 +19,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
 export interface MangaItem {
   id: string;
@@ -348,14 +349,13 @@ export const MangaApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Reader Frame Content */}
+        {/* Reader Frame Content via ServiceWorkerAppView for zero-blocking & bypass */}
         <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
-          <iframe
-            src={embedUrl}
-            title={`${selectedManga.title} - Chapter ${readingChapter.number}`}
-            className="w-full h-full border-none"
-            allow="fullscreen; autoplay; clipboard-read; clipboard-write"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+          <ServiceWorkerAppView
+            url={embedUrl}
+            appName={`${selectedManga.title} (Ch. ${readingChapter.number})`}
+            fallbackUrl={embedUrl}
+            fallbackName="MangaDex Reader"
           />
         </div>
       </div>

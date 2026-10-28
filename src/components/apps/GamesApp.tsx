@@ -1554,15 +1554,25 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               </div>
             </div>
           )}
-          <iframe
-            ref={universalFrameRef}
-            key={universalRefreshKey}
-            src={universalBlobUrl || activeUniversalGame.url}
-            title={activeUniversalGame.title}
-            className="w-full h-full border-0 bg-black"
-            sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-modals"
-            allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
-          />
+          {universalBlobUrl ? (
+            <iframe
+              ref={universalFrameRef}
+              key={universalRefreshKey}
+              src={universalBlobUrl}
+              title={activeUniversalGame.title}
+              className="w-full h-full border-0 bg-black"
+              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-modals"
+              allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
+            />
+          ) : (
+            <ServiceWorkerAppView
+              key={`${activeUniversalGame.url}-${universalRefreshKey}`}
+              url={activeUniversalGame.url}
+              appName={activeUniversalGame.title}
+              fallbackUrl={activeUniversalGame.url}
+              fallbackName="Game Stream"
+            />
+          )}
         </div>
       </div>
     );

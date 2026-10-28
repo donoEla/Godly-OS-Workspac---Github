@@ -282,7 +282,7 @@ export const MusicApp: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-                Stratus Music <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">Hi-Fi Audio</span>
+                x8music Studio <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">x8rr/music Hi-Fi</span>
               </h2>
               <p className="text-[10px] text-white/50">Lossless streaming player &amp; curated radio channels</p>
             </div>

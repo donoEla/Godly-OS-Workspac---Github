@@ -123,6 +123,8 @@ export const WindowManager: React.FC = () => {
         return <MoviesApp />;
       case 'music':
         return <MusicApp />;
+      case 'stratus':
+        return <GamesApp initialTab="stratus" />;
       default:
         return (
           <div className="p-6 text-white text-center">

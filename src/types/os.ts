@@ -23,7 +23,8 @@ export type AppId =
   | 'eaglercraft'
   | 'manga'
   | 'movies'
-  | 'music';
+  | 'music'
+  | 'stratus';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';
 

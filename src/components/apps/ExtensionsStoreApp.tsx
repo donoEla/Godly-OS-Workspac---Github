@@ -131,7 +131,7 @@ export const ExtensionsStoreApp: React.FC = () => {
   return (
     <div className="flex flex-col h-full w-full bg-[var(--window-glass)] backdrop-blur-2xl text-slate-100 select-none overflow-hidden font-sans">
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-black/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0 shadow-lg">
+      <div className="flex flex-wrap items-center justify-between px-6 py-3.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex-shrink-0 shadow-lg gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-600/30 border border-white/20">
             <Puzzle size={20} className="text-white" />
@@ -150,7 +150,7 @@ export const ExtensionsStoreApp: React.FC = () => {
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           {/* Create Custom */}
           <button
             onClick={() => {
@@ -254,6 +254,7 @@ export const ExtensionsStoreApp: React.FC = () => {
 
                 {/* Toggle Switch */}
                 <button
+                  type="button"
                   onClick={() => {
                     toggleExtension(ext.id);
                     const willBe = !ext.enabled;
@@ -263,13 +264,13 @@ export const ExtensionsStoreApp: React.FC = () => {
                       willBe ? 'success' : 'info'
                     );
                   }}
-                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                    ext.enabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-white/15'
+                  className={`w-11 h-6 rounded-full transition-all relative inline-flex items-center p-0.5 shrink-0 cursor-pointer ${
+                    ext.enabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-600/30' : 'bg-white/15 hover:bg-white/25'
                   }`}
                   title={ext.enabled ? 'Disable Extension' : 'Enable Extension'}
                 >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                  <span
+                    className={`inline-block w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 pointer-events-none ${
                       ext.enabled ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -304,26 +305,41 @@ export const ExtensionsStoreApp: React.FC = () => {
               )}
             </div>
 
-            {/* Footer Status & Delete */}
-            <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06] text-[11px]">
-              <div className="flex items-center gap-1.5">
+            {/* Footer Status & Actions */}
+            <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06] text-[11px] gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleExtension(ext.id);
+                  const willBe = !ext.enabled;
+                  addNotification(
+                    willBe ? 'Extension Activated' : 'Extension Disabled',
+                    `${ext.name} is now ${willBe ? 'active and applied to your desktop' : 'disabled'}.`,
+                    willBe ? 'success' : 'info'
+                  );
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  ext.enabled
+                    ? 'bg-purple-600/20 border-purple-500/40 text-purple-300 hover:bg-purple-600/30'
+                    : 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     ext.enabled ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-slate-500'
                   }`}
                 />
-                <span className={ext.enabled ? 'text-emerald-300 font-medium' : 'text-slate-500'}>
-                  {ext.enabled ? 'Active on Desktop' : 'Disabled'}
-                </span>
-              </div>
+                <span>{ext.enabled ? 'Active (Click to Disable)' : 'Enable Extension'}</span>
+              </button>
 
               {!ext.isBuiltIn && (
                 <button
+                  type="button"
                   onClick={() => {
                     sound.playClick();
                     uninstallExtension(ext.id);
                   }}
-                  className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   title="Uninstall extension"
                 >
                   <Trash2 size={13} />

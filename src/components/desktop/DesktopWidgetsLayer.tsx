@@ -410,7 +410,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
         zIndex: isDragging ? 50 : 10,
         transition: isDragging ? 'none' : 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      className={`pointer-events-auto rounded-[28px] p-3.5 flex flex-col group overflow-hidden select-none ${getAccentGlow()}`}
+      className={`desktop-widget pointer-events-auto rounded-[28px] p-3.5 flex flex-col group overflow-hidden select-none ${getAccentGlow()}`}
     >
       {/* 1. iOS Liquid Glass Base Translucent Plate with High-Vibrancy Blur & Optical Refraction */}
       <div

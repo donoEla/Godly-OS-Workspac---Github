@@ -158,7 +158,7 @@ export const Desktop: React.FC = () => {
       <DesktopWidgetsLayer />
 
       {/* Desktop Draggable Icons with Magnetic Grid Snapping */}
-      <div className="absolute inset-0 pointer-events-auto z-0">
+      <div className="absolute inset-0 pointer-events-auto z-[2]">
         {installedApps.map((app, index) => {
           const pos = getAppPosition(app.id, index);
           const isDraggingThis = draggingAppId === app.id;

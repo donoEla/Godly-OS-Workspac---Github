@@ -93,16 +93,18 @@ const STORE_CATALOG: StoreApp[] = [
   },
   {
     id: 'movies',
-    name: 'Movies',
+    name: 'StreamFlix Cinema',
     category: 'Media',
-    developer: '1337x Media Network',
+    developer: 'StreamFlix Network',
     rating: 4.9,
     reviews: '124.8K',
     icon: getAssetUrl('assets/icons/movies.png'),
-    description: 'Cinematic movies and multimedia portal powered by 1337x with automatic mirror failover.',
+    description: 'Cinema on-demand streaming portal with 120,000+ films and series running through proxy.',
     isInstalled: true,
-    embedUrl: 'https://1337x.to/',
-    features: ['1337x.to official mirror cluster', 'Automatic mirror rotation', 'Ultraviolet SW proxy pipeline'],
+    appId: 'web-app',
+    customUrl: 'https://streamflix.one/',
+    embedUrl: 'https://streamflix.one/',
+    features: ['120,000+ movies & TV series', 'Dual streaming engines', 'Ultraviolet SW proxy pipeline', '4K UltraHD streams'],
   },
   {
     id: 'octave-stream',
@@ -420,8 +422,11 @@ export const AppStoreApp: React.FC = () => {
                 </p>
                 <div className="pt-2 flex items-center gap-3">
                   <button
-                    onClick={() => handleLaunch(catalog[0])}
-                    className="flex items-center gap-2 px-5 py-2.5 text-white rounded-2xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 border border-white/20"
+                    onClick={() => {
+                      const streamFlixApp = catalog.find((a) => a.id === 'movies') || catalog[0];
+                      handleLaunch(streamFlixApp);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 text-white rounded-2xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 border border-white/20 cursor-pointer"
                     style={{ background: 'var(--accent)', boxShadow: '0 8px 24px var(--accent-glow)' }}
                   >
                     <Tv size={14} />
@@ -429,7 +434,7 @@ export const AppStoreApp: React.FC = () => {
                   </button>
                   <button
                     onClick={() => { sound.playOpen(); openApp('games', 'vault'); }}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-semibold transition-all border border-white/10"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-semibold transition-all border border-white/10 cursor-pointer"
                   >
                     <Gamepad2 size={14} />
                     Open Game Vault (1,567)
@@ -438,7 +443,7 @@ export const AppStoreApp: React.FC = () => {
               </div>
 
               <div className="relative z-10 hidden sm:block w-36 h-36 rounded-3xl overflow-hidden border border-white/20 shadow-2xl shadow-purple-950/60 group">
-                <img src={getAssetUrl(catalog[0].icon)} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={getAssetUrl('assets/icons/movies.png')} alt="StreamFlix" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
             </div>
 

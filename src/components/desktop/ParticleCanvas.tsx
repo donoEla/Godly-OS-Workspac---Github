@@ -133,6 +133,17 @@ export const ParticleCanvas: React.FC = () => {
     };
 
     const onMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        target.closest(
+          '.desktop-icon, .desktop-widget, [data-window-id], .window-frame, header, footer, #taskbar, nav, [role="dialog"], button, input, select'
+        )
+      ) {
+        mouse.x = -9999;
+        mouse.y = -9999;
+        return;
+      }
       mouse.x = e.clientX;
       mouse.y = e.clientY;
     };
@@ -163,8 +174,8 @@ export const ParticleCanvas: React.FC = () => {
         let radius = dot.baseRadius;
         let alpha = 0.45;
 
-        // Interactive mouse gravity repulsion & illumination
-        if (dist < 150) {
+        // Interactive mouse gravity repulsion & illumination (only on open wallpaper)
+        if (mouse.x > -1000 && dist < 150) {
           const force = (1 - dist / 150) * 24;
           const angle = Math.atan2(dy, dx);
           targetX = dot.ox + Math.cos(angle) * force;
@@ -211,7 +222,7 @@ export const ParticleCanvas: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-none z-[1] opacity-85 transition-opacity duration-700"
+      className="absolute inset-0 pointer-events-none z-0 opacity-85 transition-opacity duration-700"
     />
   );
 };

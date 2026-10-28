@@ -301,7 +301,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Wallpaper Blur Slider */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 shadow-lg">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-semibold text-white">Wallpaper Background Blur</span>
                 <span className="text-xs font-mono font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">{settings.wallpaperBlur}px</span>
@@ -313,7 +313,7 @@ export const SettingsApp: React.FC = () => {
                 step="2"
                 value={settings.wallpaperBlur}
                 onChange={(e) => updateSettings({ wallpaperBlur: parseInt(e.target.value, 10) })}
-                className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                className="w-full h-2 bg-white/15 rounded-lg border border-white/20 appearance-none cursor-pointer accent-purple-500"
               />
             </div>
           </div>
@@ -328,7 +328,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Theme Toggle Card */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
               <div>
                 <span className="text-sm font-semibold text-white block">Theme Mode</span>
                 <span className="text-xs text-slate-400">Current mode: {settings.theme.toUpperCase()}</span>
@@ -362,7 +362,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Accent Color Palettes */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 shadow-lg">
               <span className="text-sm font-semibold text-white block mb-1">System Accent Color</span>
               <p className="text-xs text-slate-400 mb-4">Highlights, glowing halos, active buttons, and cursor touches.</p>
 
@@ -392,7 +392,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Hardware-Accelerated Custom Cursors Suite */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg space-y-4">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 shadow-lg space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -551,7 +551,7 @@ export const SettingsApp: React.FC = () => {
             {activeAppSubtab === 'calculator' && (
               <div className="space-y-4">
                 {/* Angle Mode */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Default Trigonometric Angle Mode</span>
                     <span className="text-[11px] text-slate-400">Trigonometric calculations (sin, cos, tan) calculate in radians or degrees.</span>
@@ -577,7 +577,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Default Mode on Launch */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Initial Calculator Mode</span>
                     <span className="text-[11px] text-slate-400">Layout view displayed when opening Calculator Pro.</span>
@@ -598,7 +598,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Decimal Precision */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Floating Point Precision</span>
                     <span className="text-[11px] text-slate-400">Maximum decimal places displayed for scientific results.</span>
@@ -619,7 +619,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Audio Clicks */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Tactile Keypress Audio</span>
                     <span className="text-[11px] text-slate-400">Play responsive synthesized mechanical click audio on keypad presses.</span>
@@ -645,7 +645,7 @@ export const SettingsApp: React.FC = () => {
             {activeAppSubtab === 'notes' && (
               <div className="space-y-4">
                 {/* Font Family */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Editor Typography</span>
                     <span className="text-[11px] text-slate-400">Font face for text and markdown composition.</span>
@@ -663,7 +663,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Font Size */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Font Size</span>
                     <span className="text-[11px] text-slate-400">Editor text scaling in pixels.</span>
@@ -684,7 +684,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Show Line Numbers */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Show Line Numbers</span>
                     <span className="text-[11px] text-slate-400">Display margin line count numbering in editor pane.</span>
@@ -705,7 +705,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Word Wrap */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Soft Word Wrapping</span>
                     <span className="text-[11px] text-slate-400">Wrap long lines naturally to window edge without horizontal scrolling.</span>
@@ -731,7 +731,7 @@ export const SettingsApp: React.FC = () => {
             {activeAppSubtab === 'zen' && (
               <div className="space-y-4">
                 {/* Default Search Engine */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Default Search Engine</span>
                     <span className="text-[11px] text-slate-400">Default query engine for omnibar searches and new tab speed dials.</span>
@@ -756,7 +756,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Compact Mode Default */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Compact Mode by Default</span>
                     <span className="text-[11px] text-slate-400">Auto-hide vertical sidebar and toolbar until hovering near the window edge.</span>
@@ -777,7 +777,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Zen Glance */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Zen Glance (Floating Peek Preview)</span>
                     <span className="text-[11px] text-slate-400">Alt-click or eye icon to inspect links in a floating overlay modal without losing position.</span>
@@ -803,7 +803,7 @@ export const SettingsApp: React.FC = () => {
             {activeAppSubtab === 'terminal' && (
               <div className="space-y-4">
                 {/* Terminal Theme */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Terminal Color Scheme</span>
                     <span className="text-[11px] text-slate-400">Palette and phosphor styling for bash prompt and shell output.</span>
@@ -829,7 +829,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Font Size */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Terminal Font Size</span>
                     <span className="text-[11px] text-slate-400">Font size for virtual shell buffer.</span>
@@ -850,7 +850,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Cursor Style */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Shell Cursor Style</span>
                     <span className="text-[11px] text-slate-400">Blinking prompt indicator style.</span>
@@ -880,7 +880,7 @@ export const SettingsApp: React.FC = () => {
             {activeAppSubtab === 'games' && (
               <div className="space-y-4">
                 {/* Proxy Backend */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Cloud Game Proxy Backend</span>
                     <span className="text-[11px] text-slate-400">Tunnel engine for routing nowgg.fun and web arcade assets.</span>
@@ -905,7 +905,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
 
                 {/* Show FPS */}
-                <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+                <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
                   <div>
                     <span className="text-xs font-semibold text-white block">Real-time Performance HUD</span>
                     <span className="text-[11px] text-slate-400">Display framerate (FPS) and compositor latency overlay in arcade sessions.</span>
@@ -959,7 +959,7 @@ export const SettingsApp: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* 1. Export Card */}
-              <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
+              <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center mb-3 border border-purple-500/30">
                     <Download size={20} />
@@ -1019,7 +1019,7 @@ export const SettingsApp: React.FC = () => {
                   const file = e.dataTransfer.files[0];
                   if (file) handleProfileImport(file);
                 }}
-                className={`bg-white/[0.04] backdrop-blur-xl border-2 rounded-2xl p-5 flex flex-col justify-between shadow-xl transition-all cursor-pointer ${
+                className={`bg-[#0e101f]/80 border-2 rounded-2xl p-5 flex flex-col justify-between shadow-xl transition-all cursor-pointer ${
                   isDraggingProfile
                     ? 'border-purple-500 bg-purple-600/15'
                     : 'border-dashed border-white/15 hover:border-purple-500/50 hover:bg-white/[0.06]'
@@ -1083,7 +1083,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* 4c. Desktop Widgets Engine */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white flex items-center gap-2">
@@ -1134,7 +1134,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Window Snapping & Aero Multi-Tile */}
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg divide-y divide-white/5">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg divide-y divide-white/5">
               <div className="flex items-center justify-between pb-4">
                 <div>
                   <span className="text-xs font-semibold text-white block">Aero Snap Multi-Tile Grids</span>
@@ -1229,7 +1229,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Architecture Card */}
-            <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 space-y-3 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-3 shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-white">Proxy Architecture</span>
                 <span className="text-[10px] font-mono text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-lg border border-purple-500/30">
@@ -1242,7 +1242,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             {/* Active Wisp Server Card */}
-            <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-4 shadow-lg">
               <div>
                 <span className="text-xs font-semibold text-white block mb-1">Active Wisp Server URL</span>
                 <div className="flex items-center gap-2 px-3 py-2 bg-black/60 rounded-xl border border-white/10 font-mono text-xs text-emerald-300 select-text">
@@ -1327,7 +1327,7 @@ export const SettingsApp: React.FC = () => {
               <p className="text-xs text-slate-400">Disguise browser tab title, favicon, and URL bar from teacher or monitoring software.</p>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
               <div>
                 <span className="text-xs font-semibold text-white block mb-1">Preset Educational / Productivity Disguises</span>
                 <span className="text-[11px] text-slate-400 block mb-3">Click any preset to instantly disguise current browser tab title & favicon:</span>
@@ -1423,7 +1423,7 @@ export const SettingsApp: React.FC = () => {
               <p className="text-xs text-slate-400">Tune compositor blur intensity and fluid animations.</p>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
               <div>
                 <div className="flex justify-between items-center mb-2.5">
                   <span className="text-xs font-semibold text-white">Window Glass Backdrop Blur</span>
@@ -1436,7 +1436,7 @@ export const SettingsApp: React.FC = () => {
                   step="4"
                   value={settings.glassBlur}
                   onChange={(e) => updateSettings({ glassBlur: parseInt(e.target.value, 10) })}
-                  className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  className="w-full h-2 bg-white/15 rounded-lg border border-white/20 appearance-none cursor-pointer accent-purple-500"
                 />
               </div>
 
@@ -1471,7 +1471,7 @@ export const SettingsApp: React.FC = () => {
               <p className="text-xs text-slate-400">Configure tactile Web Audio feedback.</p>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 space-y-5 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs font-semibold text-white block">System Sound Effects</span>
@@ -1504,7 +1504,7 @@ export const SettingsApp: React.FC = () => {
                   step="0.05"
                   value={settings.volume}
                   onChange={(e) => updateSettings({ volume: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  className="w-full h-2 bg-white/15 rounded-lg border border-white/20 appearance-none cursor-pointer accent-purple-500"
                 />
               </div>
 
@@ -1585,7 +1585,7 @@ export const SettingsApp: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg">
+              <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 shadow-lg">
                 <span className="text-xs font-semibold text-slate-400 block mb-1">CPU Load</span>
                 <span className="text-2xl font-mono font-bold text-purple-400">14.8%</span>
                 <div className="w-full bg-black/40 h-2.5 rounded-full overflow-hidden mt-3 p-0.5">
@@ -1593,7 +1593,7 @@ export const SettingsApp: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg">
+              <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 shadow-lg">
                 <span className="text-xs font-semibold text-slate-400 block mb-1">Memory Allocation</span>
                 <span className="text-2xl font-mono font-bold text-emerald-400">4.1 GB / 16 GB</span>
                 <div className="w-full bg-black/40 h-2.5 rounded-full overflow-hidden mt-3 p-0.5">
@@ -1602,7 +1602,7 @@ export const SettingsApp: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-lg">
               <div>
                 <span className="text-xs font-semibold text-white block">Flush System Cache & Storage</span>
                 <span className="text-[11px] text-slate-400">Reset settings and files to defaults</span>
@@ -1679,7 +1679,7 @@ export const SettingsApp: React.FC = () => {
               </button>
             </div>
 
-            <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-5 divide-y divide-white/5 text-xs shadow-lg">
+            <div className="bg-[#0e101f]/80 border border-white/10 rounded-2xl p-5 divide-y divide-white/5 text-xs shadow-lg">
               <div className="py-3 flex justify-between">
                 <span className="text-slate-400 font-medium">Architecture</span>
                 <span className="font-mono text-white font-semibold">x86_64-wasm / WebGL Compositor</span>

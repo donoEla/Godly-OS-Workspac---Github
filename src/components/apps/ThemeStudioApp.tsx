@@ -390,7 +390,7 @@ export const ThemeStudioApp: React.FC = () => {
                 setGlassBlur(val);
                 applyLiveChanges({ glassBlur: val });
               }}
-              className="w-full cursor-pointer accent-violet-500"
+              className="w-full h-2 bg-white/15 rounded-lg border border-white/20 cursor-pointer accent-purple-500 appearance-none"
             />
           </div>
 
@@ -414,7 +414,7 @@ export const ThemeStudioApp: React.FC = () => {
                 setRadius(val);
                 applyLiveChanges({ radius: val });
               }}
-              className="w-full cursor-pointer accent-violet-500"
+              className="w-full h-2 bg-white/15 rounded-lg border border-white/20 cursor-pointer accent-purple-500 appearance-none"
             />
           </div>
 
@@ -464,7 +464,7 @@ export const ThemeStudioApp: React.FC = () => {
                 setBrightness(val);
                 applyLiveChanges({ brightness: val });
               }}
-              className="w-full cursor-pointer accent-violet-500"
+              className="w-full h-2 bg-white/15 rounded-lg border border-white/20 cursor-pointer accent-purple-500 appearance-none"
             />
           </div>
 

@@ -2392,11 +2392,18 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   </button>
 
                   {isAllSourcePickerOpen && (
-                    <div
-                      className={`absolute left-0 sm:right-0 sm:left-auto mt-2 w-72 sm:w-80 max-h-96 flex flex-col rounded-2xl border border-white/10 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                        isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
-                      }`}
-                    >
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAllSourcePickerOpen(false);
+                        }}
+                      />
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-72 sm:w-80 max-h-96 flex flex-col rounded-2xl border border-white/20 shadow-2xl p-2.5 z-50 bg-[#0c0d1c] animate-in fade-in zoom-in-95 duration-150"
+                      >
                       {/* Search inside picker */}
                       <div className="relative mb-2">
                         <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
@@ -2481,7 +2488,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                             );
                           })}
                       </div>
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -2708,11 +2716,18 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 (!q || 'all sources combined deduplicated'.includes(q));
 
               return (
-                <div
-                  className={`absolute right-0 mt-2 w-80 sm:w-[500px] max-h-[82vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                    isEcoMode ? 'bg-[#0d0e1a]' : 'bg-[#0b0c1ce8] backdrop-blur-2xl'
-                  }`}
-                >
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSourceDropdownOpen(false);
+                    }}
+                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 mt-2 w-80 sm:w-[500px] max-h-[82vh] flex flex-col rounded-2xl border border-white/20 shadow-2xl p-3 z-50 bg-[#0c0d1c] animate-in fade-in zoom-in-95 duration-150"
+                  >
                   {/* Search Bar */}
                   <div className="relative mb-2.5">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
@@ -2867,7 +2882,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                       </div>
                     ) : null}
                   </div>
-                </div>
+                  </div>
+                </>
               );
             })()}
           </div>
@@ -2875,7 +2891,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       </div>
 
       {/* ── Main App Content ── */}
-      <div className={`flex-1 w-full h-full relative overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+      <div className={`flex-1 w-full min-h-0 relative overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
         {/* Universal Sandboxed Game Player (Active Game from 6kh0, Ynrbsu, NettleWeb, or Catalog) */}
         {activeUniversalGame ? (
           renderUniversalPlayer()

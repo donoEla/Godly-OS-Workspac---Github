@@ -199,23 +199,76 @@ export const MultiplayerLobbyApp: React.FC = () => {
 
   const handleCellClick = (index: number) => {
     if (board[index] || winner) return;
-    if (turn !== mySymbol && peerConnected) return; // not my turn
+    if (peerConnected && turn !== mySymbol) return; // not my turn in multiplayer
+    if (!peerConnected && turn !== 'X') return; // in single-player, wait for AI 'O' response
 
     sound.playClick();
+    const currentPiece = peerConnected ? mySymbol : turn;
     const nextBoard = [...board];
-    nextBoard[index] = mySymbol;
-    const nextTurn = mySymbol === 'X' ? 'O' : 'X';
+    nextBoard[index] = currentPiece;
+    const nextTurn = currentPiece === 'X' ? 'O' : 'X';
     const winResult = checkWinner(nextBoard);
 
     setBoard(nextBoard);
     setTurn(nextTurn);
     setWinner(winResult);
 
-    broadcastData('TTT_MOVE', {
-      board: nextBoard,
-      nextTurn,
-      winner: winResult,
-    });
+    if (peerConnected) {
+      broadcastData('TTT_MOVE', {
+        board: nextBoard,
+        nextTurn,
+        winner: winResult,
+      });
+    } else if (!winResult && nextTurn === 'O') {
+      // Single-player AI response for 'O'
+      setTimeout(() => {
+        setBoard((prev) => {
+          if (checkWinner(prev)) return prev;
+          const emptyIndices = prev
+            .map((val, idx) => (val === null ? idx : null))
+            .filter((v): v is number => v !== null);
+          if (emptyIndices.length === 0) return prev;
+
+          // Check if AI can win immediately
+          for (const emptyIdx of emptyIndices) {
+            const test = [...prev];
+            test[emptyIdx] = 'O';
+            if (checkWinner(test) === 'O') {
+              const res = checkWinner(test);
+              setTurn('X');
+              setWinner(res);
+              return test;
+            }
+          }
+
+          // Check if player X is about to win and block them
+          for (const emptyIdx of emptyIndices) {
+            const test = [...prev];
+            test[emptyIdx] = 'X';
+            if (checkWinner(test) === 'X') {
+              const blockBoard = [...prev];
+              blockBoard[emptyIdx] = 'O';
+              const res = checkWinner(blockBoard);
+              setTurn('X');
+              setWinner(res);
+              return blockBoard;
+            }
+          }
+
+          // Take center if available, otherwise pick random empty cell
+          const chosenIdx = emptyIndices.includes(4)
+            ? 4
+            : emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+
+          const aiBoard = [...prev];
+          aiBoard[chosenIdx] = 'O';
+          const res = checkWinner(aiBoard);
+          setTurn('X');
+          setWinner(res);
+          return aiBoard;
+        });
+      }, 350);
+    }
   };
 
   const resetTicTacToe = () => {
@@ -399,7 +452,7 @@ export const MultiplayerLobbyApp: React.FC = () => {
                   ? winner === 'Draw'
                     ? "Game ended in a Draw!"
                     : `Winner: Player ${winner}!`
-                  : `Current Turn: Player ${turn} ${turn === mySymbol ? '(Your Turn)' : `(${peerName}'s Turn)`}`}
+                  : `Current Turn: Player ${turn} ${turn === mySymbol ? '(Your Turn)' : peerConnected ? `(${peerName}'s Turn)` : '(AI Opponent Turn)'}`}
               </p>
             </div>
 

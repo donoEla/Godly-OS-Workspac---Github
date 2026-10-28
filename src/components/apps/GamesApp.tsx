@@ -342,6 +342,7 @@ export type GameSourceTab =
   | 'nebula'
   | 'ugs'
   | 'js13kgames'
+  | 'godly-os'
   | 'cvk'
   | 'hydra'
   | 'lumin'
@@ -384,6 +385,7 @@ export const MAJOR_SOURCES_CONFIG: MajorSourceMeta[] = [
   { id: 'nebula', sourceKey: 'Nebula', name: 'Nebula CDN', badge: '3,062 Games', count: 3062, repo: 'GoatTech-42/NEBULA-CDN', repoUrl: 'https://github.com/GoatTech-42/NEBULA-CDN', color: '#818cf8', desc: 'Massive unblocked HTML5 game repository & CDN mirror' },
   { id: 'ugs', sourceKey: 'UGS', name: 'UGS Library', badge: '2,823 Games', count: 2823, repo: 'bubbls/ugs-singlefile', repoUrl: 'https://github.com/bubbls/ugs-singlefile', color: '#38bdf8', desc: 'Single-file optimized unblocked games archive' },
   { id: 'js13kgames', sourceKey: 'js13kGames', name: 'js13kGames', badge: '2,800 Games', count: 2800, repo: 'js13kGames/games', repoUrl: 'https://github.com/js13kGames/games', color: '#facc15', desc: 'Ultra-lightweight 13kB game jam masterpieces' },
+  { id: 'godly-os', sourceKey: 'Godly OS', name: 'Godly OS Archive', badge: '2,406 Games', count: 2406, repo: 'donoela/Godly-OS-Workspac---Github', repoUrl: 'https://github.com/donoEla/Godly-OS-Workspac---Github', color: '#c084fc', desc: 'Curated 1,567 classic unblocked arcade titles & 839 GN Math verified HTML5 games' },
   { id: 'cvk', sourceKey: 'CVK', name: "Chicken King's Vault", badge: '1,655 Games', count: 1655, repo: 'WanoCapy/ChickenKingsVault', repoUrl: 'https://github.com/WanoCapy/ChickenKingsVault', color: '#fb923c', desc: 'Comprehensive unblocked vault with full thumbnails' },
   { id: 'hydra', sourceKey: 'Hydra', name: 'Hydra Network', badge: '1,643 Games', count: 1643, repo: 'zennedu/hydra', repoUrl: 'https://github.com/zennedu/hydra', color: '#4ade80', desc: 'Hydra unblocked game mirror collection' },
   { id: 'lumin', sourceKey: 'Lumin', name: 'Lumin Engine', badge: '1,249 Games', count: 1249, repo: '3kh0/3kh0-lite + seraph', repoUrl: 'https://github.com/3kh0/3kh0-lite', color: '#a78bfa', desc: 'Lumin retro arcade and waflash collection' },
@@ -585,7 +587,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setUniversalRefreshKey((k) => k + 1);
   };
 
-  // ── Unified 26,123 Games Catalog (Nebula, UGS, js13kGames, CVK, Hydra, Lumin, Diesmos, GN-Math, GhostProxy, Alexr, GameZone, Petezah, Daknux, Seraph, Truffled, DuckMath, Other) ──
+  // ── Unified 28,534 Games Catalog (64 Sources: Nebula, UGS, js13kGames, Godly OS, CVK, Hydra, Lumin, Diesmos, GN-Math, GhostProxy, Alexr, GameZone, Petezah, Daknux, Seraph, Truffled, DuckMath, Solstice OS, Other) ──
   const [catalogGames, setCatalogGames] = useState<CatalogGame[]>([]);
   const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
 
@@ -715,6 +717,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     }
 
     const SOURCE_PRIORITY: Record<string, number> = {
+      'Godly OS': 105,
+      'Solstice OS': 102,
       'GN-Math': 100,
       'Nebula': 95,
       'CVK': 90,
@@ -1335,7 +1339,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     color: string;
     group: 'all' | 'major' | 'core' | 'consoles' | 'other';
   }>>(() => [
-    { id: 'all', name: 'All Sources Combined', badge: isDeduplicated ? '10.8K Unique' : '26.1K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources (duplicates removed)', color: '#a855f7', group: 'all' },
+    { id: 'all', name: 'All Sources Combined', badge: isDeduplicated ? '10.9K Unique' : '28.5K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources (duplicates removed)', color: '#a855f7', group: 'all' },
     
     // Major Game Repositories (The Large Sources)
     ...MAJOR_SOURCES_CONFIG.map(s => ({
@@ -1761,6 +1765,8 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
   // Source Theme Colors Mapping
   const SOURCE_COLOR_MAP: Record<string, string> = {
+    'Godly OS': '#c084fc',
+    'Solstice OS': '#f43f5e',
     Nebula: '#818cf8',
     UGS: '#38bdf8',
     js13kGames: '#facc15',
@@ -2287,7 +2293,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     );
   };
 
-  // ── "ALL" SECTION: VIEW ALL 26,123+ GAMES FROM ALL SOURCES COMBINED & SORTED ──
+  // ── "ALL" SECTION: VIEW ALL 28,534+ GAMES FROM ALL SOURCES COMBINED & SORTED ──
   const renderAllSourcesView = () => {
     const pageSize = 48;
     const totalPages = Math.ceil(filteredAndSortedAllGames.length / pageSize) || 1;
@@ -2305,14 +2311,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <Sparkles size={11} /> UNIFIED MASTER ARCHIVE
                   </span>
                   <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                    {catalogGames.length > 0 ? catalogGames.length.toLocaleString() : '26,123'}+ Games Combined
+                    {catalogGames.length > 0 ? catalogGames.length.toLocaleString() : '28,534'}+ Games Combined
                   </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   All Game Sources Combined &amp; Sorted
                 </h1>
                 <p className="text-xs text-white/50 mt-1 max-w-xl">
-                  Unified library from all 62 game repositories. Filter by source, search across all titles, or sort alphabetically by name or repository.
+                  Unified library from all 64 game repositories. Filter by source, search across all titles, or sort alphabetically by name or repository.
                 </p>
               </div>
 
@@ -2325,7 +2331,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     type="text"
                     value={allSearch}
                     onChange={(e) => setAllSearch(e.target.value)}
-                    placeholder="Search 26,000+ games..."
+                    placeholder="Search 28,000+ games..."
                     className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
                   />
                   {allSearch && (
@@ -2351,12 +2357,12 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   }`}
                   title={
                     isDeduplicated
-                      ? 'Duplicates removed across all 62 repositories (10,854 unique titles). Click to view all 26,123 copies.'
-                      : 'Showing all mirror copies (26,123 games). Click to deduplicate.'
+                      ? 'Duplicates removed across all 64 repositories (10,872 unique titles). Click to view all mirror copies.'
+                      : 'Showing all mirror copies. Click to deduplicate.'
                   }
                 >
                   <Sparkles size={13} className={isDeduplicated ? 'text-purple-300' : 'text-white/40'} />
-                  <span>{isDeduplicated ? '10.8K Unique' : 'All 26.1K Mirrors'}</span>
+                  <span>{isDeduplicated ? '10.9K Unique' : 'All 28.5K Mirrors'}</span>
                   <span
                     className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
                       isDeduplicated
@@ -2380,7 +2386,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <Filter size={13} className="text-purple-400 shrink-0" />
                     <span className="truncate max-w-[130px]">
                       {allSourceFilter === 'all'
-                        ? `All Sources (${isDeduplicated ? '10.8K' : '26.1K'})`
+                        ? `All Sources (${isDeduplicated ? '10.9K' : '28.5K'})`
                         : `${allSourceFilter} (${(gamesBySource[allSourceFilter]?.length || 0).toLocaleString()})`}
                     </span>
                     <ChevronDown
@@ -2411,7 +2417,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                           type="text"
                           value={allSourcePickerSearch}
                           onChange={(e) => setAllSourcePickerSearch(e.target.value)}
-                          placeholder="Filter sources (62 total)..."
+                          placeholder="Filter sources (64 total)..."
                           className="w-full pl-8 pr-7 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50"
                           autoFocus
                         />
@@ -2522,7 +2528,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     : 'bg-white/[0.04] text-white/70 hover:text-white border-white/10'
                 }`}
               >
-                All Combined ({isDeduplicated ? '10.8K' : '26.1K'})
+                All Combined ({isDeduplicated ? '10.9K' : '28.5K'})
               </button>
               {MAJOR_SOURCES_CONFIG.slice(0, 8).map((s) => {
                 const count = gamesBySource[s.sourceKey]?.length || s.count;
@@ -2613,7 +2619,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 }}
               >
                 {!isEcoMode && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />}
-                {activeTab === 'all' && `${(catalogGames.length || 26123).toLocaleString()}+ All Sources Combined`}
+                {activeTab === 'all' && `${(catalogGames.length || 28534).toLocaleString()}+ All Sources Combined`}
                 {activeTab === 'other' && `${(otherSourcesGames.length || 5551).toLocaleString()} Other Playables (${otherSourceNames.length} Sources)`}
                 {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab) && (
                   `${(gamesBySource[MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.sourceKey]?.length || MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.count).toLocaleString()} Games • ${MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.name}`
@@ -2806,7 +2812,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs font-bold text-white">All Sources Combined</span>
                               <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
-                                {isDeduplicated ? '10.8K Unique' : '26.1K Mirrors'}
+                                {isDeduplicated ? '10.9K Unique' : '28.5K Mirrors'}
                               </span>
                               {isDeduplicated && (
                                 <span className="text-[8.5px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-medium">

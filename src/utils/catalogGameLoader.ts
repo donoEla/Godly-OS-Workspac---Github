@@ -4,6 +4,8 @@
  * handles crisp-game-lib scripts, and returns a playable Blob URL.
  */
 
+import { getAssetUrl } from './assetHelper';
+
 export interface CatalogGame {
   id?: string;
   name: string;
@@ -36,18 +38,28 @@ export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUr
   if (!game || !game.url) {
     return { blobUrl: null, finalUrl: '' };
   }
+  if (game.url.startsWith('data:') || game.url.startsWith('blob:')) {
+    return { blobUrl: game.url, finalUrl: game.url };
+  }
   if (game.fetchGame === false) {
     return { blobUrl: null, finalUrl: game.url };
   }
 
-  const list: string[] = [game.url];
+  const resolved = (game.url.includes('local-games/') || !game.url.startsWith('http'))
+    ? getAssetUrl(game.url)
+    : game.url;
+
+  const list: string[] = [resolved];
+  if (resolved !== game.url) {
+    list.push(game.url);
+  }
   const m = game.url.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/(.*)$/);
   if (m) {
     list.push(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}/${m[4]}`);
   }
 
   let htmlText = '';
-  let finalUrl = game.url;
+  let finalUrl = resolved;
 
   for (const u of list) {
     try {

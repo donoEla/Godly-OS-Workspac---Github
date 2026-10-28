@@ -32,6 +32,7 @@ dist/assets/*
 !dist/baremux/
 !dist/epoxy/
 !dist/local-games/
+!dist/solstice-games/
 !dist/js/
 !dist/libcurl/
 !dist/scramjet/

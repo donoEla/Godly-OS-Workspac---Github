@@ -26,6 +26,7 @@ import { EaglercraftApp } from '../apps/EaglercraftApp';
 import { MangaApp } from '../apps/MangaApp';
 import { MoviesApp } from '../apps/MoviesApp';
 import { MusicApp } from '../apps/MusicApp';
+import { CloudGamingApp } from '../apps/CloudGamingApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
@@ -123,8 +124,9 @@ export const WindowManager: React.FC = () => {
         return <MoviesApp />;
       case 'music':
         return <MusicApp />;
+      case 'cloudgaming':
       case 'stratus':
-        return <GamesApp initialTab="stratus" />;
+        return <CloudGamingApp />;
       default:
         return (
           <div className="p-6 text-white text-center">

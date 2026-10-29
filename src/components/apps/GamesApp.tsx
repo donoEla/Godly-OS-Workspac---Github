@@ -1395,7 +1395,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     { id: 'p2p', name: 'P2P GameWebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw HTML5 arcade mirror', color: '#f97316', group: 'core' },
 
     // Cloud & Consoles
-    { id: 'stratus', name: 'Stratus Cloud Games', badge: '225 AAA Games', icon: <Cloud size={14} />, desc: 'Next-gen cloud streaming titles from Stratus & RaccoonGame', color: '#06b6d4', group: 'consoles' },
+    { id: 'stratus', name: 'Cloudgaming', badge: 'CloudMoon & 225 AAA', icon: <Cloud size={14} />, desc: 'Instant Web Cloud Gaming (CloudMoon & Stratus 225 AAA)', color: '#06b6d4', group: 'consoles' },
     { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables (Roblox)', color: '#f59e0b', group: 'consoles' },
     { id: 'emulator', name: 'WASM Emulator Hub', badge: 'RetroArch', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
     { id: 'eaglercraft', name: 'Eaglercraft Studio', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
@@ -3959,11 +3959,11 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-                        Stratus Cloud Gaming <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">RaccoonGame API</span>
+                        Cloudgaming <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">CloudMoon &amp; Stratus 225</span>
                       </h3>
                     </div>
                     <p className="text-[11px] text-white/50">
-                      225 Next-Gen AAA Console &amp; PC titles streamed directly to browser sandbox.
+                      CloudMoon Web &amp; 225 Next-Gen AAA Console &amp; PC cloud titles streamed directly to browser.
                     </p>
                   </div>
                 </div>

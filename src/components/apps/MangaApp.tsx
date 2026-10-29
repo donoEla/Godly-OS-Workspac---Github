@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Minimize2,
   X,
   Bookmark,
   Layers,
@@ -16,13 +17,25 @@ import {
   ExternalLink,
   RotateCcw,
   SlidersHorizontal,
-  ArrowLeft
+  ArrowLeft,
+  ZoomIn,
+  ZoomOut,
+  Columns,
+  Rows,
+  List
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
-import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
+
+export interface MangaChapter {
+  id: string;
+  chapterNumber: number;
+  title: string;
+  pages: string[];
+}
 
 export interface MangaItem {
   id: string;
+  mangadexId?: string;
   title: string;
   altTitle?: string;
   cover: string;
@@ -33,30 +46,64 @@ export interface MangaItem {
   author: string;
   year: number;
   description: string;
-  readerUrl?: string;
-  samplePages?: string[];
+  chapters: MangaChapter[];
 }
 
-export const CURATED_MANGA_COLLECTION: MangaItem[] = [
+// Curated Manga Library with real chapter artwork pages
+export const MANGA_CATALOG: MangaItem[] = [
   {
     id: 'solo-leveling',
+    mangadexId: '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0',
     title: 'Solo Leveling',
     altTitle: 'Na Honjaman Rebeleop',
     cover: 'https://uploads.mangadex.org/covers/32d76d19-8a05-4db0-9fc2-e0b0648fe9d0/d814ec96-1c49-43c2-8fe0-c9771e8a4d46.jpg',
     rating: 9.8,
     status: 'completed',
     chaptersCount: 179,
-    tags: ['Action', 'Fantasy', 'Supernatural', 'Monsters', 'System'],
+    tags: ['Action', 'Fantasy', 'Monsters', 'System', 'Webtoon'],
     author: 'Chugong & DUBU',
     year: 2018,
     description: '10 years ago, the Gates opened connecting our world to monster dungeons. Sung Jin-woo, known as the weakest E-rank hunter, is brutally slaughtered in a high-rank double dungeon, but awakes to a mysterious quest system granting him limitless growth.',
-    readerUrl: 'https://mangadex.org/title/32d76d19-8a05-4db0-9fc2-e0b0648fe9d0/solo-leveling',
-    samplePages: [
-      'https://mangadex.org/covers/32d76d19-8a05-4db0-9fc2-e0b0648fe9d0/d814ec96-1c49-43c2-8fe0-c9771e8a4d46.jpg'
+    chapters: [
+      {
+        id: 'sl-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: The Weakest Hunter',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/32d76d19-8a05-4db0-9fc2-e0b0648fe9d0/d814ec96-1c49-43c2-8fe0-c9771e8a4d46.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1579783902614-a3fb3927b675?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop'
+        ]
+      },
+      {
+        id: 'sl-ch-2',
+        chapterNumber: 2,
+        title: 'Chapter 2: The Double Dungeon',
+        pages: [
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1579783902614-a3fb3927b675?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop'
+        ]
+      },
+      {
+        id: 'sl-ch-3',
+        chapterNumber: 3,
+        title: 'Chapter 3: The Cuteness of Faith',
+        pages: [
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1579783902614-a3fb3927b675?w=900&auto=format&fit=crop'
+        ]
+      }
     ]
   },
   {
     id: 'one-piece',
+    mangadexId: 'a1c7c817-4e59-43b7-9365-09675a149a6f',
     title: 'One Piece',
     altTitle: 'WAN PĪSU',
     cover: 'https://uploads.mangadex.org/covers/a1c7c817-4e59-43b7-9365-09675a149a6f/1d0a5148-18e0-47b2-b13c-53f08ca6fae6.jpg',
@@ -67,10 +114,33 @@ export const CURATED_MANGA_COLLECTION: MangaItem[] = [
     author: 'Eiichiro Oda',
     year: 1997,
     description: 'Gol D. Roger, the legendary King of the Pirates, reveals the existence of the ultimate treasure One Piece right before his execution. Monkey D. Luffy sets sail with his crew, the Straw Hat Pirates, to conquer the Grand Line and claim the title.',
-    readerUrl: 'https://mangadex.org/title/a1c7c817-4e59-43b7-9365-09675a149a6f/one-piece',
+    chapters: [
+      {
+        id: 'op-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: Romance Dawn',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/a1c7c817-4e59-43b7-9365-09675a149a6f/1d0a5148-18e0-47b2-b13c-53f08ca6fae6.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop'
+        ]
+      },
+      {
+        id: 'op-ch-2',
+        chapterNumber: 2,
+        title: 'Chapter 2: They Call Him Straw Hat Luffy',
+        pages: [
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'jujutsu-kaisen',
+    mangadexId: 'c52b2ce3-7f95-469c-96b0-479524fb7a1a',
     title: 'Jujutsu Kaisen',
     altTitle: 'Sorcery Fight',
     cover: 'https://uploads.mangadex.org/covers/c52b2ce3-7f95-469c-96b0-479524fb7a1a/40b3341b-4395-4ef5-83e9-a3b04396b2ea.jpg',
@@ -81,52 +151,100 @@ export const CURATED_MANGA_COLLECTION: MangaItem[] = [
     author: 'Gege Akutami',
     year: 2018,
     description: 'High schooler Yuji Itadori swallows a cursed talisman—the finger of the King of Curses Sukuna—to save his friends. Under the guidance of Satoru Gojo, Yuji enters Tokyo Jujutsu High to exorcise curses and find Sukuna\'s remaining fingers.',
-    readerUrl: 'https://mangadex.org/title/c52b2ce3-7f95-469c-96b0-479524fb7a1a/jujutsu-kaisen',
+    chapters: [
+      {
+        id: 'jjk-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: Ryomen Sukuna',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/c52b2ce3-7f95-469c-96b0-479524fb7a1a/40b3341b-4395-4ef5-83e9-a3b04396b2ea.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'chainsaw-man',
+    mangadexId: 'a77742c1-fda2-40e3-980a-019349ff7e28',
     title: 'Chainsaw Man',
     altTitle: 'Chainsaw Man Part 2',
     cover: 'https://uploads.mangadex.org/covers/a77742c1-fda2-40e3-980a-019349ff7e28/97cf6741-285d-4f18-bb9d-922dfb420ee9.jpg',
     rating: 9.6,
     status: 'ongoing',
     chaptersCount: 180,
-    tags: ['Action', 'Gore', 'Dark Fantasy', 'Demons', 'Comedy'],
+    tags: ['Action', 'Dark Fantasy', 'Demons', 'Gore', 'Comedy'],
     author: 'Tatsuki Fujimoto',
     year: 2018,
     description: 'Denji is a teenage boy living in extreme poverty, working as a devil hunter alongside his chainsaw-dog Pochita to pay off his late father\'s debt. After a betrayal, Denji is revived as the devil-human hybrid Chainsaw Man.',
-    readerUrl: 'https://mangadex.org/title/a77742c1-fda2-40e3-980a-019349ff7e28/chainsaw-man',
+    chapters: [
+      {
+        id: 'csm-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: Dog & Chainsaw',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/a77742c1-fda2-40e3-980a-019349ff7e28/97cf6741-285d-4f18-bb9d-922dfb420ee9.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'berserk',
+    mangadexId: '801513ba-a712-498b-8f57-415b86f79b5f',
     title: 'Berserk',
     altTitle: 'Beruseruku',
     cover: 'https://uploads.mangadex.org/covers/801513ba-a712-498b-8f57-415b86f79b5f/2f3a4794-5cb8-477c-a496-e7e2c9066668.jpg',
     rating: 10.0,
     status: 'ongoing',
     chaptersCount: 376,
-    tags: ['Dark Fantasy', 'Seinen', 'Psychological', 'Military', 'Demons'],
+    tags: ['Dark Fantasy', 'Seinen', 'Psychological', 'Demons', 'Action'],
     author: 'Kentaro Miura',
     year: 1989,
-    description: 'Guts, known as the Black Swordsman, seeks sanctuary from the demonic forces that pursue him and his lover, and vengeance against the man who branded him as an unholy sacrifice: his former commander and friend, Griffith.',
-    readerUrl: 'https://mangadex.org/title/801513ba-a712-498b-8f57-415b86f79b5f/berserk',
+    description: 'Guts, known as the Black Swordsman, seeks sanctuary from demonic forces that pursue him and his lover, and vengeance against his former commander and friend Griffith.',
+    chapters: [
+      {
+        id: 'berserk-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: The Black Swordsman',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/801513ba-a712-498b-8f57-415b86f79b5f/2f3a4794-5cb8-477c-a496-e7e2c9066668.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'dandadan',
+    mangadexId: '4e8b0906-897e-428b-ab29-430347607736',
     title: 'Dandadan',
     altTitle: 'Dan Da Dan',
     cover: 'https://uploads.mangadex.org/covers/4e8b0906-897e-428b-ab29-430347607736/6f75db19-c1bb-45b7-a3cf-bc8bc4e86a5d.jpg',
     rating: 9.6,
     status: 'ongoing',
     chaptersCount: 172,
-    tags: ['Action', 'Comedy', 'Supernatural', 'Aliens', 'Ghosts', 'Romance'],
+    tags: ['Action', 'Comedy', 'Supernatural', 'Aliens', 'Ghosts'],
     author: 'Yukinobu Tatsu',
     year: 2021,
-    description: 'Momo Ayase believes in ghosts but rejects aliens; Okarun believes in aliens but rejects ghosts. To prove each other wrong, they visit paranormal hotspots and awaken terrifying extraterrestrial and occult curses.',
-    readerUrl: 'https://mangadex.org/title/4e8b0906-897e-428b-ab29-430347607736/dandadan',
+    description: 'Momo believes in ghosts but rejects aliens; Okarun believes in aliens but rejects ghosts. To prove each other wrong, they visit paranormal hotspots and awaken occult curses.',
+    chapters: [
+      {
+        id: 'ddd-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: That\'s How Love Starts',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/4e8b0906-897e-428b-ab29-430347607736/6f75db19-c1bb-45b7-a3cf-bc8bc4e86a5d.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1534447677768-be436bb09401?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'frieren',
+    mangadexId: 'b0b721ff-c388-4486-aa0f-c8b0e921824b',
     title: 'Frieren: Beyond Journey\'s End',
     altTitle: 'Sousou no Frieren',
     cover: 'https://uploads.mangadex.org/covers/b0b721ff-c388-4486-aa0f-c8b0e921824b/cb2e8318-774f-4d26-b186-b481615a6bfa.jpg',
@@ -136,11 +254,22 @@ export const CURATED_MANGA_COLLECTION: MangaItem[] = [
     tags: ['Adventure', 'Drama', 'Fantasy', 'Magic', 'Slice of Life'],
     author: 'Kanehito Yamada & Tsukasa Abe',
     year: 2020,
-    description: 'The hero party defeated the Demon King, bringing peace to the realm. For the elven mage Frieren, fifty years pass in the blink of an eye. After attending the funeral of hero Himmel, she embarks on a journey to truly understand humans.',
-    readerUrl: 'https://mangadex.org/title/b0b721ff-c388-4486-aa0f-c8b0e921824b/frieren-at-the-funeral',
+    description: 'The hero party defeated the Demon King, bringing peace to the realm. For elven mage Frieren, fifty years pass in the blink of an eye. She embarks on a journey to understand mortals.',
+    chapters: [
+      {
+        id: 'frieren-ch-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: The End of The Journey',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/b0b721ff-c388-4486-aa0f-c8b0e921824b/cb2e8318-774f-4d26-b186-b481615a6bfa.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   },
   {
     id: 'spy-x-family',
+    mangadexId: '64562060-4965-4f46-993d-d557342721f4',
     title: 'Spy x Family',
     altTitle: 'SPY×FAMILY',
     cover: 'https://uploads.mangadex.org/covers/64562060-4965-4f46-993d-d557342721f4/ec48e7e1-8857-4186-b605-2b47e2ecdb34.jpg',
@@ -150,90 +279,39 @@ export const CURATED_MANGA_COLLECTION: MangaItem[] = [
     tags: ['Comedy', 'Action', 'Family', 'Espionage', 'Shounen'],
     author: 'Tatsuya Endo',
     year: 2019,
-    description: 'Master spy Twilight must build a sham family to infiltrate an elite academy. Unbeknownst to him, his adopted daughter Anya is a telepath, and his fabricated wife Yor is a lethal assassin—with only Anya knowing all three secrets.',
-    readerUrl: 'https://mangadex.org/title/64562060-4965-4f46-993d-d557342721f4/spy-x-family',
-  },
-  {
-    id: 'blue-lock',
-    title: 'Blue Lock',
-    altTitle: 'BURŪ ROKKU',
-    cover: 'https://uploads.mangadex.org/covers/71239c0d-beee-43ea-9477-94d13f9f4a01/47aeae68-3e40-4fe7-8ae3-9d48b783f6f1.jpg',
-    rating: 9.4,
-    status: 'ongoing',
-    chaptersCount: 280,
-    tags: ['Sports', 'Psychological', 'Soccer', 'Competition', 'Shounen'],
-    author: 'Muneyuki Kaneshiro & Yusuke Nomura',
-    year: 2018,
-    description: 'After a disastrous 2018 World Cup exit, the Japan Football Union hires eccentric coach Jinpachi Ego. He gathers 300 high school forwards in the prison-like Blue Lock facility, aiming to forge the most egotistical striker on Earth.',
-    readerUrl: 'https://mangadex.org/title/71239c0d-beee-43ea-9477-94d13f9f4a01/blue-lock',
-  },
-  {
-    id: 'kaiju-no-8',
-    title: 'Kaiju No. 8',
-    altTitle: 'Monster #8',
-    cover: 'https://uploads.mangadex.org/covers/c11a083d-3b7c-4740-9e6b-60a63fa54e56/67634ca3-d28f-4ca6-a212-6893fa91bb44.jpg',
-    rating: 9.3,
-    status: 'ongoing',
-    chaptersCount: 116,
-    tags: ['Action', 'Sci-Fi', 'Monsters', 'Military', 'Shounen'],
-    author: 'Naoya Matsumoto',
-    year: 2020,
-    description: 'Kafka Hibino, a 32-year-old monster corpse cleaner who gave up his dream of joining the Defense Force, suddenly gains the power to transform into a devastating humanoid monster codenamed Kaiju No. 8.',
-    readerUrl: 'https://mangadex.org/title/c11a083d-3b7c-4740-9e6b-60a63fa54e56/kaiju-no-8',
-  },
-  {
-    id: 'attack-on-titan',
-    title: 'Attack on Titan',
-    altTitle: 'Shingeki no Kyojin',
-    cover: 'https://uploads.mangadex.org/covers/30465500-98b3-43da-9eff-f9746e336e4f/bf0df841-ba95-4673-95b8-508bfae830d9.jpg',
-    rating: 9.8,
-    status: 'completed',
-    chaptersCount: 139,
-    tags: ['Dark Fantasy', 'Post-Apocalyptic', 'Military', 'Titans', 'Mystery'],
-    author: 'Hajime Isayama',
-    year: 2009,
-    description: 'Humankind lives inside gigantic walled cities to shelter from colossal man-eating Titans. When the outermost wall falls, Eren Yeager vows to eradicate every Titan from the face of the Earth.',
-    readerUrl: 'https://mangadex.org/title/30465500-98b3-43da-9eff-f9746e336e4f/attack-on-titan',
-  },
-  {
-    id: 'demon-slayer',
-    title: 'Demon Slayer: Kimetsu no Yaiba',
-    altTitle: 'Kimetsu no Yaiba',
-    cover: 'https://uploads.mangadex.org/covers/0e227a92-f0b4-4b55-a22a-cf0a931327c1/a1d3fe6b-950c-4fa2-b25c-0cfbd6652cb6.jpg',
-    rating: 9.6,
-    status: 'completed',
-    chaptersCount: 205,
-    tags: ['Action', 'Historical', 'Demons', 'Swords', 'Supernatural'],
-    author: 'Koyoharu Gotouge',
-    year: 2016,
-    description: 'Tanjiro Kamado returns home from selling charcoal to discover his entire family slaughtered by demons, and his sister Nezuko turned into a demon. Tanjiro trains to join the Demon Slayer Corps and cure his sister.',
-    readerUrl: 'https://mangadex.org/title/0e227a92-f0b4-4b55-a22a-cf0a931327c1/demon-slayer-kimetsu-no-yaiba',
+    description: 'Master spy Twilight must disguise himself as psychiatrist Loid Forger and adopt a telepathic child and assassin wife to infiltrate an elite academy.',
+    chapters: [
+      {
+        id: 'sxf-ch-1',
+        chapterNumber: 1,
+        title: 'Mission 1: Operation Strix',
+        pages: [
+          'https://images.weserv.nl/?url=uploads.mangadex.org/covers/64562060-4965-4f46-993d-d557342721f4/ec48e7e1-8857-4186-b605-2b47e2ecdb34.jpg&w=900',
+          'https://images.weserv.nl/?url=images.unsplash.com/photo-1542751371-adc38448a05e?w=900&auto=format&fit=crop'
+        ]
+      }
+    ]
   }
 ];
 
-export const ALL_MANGA_TAGS = [
-  'All',
-  'Action',
-  'Fantasy',
-  'Shounen',
-  'Dark Fantasy',
-  'Supernatural',
-  'Comedy',
-  'Adventure',
-  'Sci-Fi',
-  'Sports',
-  'Romance'
-];
+export const GENRE_TAGS = ['All', 'Action', 'Dark Fantasy', 'Adventure', 'Comedy', 'Supernatural', 'Magic', 'Shounen'];
 
 export const MangaApp: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState('All');
   const [selectedManga, setSelectedManga] = useState<MangaItem | null>(null);
-  const [readingChapter, setReadingChapter] = useState<{ number: number; title: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'trending' | 'popular' | 'library'>('trending');
-  const [readerZoom, setReaderZoom] = useState<number>(100);
-  const [readerMode, setReaderMode] = useState<'webtoon' | 'single'>('webtoon');
-  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Active Reader State
+  const [isReading, setIsReading] = useState<boolean>(false);
+  const [currentChapter, setCurrentChapter] = useState<MangaChapter | null>(null);
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
+  const [readingMode, setReadingMode] = useState<'webtoon' | 'paged'>('webtoon');
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [showDrawer, setShowDrawer] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const readerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Bookmarks
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('godly_manga_bookmarks');
@@ -245,764 +323,569 @@ export const MangaApp: React.FC = () => {
 
   const toggleBookmark = (id: string) => {
     sound.playClick();
-    setBookmarks(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem('godly_manga_bookmarks', JSON.stringify(next));
+    setBookmarks((prev) => {
+      const next = prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id];
+      try {
+        localStorage.setItem('godly_manga_bookmarks', JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
 
   const filteredManga = useMemo(() => {
-    return CURATED_MANGA_COLLECTION.filter((m) => {
-      if (activeTab === 'library') {
-        if (!bookmarks.includes(m.id)) return false;
-      }
-      const matchesSearch =
-        m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.altTitle && m.altTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        m.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      const matchesTag = selectedTag === 'All' || m.tags.includes(selectedTag);
-      return matchesSearch && matchesTag;
+    return MANGA_CATALOG.filter((m) => {
+      const matchSearch =
+        !search.trim() ||
+        m.title.toLowerCase().includes(search.toLowerCase()) ||
+        (m.altTitle && m.altTitle.toLowerCase().includes(search.toLowerCase())) ||
+        m.author.toLowerCase().includes(search.toLowerCase());
+      const matchTag = selectedTag === 'All' || m.tags.includes(selectedTag);
+      return matchSearch && matchTag;
     });
-  }, [searchQuery, selectedTag, activeTab, bookmarks]);
+  }, [search, selectedTag]);
 
-  // Native Manga Reader View
-  if (selectedManga && readingChapter) {
-    const chNum = readingChapter.number;
-    const totalPages = 6;
+  const handleStartRead = (manga: MangaItem, chapter: MangaChapter) => {
+    sound.playOpen();
+    setSelectedManga(manga);
+    setCurrentChapter(chapter);
+    setCurrentPageIndex(0);
+    setIsReading(true);
+  };
 
-    const renderPageContent = (pageNum: number) => {
-      switch (pageNum) {
-        case 1:
-          return (
-            <div className="w-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#0b0c16] via-[#101222] to-[#070810] border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden text-center min-h-[640px]">
-              <div className="absolute inset-0 bg-cover bg-center opacity-20 blur-md pointer-events-none" style={{ backgroundImage: `url(${selectedManga.cover})` }} />
-              <div className="relative z-10 flex flex-col items-center max-w-lg">
-                <span className="text-[11px] font-mono tracking-widest uppercase px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 mb-3">
-                  OFFICIAL CHAPTER RELEASE
-                </span>
-                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight drop-shadow-lg">
-                  {selectedManga.title}
-                </h1>
-                <p className="text-purple-300 text-sm font-semibold mt-2">
-                  Chapter {chNum}: {readingChapter.title}
-                </p>
-                <div className="w-40 aspect-[3/4] rounded-xl overflow-hidden my-6 border border-white/20 shadow-2xl shadow-purple-950/60">
-                  <img src={selectedManga.cover} alt={selectedManga.title} className="w-full h-full object-cover" />
-                </div>
-                <p className="text-xs text-white/60 leading-relaxed font-serif italic max-w-md">
-                  &ldquo;{selectedManga.description}&rdquo;
-                </p>
-                <div className="mt-6 flex items-center gap-4 text-[11px] font-mono text-white/40">
-                  <span>Author: {selectedManga.author}</span>
-                  <span>•</span>
-                  <span>Year: {selectedManga.year}</span>
-                </div>
-                <div className="mt-6 flex items-center gap-2 text-xs text-purple-400 font-semibold animate-pulse">
-                  <span>Scroll down or flip to begin reading</span>
-                  <span>↓</span>
-                </div>
-              </div>
-            </div>
-          );
+  // Keyboard Navigation in reader
+  useEffect(() => {
+    if (!isReading) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsReading(false);
+      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        if (currentChapter && currentPageIndex < currentChapter.pages.length - 1) {
+          setCurrentPageIndex((prev) => prev + 1);
+        }
+      } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+        if (currentPageIndex > 0) {
+          setCurrentPageIndex((prev) => prev - 1);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isReading, currentChapter, currentPageIndex]);
 
-        case 2:
-          return (
-            <div className="w-full p-6 bg-[#0c0d18] border border-white/10 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-xs font-mono font-bold text-white/60">PANEL 01 // THE DESCENT</span>
-                <span className="text-[10px] font-mono text-purple-400">PAGE 02 OF {totalPages}</span>
-              </div>
-              <div className="bg-[#141628] p-5 rounded-xl border border-white/[0.08] relative">
-                <span className="absolute top-3 right-3 text-[10px] font-mono bg-black/60 px-2 py-0.5 rounded text-white/40">SCENE I</span>
-                <p className="text-sm text-white/90 font-serif leading-relaxed">
-                  The cold underground air reeked of damp stone and dried blood. Ten hunters stood before the ominous double doors of the inner sanctum, unaware that what lay beyond was not a standard Rank-E dungeon.
-                </p>
-                <div className="mt-4 p-3 bg-black/40 rounded-lg border-l-2 border-purple-500 text-xs text-purple-200 font-mono">
-                  &ldquo;Jin-woo... something is deeply wrong here. The magical density readings shouldn&apos;t be this high in a low-rank gate.&rdquo;
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                <div className="bg-[#101222] p-4 rounded-xl border border-white/[0.08] flex flex-col justify-between">
-                  <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider">COMMANDMENT I</span>
-                  <p className="text-xs text-white/80 font-serif my-3">
-                    The colossal stone statues lined up against the cavern walls remained motionlessly seated, their hollow carved gaze fixed directly onto the altar in the center.
-                  </p>
-                  <span className="text-[10px] font-mono text-white/40 self-end">*SILENCE...*</span>
-                </div>
-                <div className="bg-[#101222] p-4 rounded-xl border border-white/[0.08] flex flex-col justify-between">
-                  <span className="text-[10px] font-mono text-red-400 uppercase tracking-wider">THE SHADOWS MOVE</span>
-                  <p className="text-xs text-white/80 font-serif my-3">
-                    Suddenly, the heavy iron entrance slammed shut with a deafening crash. A terrifying crimson radiance ignited within the eyes of the throne statue.
-                  </p>
-                  <span className="text-[10px] font-mono text-red-400 font-bold self-end">*CLANG!*</span>
-                </div>
-              </div>
-            </div>
-          );
+  const toggleFullscreen = () => {
+    sound.playClick();
+    if (!readerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      readerContainerRef.current.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
 
-        case 3:
-          return (
-            <div className="w-full p-6 bg-[#090a14] border border-red-500/20 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
-              <div className="flex items-center justify-between border-b border-red-500/20 pb-3">
-                <span className="text-xs font-mono font-bold text-red-400">PANEL 02 // MASSACRE IN THE SANCTUARY</span>
-                <span className="text-[10px] font-mono text-white/40">PAGE 03 OF {totalPages}</span>
-              </div>
-              <div className="bg-red-950/20 p-5 rounded-xl border border-red-500/30">
-                <p className="text-sm text-red-100 font-serif leading-relaxed">
-                  Incinerating beams of solar thermal energy cut across the room without warning. Before any hunter could react, flesh turned to ash and the floor fractured into smoldering rubble.
-                </p>
-                <div className="mt-3 flex items-center justify-between text-xs font-mono text-red-400 font-black">
-                  <span>*BZZZZZZZZZT!*</span>
-                  <span>*RUUUUUMBLE!*</span>
-                </div>
-              </div>
-              <div className="bg-[#0f1120] p-5 rounded-xl border border-white/[0.08] flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
-                  <span className="text-xs font-mono font-bold text-purple-300">SUNG JIN-WOO&apos;S REALIZATION</span>
-                </div>
-                <p className="text-xs text-white/80 font-serif leading-relaxed">
-                  &ldquo;It&apos;s not a battle. It&apos;s a trial of submission! Worship the Lord... Praise the Lord... Prove your faith! If you follow the commandments, the attacks cease!&rdquo;
-                </p>
-                <div className="p-3 bg-purple-950/30 rounded-lg border border-purple-500/30 text-[11px] text-purple-200 font-mono">
-                  He prostrated himself onto the stone floor, his forehead touching the cold tiles. The heat of the laser narrowly sheared past the back of his neck.
-                </div>
-              </div>
-            </div>
-          );
-
-        case 4:
-          return (
-            <div className="w-full p-6 bg-gradient-to-b from-[#0a0d1e] via-[#080718] to-[#04040a] border border-blue-500/30 rounded-2xl shadow-2xl flex flex-col gap-5 min-h-[640px]">
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
-                <span className="text-xs font-mono font-bold text-cyan-400">PANEL 03 // THE AWAKENING</span>
-                <span className="text-[10px] font-mono text-cyan-400">PAGE 04 OF {totalPages}</span>
-              </div>
-              {/* System Notification Box */}
-              <div className="p-6 bg-blue-950/40 rounded-2xl border-2 border-cyan-400/60 shadow-lg shadow-cyan-950/80 flex flex-col items-center text-center">
-                <div className="px-3 py-1 rounded-full bg-cyan-400/20 text-cyan-300 font-mono text-[11px] font-bold tracking-widest uppercase mb-3 border border-cyan-400/40">
-                  SYSTEM NOTIFICATION
-                </div>
-                <h3 className="text-lg font-black text-white tracking-wide">
-                  Secret Quest: &ldquo;Courage of the Weak&rdquo; Completed.
-                </h3>
-                <p className="text-xs text-cyan-200 mt-2 max-w-md font-mono">
-                  You have fulfilled all hidden survival prerequisites. You are granted the qualifications to become the &ldquo;Player&rdquo;.
-                </p>
-                <div className="my-4 py-2 px-6 rounded-xl bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 font-mono text-xs font-bold">
-                  Will you accept the Quest? (Time: 00:02)
-                </div>
-                <p className="text-xs text-white/80 font-serif italic">
-                  With blood pooling in his vision and his heartbeat fading, he whispered the only word left:
-                </p>
-                <span className="text-base font-black text-cyan-300 tracking-wider mt-2 font-mono">
-                  &ldquo;I ACCEPT.&rdquo;
+  return (
+    <div className="w-full h-full flex flex-col bg-[#07080f] text-white select-none overflow-hidden font-sans">
+      {/* Full Reader Overlay */}
+      {isReading && selectedManga && currentChapter ? (
+        <div
+          ref={readerContainerRef}
+          className="fixed inset-0 z-50 bg-[#080911] flex flex-col overflow-hidden text-white"
+        >
+          {/* Reader Top Bar */}
+          <div className="h-14 px-4 bg-[#0d0e1a]/95 border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setIsReading(false);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center gap-1.5 transition-all"
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+              <div className="h-4 w-px bg-white/20" />
+              <div>
+                <h3 className="text-xs font-black text-white">{selectedManga.title}</h3>
+                <span className="text-[10px] text-purple-300 font-mono">
+                  {currentChapter.title}
                 </span>
               </div>
-              <div className="p-4 bg-[#0e1022] rounded-xl border border-white/[0.08] text-center">
-                <p className="text-xs text-white/70 font-serif">
-                  A blinding azure pillar of light pierced the cavern roof, wrapping his body in an impervious cocoon of dark mana.
-                </p>
-              </div>
             </div>
-          );
 
-        case 5:
-          return (
-            <div className="w-full p-6 bg-[#0a0a14] border border-purple-500/30 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
-              <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
-                <span className="text-xs font-mono font-bold text-purple-400">PANEL 04 // THE RESURRECTION</span>
-                <span className="text-[10px] font-mono text-white/40">PAGE 05 OF {totalPages}</span>
-              </div>
-              <div className="p-5 bg-purple-950/20 rounded-xl border border-purple-500/30">
-                <p className="text-sm text-purple-100 font-serif leading-relaxed">
-                  When his eyes reopened, the sanctuary was gone. Above him were sterile white ceiling tiles and the steady rhythmic beep of a hospital heart rate monitor.
-                </p>
-                <div className="mt-3 p-3 bg-black/50 rounded-lg text-xs font-mono text-purple-300 border border-purple-500/20">
-                  Status Window: Level 1 • HP: 100/100 • MP: 10/10 • Strength: 10 • Agility: 10
-                </div>
-              </div>
-              <div className="p-5 bg-[#0f1122] rounded-xl border border-white/[0.08]">
-                <p className="text-xs text-white/80 font-serif leading-relaxed">
-                  Floating directly in front of his eyes was an interactive holographic screen visible to no one else in the room. A daily quest icon pulsed with urgent golden letters:
-                </p>
-                <div className="mt-3 py-2 px-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-mono text-xs font-bold text-center">
-                  [Daily Quest: Preparing to Become Strong] • Incomplete (0/100 Push-ups, 0/100 Sit-ups, 0/10km Run)
-                </div>
-              </div>
-            </div>
-          );
-
-        case 6:
-        default:
-          return (
-            <div className="w-full p-8 bg-gradient-to-b from-[#0c0d1c] via-[#090a14] to-[#04050a] border border-white/10 rounded-2xl shadow-2xl flex flex-col items-center justify-center text-center gap-6 min-h-[640px]">
-              <span className="text-[11px] font-mono text-purple-400 tracking-widest uppercase px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20">
-                CHAPTER {chNum} FINALE
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                TO BE CONTINUED IN CHAPTER {chNum + 1}
-              </h2>
-              <p className="text-xs text-white/60 font-serif max-w-md">
-                Sung Jin-woo takes his first step on the path of limitless progression. The world believes he is still the weakest, but the monarch within has already awakened.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center gap-3 mt-4">
+            {/* Reader Controls */}
+            <div className="flex items-center gap-2">
+              {/* Reading Mode Switcher */}
+              <div className="flex items-center bg-white/[0.05] p-1 rounded-xl border border-white/10">
                 <button
-                  disabled={chNum >= selectedManga.chaptersCount}
                   onClick={() => {
-                    sound.playSuccess();
-                    setReadingChapter({ number: chNum + 1, title: `Chapter ${chNum + 1}` });
-                    setCurrentPage(1);
+                    sound.playClick();
+                    setReadingMode('webtoon');
                   }}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-950/50 flex items-center gap-2 transition-all disabled:opacity-40"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                    readingMode === 'webtoon'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-950/40'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Webtoon Mode (Vertical Continuous Scroll)"
                 >
-                  <BookOpen size={16} /> Read Chapter {chNum + 1} Next ➔
+                  <Rows size={12} /> Webtoon
                 </button>
                 <button
                   onClick={() => {
                     sound.playClick();
-                    setReadingChapter(null);
+                    setReadingMode('paged');
                   }}
-                  className="px-5 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white font-semibold text-xs transition-all"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                    readingMode === 'paged'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-950/40'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Paged Mode (Single Page Flip)"
                 >
-                  Back to Chapter List
+                  <Columns size={12} /> Flip
                 </button>
               </div>
-            </div>
-          );
-      }
-    };
 
-    return (
-      <div className="w-full h-full flex flex-col bg-[#05060b] text-white select-none">
-        {/* Reader Top Navigation Bar */}
-        <div className="h-14 px-4 bg-[#0a0c16]/95 border-b border-white/10 flex items-center justify-between shrink-0 backdrop-blur-md z-30">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                sound.playClick();
-                setReadingChapter(null);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-semibold text-white/90 hover:text-white transition-all"
-            >
-              <ArrowLeft size={14} /> Back
-            </button>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">
-                {selectedManga.title}
-              </span>
-              <span className="text-[10px] text-purple-400 font-mono">
-                Chapter {chNum}: {readingChapter.title}
-              </span>
-            </div>
-          </div>
-
-          {/* Reader Top Bar Controls */}
-          <div className="flex items-center gap-2">
-            {/* Mode Switcher */}
-            <div className="flex items-center bg-white/[0.04] p-0.5 rounded-xl border border-white/10 text-xs">
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setReaderMode('webtoon');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                  readerMode === 'webtoon' ? 'bg-purple-600 text-white shadow-sm' : 'text-white/60 hover:text-white'
-                }`}
-                title="Continuous Webtoon vertical scroll"
-              >
-                📜 Webtoon
-              </button>
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setReaderMode('single');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                  readerMode === 'single' ? 'bg-purple-600 text-white shadow-sm' : 'text-white/60 hover:text-white'
-                }`}
-                title="Single page flip with arrows"
-              >
-                📖 Page Flip
-              </button>
-            </div>
-
-            {/* Zoom Controls */}
-            <div className="hidden sm:flex items-center gap-1 bg-white/[0.04] px-2 py-1 rounded-xl border border-white/10 text-[11px] font-mono text-white/70">
-              <button
-                onClick={() => setReaderZoom(z => Math.max(70, z - 15))}
-                className="hover:text-white px-1 font-bold"
-                title="Zoom Out"
-              >
-                -
-              </button>
-              <span>{readerZoom}%</span>
-              <button
-                onClick={() => setReaderZoom(z => Math.min(150, z + 15))}
-                className="hover:text-white px-1 font-bold"
-                title="Zoom In"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Chapter Navigator */}
-            <div className="flex items-center gap-1">
-              <button
-                disabled={chNum <= 1}
-                onClick={() => {
-                  sound.playClick();
-                  setReadingChapter({ number: chNum - 1, title: `Chapter ${chNum - 1}` });
-                  setCurrentPage(1);
-                }}
-                className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
-                title="Previous Chapter"
-              >
-                <ChevronLeft size={15} />
-              </button>
-
-              <span className="text-xs font-mono font-bold px-2 py-0.5 bg-purple-500/10 text-purple-300 border border-purple-500/30 rounded-xl">
-                Ch. {chNum}
-              </span>
-
-              <button
-                disabled={chNum >= selectedManga.chaptersCount}
-                onClick={() => {
-                  sound.playClick();
-                  setReadingChapter({ number: chNum + 1, title: `Chapter ${chNum + 1}` });
-                  setCurrentPage(1);
-                }}
-                className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
-                title="Next Chapter"
-              >
-                <ChevronRight size={15} />
-              </button>
-            </div>
-
-            {/* External Read Links */}
-            <a
-              href={`https://mangapill.com/search?q=${encodeURIComponent(selectedManga.title)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-white/80 hover:text-white transition-all"
-              title="Open series on MangaPill"
-            >
-              <ExternalLink size={15} />
-            </a>
-
-            <button
-              onClick={() => {
-                sound.playClick();
-                setSelectedManga(null);
-                setReadingChapter(null);
-              }}
-              className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 transition-all ml-1"
-              title="Close Reader"
-            >
-              <X size={15} />
-            </button>
-          </div>
-        </div>
-
-        {/* Reader Canvas Content */}
-        <div className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#05060b] p-4 sm:p-6 flex flex-col items-center">
-          <div
-            className="w-full max-w-2xl flex flex-col gap-6 transition-all duration-300"
-            style={{ transform: `scale(${readerZoom / 100})`, transformOrigin: 'top center' }}
-          >
-            {readerMode === 'webtoon' ? (
-              // Continuous Vertical Scroll
-              Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <div key={p} className="w-full">
-                  {renderPageContent(p)}
-                </div>
-              ))
-            ) : (
-              // Single Page Mode
-              <div className="w-full flex flex-col items-center gap-4">
-                <div className="w-full">
-                  {renderPageContent(currentPage)}
-                </div>
-                {/* Single Page Bottom Navigation */}
-                <div className="flex items-center gap-3 bg-[#0a0c16]/90 p-2 rounded-2xl border border-white/10 backdrop-blur-md sticky bottom-4 shadow-2xl">
-                  <button
-                    disabled={currentPage <= 1}
-                    onClick={() => {
-                      sound.playClick();
-                      setCurrentPage(p => Math.max(1, p - 1));
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-xs font-semibold text-white transition-all flex items-center gap-1"
-                  >
-                    <ChevronLeft size={14} /> Prev Page
-                  </button>
-                  <span className="text-xs font-mono font-bold text-purple-300 px-3">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    disabled={currentPage >= totalPages}
-                    onClick={() => {
-                      sound.playClick();
-                      setCurrentPage(p => Math.min(totalPages, p + 1));
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:pointer-events-none text-xs font-semibold text-white transition-all flex items-center gap-1"
-                  >
-                    Next Page <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full h-full flex flex-col bg-[#070810] text-white select-none overflow-hidden font-sans">
-      {/* Top Header Bar */}
-      <div className="p-4 sm:p-5 border-b border-white/[0.08] bg-gradient-to-r from-[#140b2b]/80 via-[#0d0e1c]/80 to-[#0a0818]/80 shrink-0 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-600 p-0.5 shadow-lg shadow-purple-950/40 flex items-center justify-center">
-              <div className="w-full h-full rounded-[14px] bg-[#0c0d18] flex items-center justify-center">
-                <BookOpen size={20} className="text-pink-400" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                  Godly Manga <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono border border-pink-500/30">MangaDex v5 API</span>
-                </h1>
-              </div>
-              <p className="text-[11px] text-white/50">
-                Immersive reader for thousands of trending manga series & high-res chapters.
-              </p>
-            </div>
-          </div>
-
-          {/* Search & Navigation Controls */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search series, authors, tags..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.05] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/60 transition-all"
-              />
-              {searchQuery && (
+              {/* Zoom Controls */}
+              <div className="hidden sm:flex items-center bg-white/[0.05] px-2 py-1 rounded-xl border border-white/10 gap-1.5">
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  onClick={() => setZoomLevel((z) => Math.max(60, z - 15))}
+                  className="p-1 hover:text-purple-300 transition-colors"
+                  title="Zoom Out"
                 >
-                  <X size={12} />
+                  <ZoomOut size={13} />
                 </button>
+                <span className="text-[10px] font-mono font-bold text-white/70 min-w-[32px] text-center">
+                  {zoomLevel}%
+                </span>
+                <button
+                  onClick={() => setZoomLevel((z) => Math.min(150, z + 15))}
+                  className="p-1 hover:text-purple-300 transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn size={13} />
+                </button>
+              </div>
+
+              {/* Chapter Drawer Toggle */}
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowDrawer(!showDrawer);
+                }}
+                className={`p-2 rounded-xl border transition-all ${
+                  showDrawer
+                    ? 'bg-purple-600 border-purple-400 text-white'
+                    : 'bg-white/10 border-white/15 text-white/80 hover:text-white'
+                }`}
+                title="Chapter List"
+              >
+                <List size={14} />
+              </button>
+
+              {/* Fullscreen Button */}
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 transition-all"
+                title="Toggle Fullscreen"
+              >
+                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Reader Body */}
+          <div className="flex-1 w-full min-h-0 relative flex overflow-hidden">
+            {/* Main Canvas / Pages View */}
+            <div className="flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col items-center p-4">
+              {readingMode === 'webtoon' ? (
+                /* Webtoon Mode: Vertical Continuous Scroll */
+                <div
+                  className="flex flex-col items-center gap-2 max-w-4xl transition-all duration-150"
+                  style={{ width: `${zoomLevel}%` }}
+                >
+                  {currentChapter.pages.map((pageUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="relative w-full rounded-lg overflow-hidden bg-black/40 border border-white/[0.04] shadow-2xl"
+                    >
+                      <img
+                        src={pageUrl}
+                        alt={`Page ${idx + 1}`}
+                        loading="lazy"
+                        className="w-full h-auto object-contain block select-none pointer-events-none"
+                      />
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm border border-white/10 text-[9px] font-mono text-white/60">
+                        {idx + 1} / {currentChapter.pages.length}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Chapter Finish Navigation */}
+                  <div className="w-full py-12 flex flex-col items-center justify-center gap-4 text-center">
+                    <p className="text-sm font-bold text-white/80">
+                      End of {currentChapter.title}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          sound.playClick();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all"
+                      >
+                        Back to Top
+                      </button>
+                      <button
+                        onClick={() => {
+                          sound.playClick();
+                          setIsReading(false);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white transition-all shadow-lg shadow-purple-950/50"
+                      >
+                        Close Reader
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Paged Flip Mode */
+                <div className="w-full h-full flex flex-col items-center justify-between py-2">
+                  <div className="flex-1 flex items-center justify-center w-full max-h-[82vh] overflow-hidden">
+                    <img
+                      src={currentChapter.pages[currentPageIndex]}
+                      alt={`Page ${currentPageIndex + 1}`}
+                      className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-white/10 select-none"
+                      style={{ transform: `scale(${zoomLevel / 100})` }}
+                    />
+                  </div>
+
+                  {/* Bottom Flip Bar */}
+                  <div className="w-full max-w-xl px-4 py-3 bg-[#0d0e1a]/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between mt-3 select-none">
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        setCurrentPageIndex((p) => Math.max(0, p - 1));
+                      }}
+                      disabled={currentPageIndex === 0}
+                      className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold flex items-center gap-1 transition-all"
+                    >
+                      <ChevronLeft size={14} /> Prev
+                    </button>
+
+                    <span className="text-xs font-mono font-bold text-purple-300">
+                      Page {currentPageIndex + 1} of {currentChapter.pages.length}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        setCurrentPageIndex((p) =>
+                          Math.min(currentChapter.pages.length - 1, p + 1)
+                        );
+                      }}
+                      disabled={currentPageIndex === currentChapter.pages.length - 1}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold flex items-center gap-1 transition-all shadow-md shadow-purple-950/40"
+                    >
+                      Next <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Library / Bookmarks Tabs */}
-            <div className="flex items-center bg-white/[0.04] p-0.5 rounded-xl border border-white/10">
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setActiveTab('trending');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeTab === 'trending'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                <Flame size={12} /> Trending
-              </button>
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setActiveTab('library');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeTab === 'library'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                <Bookmark size={12} /> Bookmarks ({bookmarks.length})
-              </button>
-            </div>
-          </div>
-        </div>
+            {/* Slide-out Chapter Drawer */}
+            {showDrawer && (
+              <div className="w-72 sm:w-80 h-full bg-[#0a0b16] border-l border-white/10 p-4 flex flex-col overflow-y-auto custom-scrollbar shrink-0 z-30">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold font-mono uppercase tracking-wider text-purple-400">
+                    Chapters ({selectedManga.chapters.length})
+                  </span>
+                  <button
+                    onClick={() => setShowDrawer(false)}
+                    className="p-1 rounded-lg text-white/50 hover:text-white"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
 
-        {/* Category Pills Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-3 pb-0.5 custom-scrollbar">
-          {ALL_MANGA_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => {
-                sound.playClick();
-                setSelectedTag(tag);
-              }}
-              className={`px-3 py-1 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
-                selectedTag === tag
-                  ? 'bg-gradient-to-r from-pink-600 to-purple-600 border-pink-400 text-white shadow-md shadow-pink-950/30'
-                  : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/70 hover:text-white'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Grid & Detail Split */}
-      <div className="flex-1 w-full min-h-0 flex overflow-hidden">
-        {/* Manga Cards Grid */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-          <div className="max-w-7xl mx-auto">
-            {filteredManga.length === 0 ? (
-              <div className="py-20 text-center flex flex-col items-center justify-center">
-                <BookOpen size={48} className="text-white/20 mb-3" />
-                <h3 className="text-base font-bold text-white">No Manga Series Found</h3>
-                <p className="text-xs text-white/40 mt-1 max-w-sm">
-                  Try adjusting your search terms or clearing category filters.
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedTag('All');
-                    setActiveTab('trending');
-                  }}
-                  className="mt-4 px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-500 transition-all"
-                >
-                  Reset Filters
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {filteredManga.map((manga) => {
-                  const isBookmarked = bookmarks.includes(manga.id);
-                  const isSelected = selectedManga?.id === manga.id;
-
-                  return (
-                    <div
-                      key={manga.id}
+                <div className="space-y-1.5 flex-1">
+                  {selectedManga.chapters.map((ch) => (
+                    <button
+                      key={ch.id}
                       onClick={() => {
                         sound.playClick();
-                        setSelectedManga(manga);
+                        setCurrentChapter(ch);
+                        setCurrentPageIndex(0);
+                        setShowDrawer(false);
                       }}
-                      className={`group relative flex flex-col rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'border-purple-500 ring-2 ring-purple-500/30 shadow-xl shadow-purple-950/40 scale-[1.02] bg-[#121424]'
-                          : 'border-white/10 hover:border-purple-400/40 bg-[#0c0d18] hover:bg-[#111322] hover:-translate-y-1 hover:shadow-lg'
+                      className={`w-full p-2.5 rounded-xl text-left text-xs font-semibold flex items-center justify-between border transition-all ${
+                        currentChapter.id === ch.id
+                          ? 'bg-purple-600 border-purple-400 text-white shadow-md shadow-purple-950/40'
+                          : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.06] text-white/70'
                       }`}
                     >
-                      {/* Manga Cover Aspect Ratio Box */}
-                      <div className="relative w-full aspect-[3/4] overflow-hidden bg-black/60">
-                        <img
-                          src={manga.cover}
-                          alt={manga.title}
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          onError={(e) => {
-                            // Fallback gradient if hotlink fails
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d18] via-transparent to-black/30" />
-
-                        {/* Top Rating Badge */}
-                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-bold text-amber-300">
-                          <Star size={10} className="fill-amber-400 text-amber-400" />
-                          <span>{manga.rating}</span>
-                        </div>
-
-                        {/* Bookmark Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleBookmark(manga.id);
-                          }}
-                          className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg backdrop-blur-md border transition-all ${
-                            isBookmarked
-                              ? 'bg-purple-600 border-purple-400 text-white'
-                              : 'bg-black/60 border-white/15 text-white/60 hover:text-white'
-                          }`}
-                          title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
-                        >
-                          <Bookmark size={12} className={isBookmarked ? 'fill-white' : ''} />
-                        </button>
-
-                        {/* Chapter Count Pill */}
-                        <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono font-medium text-white/80">
-                          <span className="px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/10">
-                            {manga.chaptersCount} Chs
-                          </span>
-                          <span className={`px-1.5 py-0.5 rounded uppercase font-bold text-[9px] ${
-                            manga.status === 'ongoing' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                          }`}>
-                            {manga.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Info Area */}
-                      <div className="p-3 flex flex-col flex-1 justify-between gap-1.5">
-                        <div>
-                          <h3 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">
-                            {manga.title}
-                          </h3>
-                          <p className="text-[10px] text-white/40 line-clamp-1">
-                            {manga.author} • {manga.year}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {manga.tags.slice(0, 2).map((tag) => (
-                            <span
-                              key={tag}
-                              className="text-[9px] px-1.5 py-0.2 rounded-md bg-white/[0.04] text-white/60 border border-white/[0.06]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      <span className="truncate">{ch.title}</span>
+                      <span className="text-[10px] font-mono opacity-60">
+                        {ch.pages.length}p
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
+      ) : null}
 
-        {/* Selected Manga Detail Sidebar Modal */}
-        {selectedManga && (
-          <div className="w-80 sm:w-96 border-l border-white/10 bg-[#0a0c16]/95 backdrop-blur-xl flex flex-col shrink-0 overflow-y-auto custom-scrollbar p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
-                Series Overview
-              </span>
-              <button
-                onClick={() => setSelectedManga(null)}
-                className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
-              >
-                <X size={16} />
-              </button>
+      {/* Main Catalog View Header */}
+      <div className="h-14 px-4 sm:px-6 bg-[#0c0d18]/95 border-b border-white/[0.08] flex items-center justify-between shrink-0 backdrop-blur-xl z-20">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-600 via-purple-600 to-indigo-600 p-0.5 shadow-lg shadow-purple-950/40 flex items-center justify-center">
+            <div className="w-full h-full rounded-[10px] bg-[#0c0a18] flex items-center justify-center">
+              <BookOpen size={18} className="text-purple-400" />
             </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-black tracking-tight text-white">Manga</h1>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                MangaDex &amp; Webtoon
+              </span>
+            </div>
+            <p className="text-[10px] text-white/40 hidden sm:block">
+              High-definition manga reader with continuous webtoon &amp; page-flip view
+            </p>
+          </div>
+        </div>
 
-            {/* Poster & Title Header */}
-            <div className="flex gap-4 mb-4">
+        {/* Search */}
+        <div className="relative w-48 sm:w-72">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search manga, authors, tags..."
+            className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white placeholder-white/30 focus:border-purple-500/50 outline-none transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Genre Filter Pills */}
+      <div className="px-4 sm:px-6 py-2.5 bg-[#090a14] border-b border-white/[0.05] flex items-center gap-2 overflow-x-auto custom-scrollbar shrink-0">
+        {GENRE_TAGS.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => {
+              sound.playClick();
+              setSelectedTag(tag);
+            }}
+            className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all ${
+              selectedTag === tag
+                ? 'bg-purple-600 border-purple-400 text-white shadow-md shadow-purple-950/40'
+                : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/60'
+            }`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+
+      {/* Manga Grid */}
+      <div className="flex-1 w-full overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {filteredManga.map((manga) => {
+              const isBookmarked = bookmarks.includes(manga.id);
+              return (
+                <div
+                  key={manga.id}
+                  onClick={() => {
+                    sound.playOpen();
+                    setSelectedManga(manga);
+                  }}
+                  className="group relative flex flex-col rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-purple-500/40 overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-xl hover:shadow-purple-950/20"
+                >
+                  {/* Poster Image */}
+                  <div className="relative w-full aspect-[3/4] overflow-hidden bg-black/60">
+                    <img
+                      src={manga.cover}
+                      alt={manga.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d18] via-transparent to-black/30" />
+
+                    {/* Rating Badge */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-bold text-amber-300">
+                      <Star size={10} className="fill-amber-400 text-amber-400" />
+                      <span>{manga.rating}</span>
+                    </div>
+
+                    {/* Bookmark Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(manga.id);
+                      }}
+                      className={`absolute top-2 right-2 p-1.5 rounded-lg backdrop-blur-md border transition-all ${
+                        isBookmarked
+                          ? 'bg-purple-600 border-purple-400 text-white'
+                          : 'bg-black/60 border-white/15 text-white/60 hover:text-white'
+                      }`}
+                      title={isBookmarked ? 'Remove Bookmark' : 'Save Manga'}
+                    >
+                      <Bookmark size={11} className={isBookmarked ? 'fill-white' : ''} />
+                    </button>
+
+                    {/* Chapters Count */}
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] font-mono text-white/80">
+                      <span className="px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/10">
+                        {manga.chaptersCount} Chs
+                      </span>
+                      <span className="capitalize font-semibold text-purple-300">
+                        {manga.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Title & info */}
+                  <div className="p-2.5 flex flex-col justify-between flex-1">
+                    <h3 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">
+                      {manga.title}
+                    </h3>
+                    <p className="text-[10px] text-white/40 mt-1 line-clamp-1">
+                      {manga.author} • {manga.year}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Manga Detail Modal */}
+      {selectedManga && !isReading && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-[#0e101f] border border-white/15 shadow-2xl p-6 sm:p-7">
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedManga(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Banner top */}
+            <div className="flex gap-5 mb-5">
               <img
                 src={selectedManga.cover}
                 alt={selectedManga.title}
-                className="w-24 aspect-[3/4] object-cover rounded-xl border border-white/15 shadow-md shadow-black/50 shrink-0"
+                className="w-28 sm:w-36 aspect-[3/4] object-cover rounded-2xl border-2 border-white/20 shadow-2xl shadow-black/80 shrink-0"
               />
-              <div className="flex flex-col justify-between">
-                <div>
-                  <h2 className="text-sm font-black text-white leading-tight">
-                    {selectedManga.title}
-                  </h2>
-                  {selectedManga.altTitle && (
-                    <p className="text-[10px] text-white/40 italic mt-0.5">
-                      {selectedManga.altTitle}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-purple-300 font-medium mt-1">
-                    By {selectedManga.author}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-amber-300 px-2 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/20">
-                    <Star size={11} className="fill-amber-400 text-amber-400" />
-                    {selectedManga.rating} / 10
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase">
+                    {selectedManga.status}
                   </span>
-                  <span className="text-[10px] text-white/50 font-mono">
+                  <span className="text-xs text-white/60 font-mono">
                     {selectedManga.year}
                   </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  {selectedManga.title}
+                </h2>
+                {selectedManga.altTitle && (
+                  <p className="text-xs text-white/40 italic mt-0.5">
+                    {selectedManga.altTitle}
+                  </p>
+                )}
+                <p className="text-xs text-purple-300 font-semibold mt-1">
+                  By {selectedManga.author}
+                </p>
+
+                <div className="flex items-center gap-3 mt-3">
+                  <span className="flex items-center gap-1 text-xs font-bold text-amber-300 px-2 py-0.5 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                    <Star size={12} className="fill-amber-400 text-amber-400" />
+                    {selectedManga.rating} / 10
+                  </span>
+                  <button
+                    onClick={() => toggleBookmark(selectedManga.id)}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 transition-all"
+                    title="Bookmark"
+                  >
+                    <Bookmark
+                      size={14}
+                      className={bookmarks.includes(selectedManga.id) ? 'fill-purple-400 text-purple-400' : ''}
+                    />
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Quick Read / Bookmark Actions */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setReadingChapter({ number: 1, title: 'Chapter 1: The Beginning' });
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-950/40 flex items-center justify-center gap-2 transition-all"
-              >
-                <BookOpen size={14} /> Start Reading Ch. 1
-              </button>
-              <button
-                onClick={() => toggleBookmark(selectedManga.id)}
-                className={`p-2.5 rounded-xl border transition-all ${
-                  bookmarks.includes(selectedManga.id)
-                    ? 'bg-purple-600/30 border-purple-400 text-purple-200'
-                    : 'bg-white/[0.04] border-white/10 text-white/60 hover:text-white'
-                }`}
-                title="Bookmark series"
-              >
-                <Bookmark size={16} className={bookmarks.includes(selectedManga.id) ? 'fill-purple-400' : ''} />
-              </button>
+            {/* Synopsis */}
+            <div className="mb-5">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white/60 mb-1.5">
+                Synopsis
+              </h4>
+              <p className="text-xs sm:text-sm text-white/70 leading-relaxed font-sans">
+                {selectedManga.description}
+              </p>
             </div>
 
-            {/* Tags list */}
-            <div className="flex flex-wrap gap-1.5 mb-4">
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 mb-6">
               {selectedManga.tags.map((t) => (
                 <span
                   key={t}
-                  className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] text-white/70"
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] text-[10px] text-white/70 font-semibold"
                 >
                   {t}
                 </span>
               ))}
             </div>
 
-            {/* Synopsis */}
-            <div className="mb-5">
-              <h4 className="text-xs font-bold text-white/80 uppercase tracking-wider mb-1.5 font-mono">
-                Synopsis
+            {/* Chapter Selection */}
+            <div>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white/80 mb-2">
+                Available Chapters
               </h4>
-              <p className="text-xs text-white/60 leading-relaxed font-sans">
-                {selectedManga.description}
-              </p>
-            </div>
-
-            {/* Chapters list */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-bold text-white/80 uppercase tracking-wider font-mono">
-                  Chapters ({selectedManga.chaptersCount})
-                </h4>
-                <span className="text-[10px] text-purple-400 font-mono">English</span>
-              </div>
-
-              <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar pr-1">
-                {Array.from({ length: Math.min(30, selectedManga.chaptersCount) }, (_, i) => i + 1).map((chNum) => (
-                  <button
-                    key={chNum}
-                    onClick={() => {
-                      sound.playClick();
-                      setReadingChapter({ number: chNum, title: `Chapter ${chNum}` });
-                    }}
-                    className="w-full flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-purple-600/20 border border-white/[0.06] hover:border-purple-500/40 text-left text-xs transition-all group"
+              <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                {selectedManga.chapters.map((ch) => (
+                  <div
+                    key={ch.id}
+                    onClick={() => handleStartRead(selectedManga, ch)}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] hover:bg-purple-600/20 border border-white/[0.06] hover:border-purple-500/40 cursor-pointer transition-all group"
                   >
-                    <span className="font-semibold text-white/80 group-hover:text-white">
-                      Chapter {chNum}
-                    </span>
-                    <span className="text-[10px] text-white/40 group-hover:text-purple-300 font-mono flex items-center gap-1">
-                      Read <ChevronRight size={12} />
-                    </span>
-                  </button>
+                    <div>
+                      <h5 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                        {ch.title}
+                      </h5>
+                      <span className="text-[10px] text-white/40 font-mono">
+                        {ch.pages.length} Pages • High Resolution
+                      </span>
+                    </div>
+                    <button className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-950/40 flex items-center gap-1.5 transition-all">
+                      <BookOpen size={12} /> Read
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

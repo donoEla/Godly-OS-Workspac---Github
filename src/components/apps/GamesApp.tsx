@@ -888,7 +888,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const zenScriptInjectedRef = useRef<boolean>(false);
 
   // Game Vault state (1,567 local games)
-  const { settings, updateSettings } = useOS();
+  const { settings, updateSettings, openApp } = useOS();
   const [showGamepadMapper, setShowGamepadMapper] = useState(false);
   const [showSaveManager, setShowSaveManager] = useState(false);
   const [saveSlots, setSaveSlots] = useState<GameSaveSlot[]>([]);

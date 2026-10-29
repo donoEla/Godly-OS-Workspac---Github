@@ -125,7 +125,6 @@ export const WindowManager: React.FC = () => {
       case 'music':
         return <MusicApp />;
       case 'cloudgaming':
-      case 'stratus':
         return <CloudGamingApp />;
       default:
         return (

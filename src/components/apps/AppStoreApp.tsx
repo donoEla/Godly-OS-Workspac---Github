@@ -118,8 +118,8 @@ const STORE_CATALOG: StoreApp[] = [
     features: ['Thousands of manga series', 'MangaDex v5 API integration', 'Continuous webtoon & page flip modes', 'Bookmarks and chapter tracking'],
   },
   {
-    id: 'x8music',
-    name: 'x8music Studio',
+    id: 'music',
+    name: 'Music',
     category: 'Media',
     developer: 'x8rr/music & Fastify',
     rating: 4.8,
@@ -132,7 +132,7 @@ const STORE_CATALOG: StoreApp[] = [
   },
   {
     id: 'cloudgaming',
-    name: 'Cloudgaming',
+    name: 'Cloud Gaming',
     category: 'Games',
     developer: 'CloudMoon & Stratus API',
     rating: 4.9,

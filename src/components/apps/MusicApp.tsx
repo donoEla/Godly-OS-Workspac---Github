@@ -302,9 +302,9 @@ export const MusicApp: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-                x8music Studio <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">x8rr/music Hi-Fi</span>
+                Music
               </h2>
-              <p className="text-[10px] text-white/50">Lossless streaming player &amp; curated radio channels</p>
+              <p className="text-[10px] text-white/50">Lossless audio &amp; 24/7 radio stations</p>
             </div>
           </div>
 

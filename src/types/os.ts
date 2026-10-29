@@ -24,7 +24,6 @@ export type AppId =
   | 'manga'
   | 'movies'
   | 'music'
-  | 'stratus'
   | 'cloudgaming';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';

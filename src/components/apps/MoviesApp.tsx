@@ -193,11 +193,12 @@ export const CURATED_MOVIES_AND_SHOWS: MediaItem[] = [
 ];
 
 export const PROVIDERS = [
-  { id: 'autoembed', name: 'AutoEmbed (Ultra HD)', getUrl: (m: MediaItem, s: number, e: number) => `https://player.autoembed.cc/embed/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` },
-  { id: 'superembed', name: 'SuperEmbed (Fast)', getUrl: (m: MediaItem, s: number, e: number) => `https://multiembed.mov/?video_id=${m.tmdbId}&tmdb=1${m.type === 'tv' ? `&s=${s}&e=${e}` : ''}` },
-  { id: 'vidlink', name: 'VidLink Pro', getUrl: (m: MediaItem, s: number, e: number) => `https://vidlink.pro/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` },
+  { id: 'superembed', name: 'SuperEmbed (Unblocked & Fast)', getUrl: (m: MediaItem, s: number, e: number) => `https://multiembed.mov/?video_id=${m.tmdbId}&tmdb=1${m.type === 'tv' ? `&s=${s}&e=${e}` : ''}` },
+  { id: 'smashystream', name: 'SmashyStream (Full HD)', getUrl: (m: MediaItem, s: number, e: number) => `https://player.smashy.stream/${m.type}/${m.tmdbId}${m.type === 'tv' ? `?s=${s}&e=${e}` : ''}` },
+  { id: 'autoembed', name: 'AutoEmbed Pro (4K)', getUrl: (m: MediaItem, s: number, e: number) => `https://player.autoembed.cc/embed/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` },
+  { id: 'vidsrc-xyz', name: 'VidSrc VIP', getUrl: (m: MediaItem, s: number, e: number) => `https://vidsrc.xyz/embed/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` },
   { id: '2embed', name: '2Embed CDN', getUrl: (m: MediaItem, s: number, e: number) => `https://www.2embed.cc/embed/${m.type === 'tv' ? 'tv/' : ''}${m.tmdbId}${m.type === 'tv' ? `&s=${s}&e=${e}` : ''}` },
-  { id: 'vidsrc', name: 'VidSrc Direct', getUrl: (m: MediaItem, s: number, e: number) => `https://vidsrc.to/embed/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` }
+  { id: 'vidlink', name: 'VidLink Pro', getUrl: (m: MediaItem, s: number, e: number) => `https://vidlink.pro/${m.type}/${m.tmdbId}${m.type === 'tv' ? `/${s}/${e}` : ''}` }
 ];
 
 export const GENRES = ['All', 'Movies', 'TV Shows', 'Sci-Fi', 'Action', 'Drama', 'Comedy', 'Animation', 'Crime'];
@@ -208,7 +209,8 @@ export const MoviesApp: React.FC = () => {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
-  const [activeProvider, setActiveProvider] = useState<string>('autoembed');
+  const [activeProvider, setActiveProvider] = useState<string>('superembed');
+  const [streamMode, setStreamMode] = useState<'direct' | 'proxy'>('direct');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [streamUrlKey, setStreamUrlKey] = useState<number>(0);
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
@@ -304,6 +306,23 @@ export const MoviesApp: React.FC = () => {
               </select>
             </div>
 
+            {/* Stream Mode Switcher */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                setStreamMode(m => m === 'direct' ? 'proxy' : 'direct');
+                setStreamUrlKey(k => k + 1);
+              }}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                streamMode === 'direct'
+                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                  : 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+              }`}
+              title="Toggle between Direct Unblocked Embed and Ultraviolet Proxy"
+            >
+              {streamMode === 'direct' ? '⚡ Direct 4K' : '🛡️ UV Proxy'}
+            </button>
+
             <button
               onClick={() => {
                 sound.playClick();
@@ -320,22 +339,35 @@ export const MoviesApp: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-white/80 hover:text-white transition-all"
-              title="Open in new window"
+              title="Popout player in new tab"
             >
               <ExternalLink size={14} />
             </a>
           </div>
         </div>
 
-        {/* Video Player Content via ServiceWorkerAppView for zero-blocking & proxy tunnel */}
+        {/* Video Player Content: Direct Unblocked <iframe> or ServiceWorkerAppView Proxy */}
         <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
-          <ServiceWorkerAppView
-            key={`${currentEmbedUrl}-${streamUrlKey}`}
-            url={currentEmbedUrl}
-            appName={`${selectedMedia.title} (${currentProviderObj.name})`}
-            fallbackUrl={currentEmbedUrl}
-            fallbackName={currentProviderObj.name}
-          />
+          {streamMode === 'direct' ? (
+            <iframe
+              key={`direct-${currentEmbedUrl}-${streamUrlKey}`}
+              src={currentEmbedUrl}
+              title={`${selectedMedia.title} - ${currentProviderObj.name}`}
+              className="w-full h-full border-0 bg-black"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+              allowFullScreen
+              referrerPolicy="origin"
+              sandbox="allow-scripts allow-forms allow-same-origin allow-presentation allow-modals"
+            />
+          ) : (
+            <ServiceWorkerAppView
+              key={`proxy-${currentEmbedUrl}-${streamUrlKey}`}
+              url={currentEmbedUrl}
+              appName={`${selectedMedia.title} (${currentProviderObj.name})`}
+              fallbackUrl={currentEmbedUrl}
+              fallbackName={currentProviderObj.name}
+            />
+          )}
         </div>
       </div>
     );

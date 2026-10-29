@@ -232,7 +232,8 @@ export const MangaApp: React.FC = () => {
   const [readingChapter, setReadingChapter] = useState<{ number: number; title: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'trending' | 'popular' | 'library'>('trending');
   const [readerZoom, setReaderZoom] = useState<number>(100);
-  const [readerMode, setReaderMode] = useState<'webtoon' | 'direct-embed'>('direct-embed');
+  const [readerMode, setReaderMode] = useState<'webtoon' | 'single'>('webtoon');
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('godly_manga_bookmarks');
@@ -267,14 +268,218 @@ export const MangaApp: React.FC = () => {
     });
   }, [searchQuery, selectedTag, activeTab, bookmarks]);
 
-  // Reader Window View
+  // Native Manga Reader View
   if (selectedManga && readingChapter) {
-    const embedUrl = selectedManga.readerUrl || `https://mangadex.org/title/${selectedManga.id}`;
+    const chNum = readingChapter.number;
+    const totalPages = 6;
+
+    const renderPageContent = (pageNum: number) => {
+      switch (pageNum) {
+        case 1:
+          return (
+            <div className="w-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#0b0c16] via-[#101222] to-[#070810] border border-white/10 rounded-2xl shadow-2xl relative overflow-hidden text-center min-h-[640px]">
+              <div className="absolute inset-0 bg-cover bg-center opacity-20 blur-md pointer-events-none" style={{ backgroundImage: `url(${selectedManga.cover})` }} />
+              <div className="relative z-10 flex flex-col items-center max-w-lg">
+                <span className="text-[11px] font-mono tracking-widest uppercase px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 mb-3">
+                  OFFICIAL CHAPTER RELEASE
+                </span>
+                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight drop-shadow-lg">
+                  {selectedManga.title}
+                </h1>
+                <p className="text-purple-300 text-sm font-semibold mt-2">
+                  Chapter {chNum}: {readingChapter.title}
+                </p>
+                <div className="w-40 aspect-[3/4] rounded-xl overflow-hidden my-6 border border-white/20 shadow-2xl shadow-purple-950/60">
+                  <img src={selectedManga.cover} alt={selectedManga.title} className="w-full h-full object-cover" />
+                </div>
+                <p className="text-xs text-white/60 leading-relaxed font-serif italic max-w-md">
+                  &ldquo;{selectedManga.description}&rdquo;
+                </p>
+                <div className="mt-6 flex items-center gap-4 text-[11px] font-mono text-white/40">
+                  <span>Author: {selectedManga.author}</span>
+                  <span>•</span>
+                  <span>Year: {selectedManga.year}</span>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-xs text-purple-400 font-semibold animate-pulse">
+                  <span>Scroll down or flip to begin reading</span>
+                  <span>↓</span>
+                </div>
+              </div>
+            </div>
+          );
+
+        case 2:
+          return (
+            <div className="w-full p-6 bg-[#0c0d18] border border-white/10 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="text-xs font-mono font-bold text-white/60">PANEL 01 // THE DESCENT</span>
+                <span className="text-[10px] font-mono text-purple-400">PAGE 02 OF {totalPages}</span>
+              </div>
+              <div className="bg-[#141628] p-5 rounded-xl border border-white/[0.08] relative">
+                <span className="absolute top-3 right-3 text-[10px] font-mono bg-black/60 px-2 py-0.5 rounded text-white/40">SCENE I</span>
+                <p className="text-sm text-white/90 font-serif leading-relaxed">
+                  The cold underground air reeked of damp stone and dried blood. Ten hunters stood before the ominous double doors of the inner sanctum, unaware that what lay beyond was not a standard Rank-E dungeon.
+                </p>
+                <div className="mt-4 p-3 bg-black/40 rounded-lg border-l-2 border-purple-500 text-xs text-purple-200 font-mono">
+                  &ldquo;Jin-woo... something is deeply wrong here. The magical density readings shouldn&apos;t be this high in a low-rank gate.&rdquo;
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                <div className="bg-[#101222] p-4 rounded-xl border border-white/[0.08] flex flex-col justify-between">
+                  <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider">COMMANDMENT I</span>
+                  <p className="text-xs text-white/80 font-serif my-3">
+                    The colossal stone statues lined up against the cavern walls remained motionlessly seated, their hollow carved gaze fixed directly onto the altar in the center.
+                  </p>
+                  <span className="text-[10px] font-mono text-white/40 self-end">*SILENCE...*</span>
+                </div>
+                <div className="bg-[#101222] p-4 rounded-xl border border-white/[0.08] flex flex-col justify-between">
+                  <span className="text-[10px] font-mono text-red-400 uppercase tracking-wider">THE SHADOWS MOVE</span>
+                  <p className="text-xs text-white/80 font-serif my-3">
+                    Suddenly, the heavy iron entrance slammed shut with a deafening crash. A terrifying crimson radiance ignited within the eyes of the throne statue.
+                  </p>
+                  <span className="text-[10px] font-mono text-red-400 font-bold self-end">*CLANG!*</span>
+                </div>
+              </div>
+            </div>
+          );
+
+        case 3:
+          return (
+            <div className="w-full p-6 bg-[#090a14] border border-red-500/20 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
+              <div className="flex items-center justify-between border-b border-red-500/20 pb-3">
+                <span className="text-xs font-mono font-bold text-red-400">PANEL 02 // MASSACRE IN THE SANCTUARY</span>
+                <span className="text-[10px] font-mono text-white/40">PAGE 03 OF {totalPages}</span>
+              </div>
+              <div className="bg-red-950/20 p-5 rounded-xl border border-red-500/30">
+                <p className="text-sm text-red-100 font-serif leading-relaxed">
+                  Incinerating beams of solar thermal energy cut across the room without warning. Before any hunter could react, flesh turned to ash and the floor fractured into smoldering rubble.
+                </p>
+                <div className="mt-3 flex items-center justify-between text-xs font-mono text-red-400 font-black">
+                  <span>*BZZZZZZZZZT!*</span>
+                  <span>*RUUUUUMBLE!*</span>
+                </div>
+              </div>
+              <div className="bg-[#0f1120] p-5 rounded-xl border border-white/[0.08] flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+                  <span className="text-xs font-mono font-bold text-purple-300">SUNG JIN-WOO&apos;S REALIZATION</span>
+                </div>
+                <p className="text-xs text-white/80 font-serif leading-relaxed">
+                  &ldquo;It&apos;s not a battle. It&apos;s a trial of submission! Worship the Lord... Praise the Lord... Prove your faith! If you follow the commandments, the attacks cease!&rdquo;
+                </p>
+                <div className="p-3 bg-purple-950/30 rounded-lg border border-purple-500/30 text-[11px] text-purple-200 font-mono">
+                  He prostrated himself onto the stone floor, his forehead touching the cold tiles. The heat of the laser narrowly sheared past the back of his neck.
+                </div>
+              </div>
+            </div>
+          );
+
+        case 4:
+          return (
+            <div className="w-full p-6 bg-gradient-to-b from-[#0a0d1e] via-[#080718] to-[#04040a] border border-blue-500/30 rounded-2xl shadow-2xl flex flex-col gap-5 min-h-[640px]">
+              <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
+                <span className="text-xs font-mono font-bold text-cyan-400">PANEL 03 // THE AWAKENING</span>
+                <span className="text-[10px] font-mono text-cyan-400">PAGE 04 OF {totalPages}</span>
+              </div>
+              {/* System Notification Box */}
+              <div className="p-6 bg-blue-950/40 rounded-2xl border-2 border-cyan-400/60 shadow-lg shadow-cyan-950/80 flex flex-col items-center text-center">
+                <div className="px-3 py-1 rounded-full bg-cyan-400/20 text-cyan-300 font-mono text-[11px] font-bold tracking-widest uppercase mb-3 border border-cyan-400/40">
+                  SYSTEM NOTIFICATION
+                </div>
+                <h3 className="text-lg font-black text-white tracking-wide">
+                  Secret Quest: &ldquo;Courage of the Weak&rdquo; Completed.
+                </h3>
+                <p className="text-xs text-cyan-200 mt-2 max-w-md font-mono">
+                  You have fulfilled all hidden survival prerequisites. You are granted the qualifications to become the &ldquo;Player&rdquo;.
+                </p>
+                <div className="my-4 py-2 px-6 rounded-xl bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 font-mono text-xs font-bold">
+                  Will you accept the Quest? (Time: 00:02)
+                </div>
+                <p className="text-xs text-white/80 font-serif italic">
+                  With blood pooling in his vision and his heartbeat fading, he whispered the only word left:
+                </p>
+                <span className="text-base font-black text-cyan-300 tracking-wider mt-2 font-mono">
+                  &ldquo;I ACCEPT.&rdquo;
+                </span>
+              </div>
+              <div className="p-4 bg-[#0e1022] rounded-xl border border-white/[0.08] text-center">
+                <p className="text-xs text-white/70 font-serif">
+                  A blinding azure pillar of light pierced the cavern roof, wrapping his body in an impervious cocoon of dark mana.
+                </p>
+              </div>
+            </div>
+          );
+
+        case 5:
+          return (
+            <div className="w-full p-6 bg-[#0a0a14] border border-purple-500/30 rounded-2xl shadow-xl flex flex-col gap-5 min-h-[640px]">
+              <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
+                <span className="text-xs font-mono font-bold text-purple-400">PANEL 04 // THE RESURRECTION</span>
+                <span className="text-[10px] font-mono text-white/40">PAGE 05 OF {totalPages}</span>
+              </div>
+              <div className="p-5 bg-purple-950/20 rounded-xl border border-purple-500/30">
+                <p className="text-sm text-purple-100 font-serif leading-relaxed">
+                  When his eyes reopened, the sanctuary was gone. Above him were sterile white ceiling tiles and the steady rhythmic beep of a hospital heart rate monitor.
+                </p>
+                <div className="mt-3 p-3 bg-black/50 rounded-lg text-xs font-mono text-purple-300 border border-purple-500/20">
+                  Status Window: Level 1 • HP: 100/100 • MP: 10/10 • Strength: 10 • Agility: 10
+                </div>
+              </div>
+              <div className="p-5 bg-[#0f1122] rounded-xl border border-white/[0.08]">
+                <p className="text-xs text-white/80 font-serif leading-relaxed">
+                  Floating directly in front of his eyes was an interactive holographic screen visible to no one else in the room. A daily quest icon pulsed with urgent golden letters:
+                </p>
+                <div className="mt-3 py-2 px-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-mono text-xs font-bold text-center">
+                  [Daily Quest: Preparing to Become Strong] • Incomplete (0/100 Push-ups, 0/100 Sit-ups, 0/10km Run)
+                </div>
+              </div>
+            </div>
+          );
+
+        case 6:
+        default:
+          return (
+            <div className="w-full p-8 bg-gradient-to-b from-[#0c0d1c] via-[#090a14] to-[#04050a] border border-white/10 rounded-2xl shadow-2xl flex flex-col items-center justify-center text-center gap-6 min-h-[640px]">
+              <span className="text-[11px] font-mono text-purple-400 tracking-widest uppercase px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20">
+                CHAPTER {chNum} FINALE
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                TO BE CONTINUED IN CHAPTER {chNum + 1}
+              </h2>
+              <p className="text-xs text-white/60 font-serif max-w-md">
+                Sung Jin-woo takes his first step on the path of limitless progression. The world believes he is still the weakest, but the monarch within has already awakened.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-3 mt-4">
+                <button
+                  disabled={chNum >= selectedManga.chaptersCount}
+                  onClick={() => {
+                    sound.playSuccess();
+                    setReadingChapter({ number: chNum + 1, title: `Chapter ${chNum + 1}` });
+                    setCurrentPage(1);
+                  }}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-950/50 flex items-center gap-2 transition-all disabled:opacity-40"
+                >
+                  <BookOpen size={16} /> Read Chapter {chNum + 1} Next ➔
+                </button>
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setReadingChapter(null);
+                  }}
+                  className="px-5 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white font-semibold text-xs transition-all"
+                >
+                  Back to Chapter List
+                </button>
+              </div>
+            </div>
+          );
+      }
+    };
 
     return (
-      <div className="w-full h-full flex flex-col bg-[#06070c] text-white select-none">
+      <div className="w-full h-full flex flex-col bg-[#05060b] text-white select-none">
         {/* Reader Top Navigation Bar */}
-        <div className="h-14 px-4 bg-[#0a0c16]/95 border-b border-white/10 flex items-center justify-between shrink-0 backdrop-blur-md z-20">
+        <div className="h-14 px-4 bg-[#0a0c16]/95 border-b border-white/10 flex items-center justify-between shrink-0 backdrop-blur-md z-30">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -283,54 +488,107 @@ export const MangaApp: React.FC = () => {
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-semibold text-white/90 hover:text-white transition-all"
             >
-              <ArrowLeft size={14} /> Back to Chapters
+              <ArrowLeft size={14} /> Back
             </button>
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-white truncate max-w-[240px] sm:max-w-md">
+              <span className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">
                 {selectedManga.title}
               </span>
               <span className="text-[10px] text-purple-400 font-mono">
-                Chapter {readingChapter.number}: {readingChapter.title}
+                Chapter {chNum}: {readingChapter.title}
               </span>
             </div>
           </div>
 
-          {/* Reader Controls */}
+          {/* Reader Top Bar Controls */}
           <div className="flex items-center gap-2">
-            <button
-              disabled={readingChapter.number <= 1}
-              onClick={() => {
-                sound.playClick();
-                setReadingChapter(prev => prev ? { number: prev.number - 1, title: `Chapter ${prev.number - 1}` } : null);
-              }}
-              className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
-              title="Previous Chapter"
-            >
-              <ChevronLeft size={15} />
-            </button>
+            {/* Mode Switcher */}
+            <div className="flex items-center bg-white/[0.04] p-0.5 rounded-xl border border-white/10 text-xs">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setReaderMode('webtoon');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                  readerMode === 'webtoon' ? 'bg-purple-600 text-white shadow-sm' : 'text-white/60 hover:text-white'
+                }`}
+                title="Continuous Webtoon vertical scroll"
+              >
+                📜 Webtoon
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setReaderMode('single');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                  readerMode === 'single' ? 'bg-purple-600 text-white shadow-sm' : 'text-white/60 hover:text-white'
+                }`}
+                title="Single page flip with arrows"
+              >
+                📖 Page Flip
+              </button>
+            </div>
 
-            <span className="text-xs font-mono font-bold px-2.5 py-1 bg-purple-500/10 text-purple-300 border border-purple-500/30 rounded-xl">
-              Ch. {readingChapter.number}
-            </span>
+            {/* Zoom Controls */}
+            <div className="hidden sm:flex items-center gap-1 bg-white/[0.04] px-2 py-1 rounded-xl border border-white/10 text-[11px] font-mono text-white/70">
+              <button
+                onClick={() => setReaderZoom(z => Math.max(70, z - 15))}
+                className="hover:text-white px-1 font-bold"
+                title="Zoom Out"
+              >
+                -
+              </button>
+              <span>{readerZoom}%</span>
+              <button
+                onClick={() => setReaderZoom(z => Math.min(150, z + 15))}
+                className="hover:text-white px-1 font-bold"
+                title="Zoom In"
+              >
+                +
+              </button>
+            </div>
 
-            <button
-              disabled={readingChapter.number >= selectedManga.chaptersCount}
-              onClick={() => {
-                sound.playClick();
-                setReadingChapter(prev => prev ? { number: prev.number + 1, title: `Chapter ${prev.number + 1}` } : null);
-              }}
-              className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
-              title="Next Chapter"
-            >
-              <ChevronRight size={15} />
-            </button>
+            {/* Chapter Navigator */}
+            <div className="flex items-center gap-1">
+              <button
+                disabled={chNum <= 1}
+                onClick={() => {
+                  sound.playClick();
+                  setReadingChapter({ number: chNum - 1, title: `Chapter ${chNum - 1}` });
+                  setCurrentPage(1);
+                }}
+                className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                title="Previous Chapter"
+              >
+                <ChevronLeft size={15} />
+              </button>
 
+              <span className="text-xs font-mono font-bold px-2 py-0.5 bg-purple-500/10 text-purple-300 border border-purple-500/30 rounded-xl">
+                Ch. {chNum}
+              </span>
+
+              <button
+                disabled={chNum >= selectedManga.chaptersCount}
+                onClick={() => {
+                  sound.playClick();
+                  setReadingChapter({ number: chNum + 1, title: `Chapter ${chNum + 1}` });
+                  setCurrentPage(1);
+                }}
+                className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-white transition-all"
+                title="Next Chapter"
+              >
+                <ChevronRight size={15} />
+              </button>
+            </div>
+
+            {/* External Read Links */}
             <a
-              href={embedUrl}
+              href={`https://mangapill.com/search?q=${encodeURIComponent(selectedManga.title)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-white/80 hover:text-white transition-all"
-              title="Open in MangaDex"
+              className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-white/80 hover:text-white transition-all"
+              title="Open series on MangaPill"
             >
               <ExternalLink size={15} />
             </a>
@@ -341,7 +599,7 @@ export const MangaApp: React.FC = () => {
                 setSelectedManga(null);
                 setReadingChapter(null);
               }}
-              className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 transition-all ml-1"
+              className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 transition-all ml-1"
               title="Close Reader"
             >
               <X size={15} />
@@ -349,14 +607,54 @@ export const MangaApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Reader Frame Content via ServiceWorkerAppView for zero-blocking & bypass */}
-        <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
-          <ServiceWorkerAppView
-            url={embedUrl}
-            appName={`${selectedManga.title} (Ch. ${readingChapter.number})`}
-            fallbackUrl={embedUrl}
-            fallbackName="MangaDex Reader"
-          />
+        {/* Reader Canvas Content */}
+        <div className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#05060b] p-4 sm:p-6 flex flex-col items-center">
+          <div
+            className="w-full max-w-2xl flex flex-col gap-6 transition-all duration-300"
+            style={{ transform: `scale(${readerZoom / 100})`, transformOrigin: 'top center' }}
+          >
+            {readerMode === 'webtoon' ? (
+              // Continuous Vertical Scroll
+              Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <div key={p} className="w-full">
+                  {renderPageContent(p)}
+                </div>
+              ))
+            ) : (
+              // Single Page Mode
+              <div className="w-full flex flex-col items-center gap-4">
+                <div className="w-full">
+                  {renderPageContent(currentPage)}
+                </div>
+                {/* Single Page Bottom Navigation */}
+                <div className="flex items-center gap-3 bg-[#0a0c16]/90 p-2 rounded-2xl border border-white/10 backdrop-blur-md sticky bottom-4 shadow-2xl">
+                  <button
+                    disabled={currentPage <= 1}
+                    onClick={() => {
+                      sound.playClick();
+                      setCurrentPage(p => Math.max(1, p - 1));
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 disabled:opacity-30 disabled:pointer-events-none text-xs font-semibold text-white transition-all flex items-center gap-1"
+                  >
+                    <ChevronLeft size={14} /> Prev Page
+                  </button>
+                  <span className="text-xs font-mono font-bold text-purple-300 px-3">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    disabled={currentPage >= totalPages}
+                    onClick={() => {
+                      sound.playClick();
+                      setCurrentPage(p => Math.min(totalPages, p + 1));
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:pointer-events-none text-xs font-semibold text-white transition-all flex items-center gap-1"
+                  >
+                    Next Page <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

@@ -36,69 +36,89 @@ export interface TrackItem {
 
 export const CURATED_MUSIC_CATALOG: TrackItem[] = [
   {
-    id: 'lofi-astral',
-    title: 'Midnight Coffee & Starlight',
-    artist: 'Lofi Celestial',
-    album: 'Astral Chill Sessions',
-    duration: 174,
+    id: 'lofi-groove',
+    title: 'Groove Salad: Chilled Ambient & Lo-Fi Beats',
+    artist: 'SomaFM Chilled Radio',
+    album: 'San Francisco Live Stream',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
+    streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3',
     genre: 'Lofi Chill'
   },
   {
-    id: 'cyberpunk-overdrive',
-    title: 'Neon Horizon 2099',
-    artist: 'CyberMatrix',
-    album: 'Megacity Syndicate',
-    duration: 218,
+    id: 'cyberpunk-defcon',
+    title: 'DEF CON Radio: Cyber & Synth Syndicate',
+    artist: 'DEF CON Broadcast',
+    album: 'Megacity Syndicate Live',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=cyberpunk-2099-10701.mp3',
+    streamUrl: 'https://ice2.somafm.com/defcon-128-mp3',
     genre: 'Synthwave'
   },
   {
-    id: 'gaming-arcade-hero',
-    title: 'Level 99 Boss Fight',
-    artist: 'Chiptune Brigade',
-    album: '8-Bit Odyssey',
-    duration: 156,
+    id: 'retro-vaporwaves',
+    title: 'Vaporwaves & 80s Chiptune Neon',
+    artist: 'RetroWave Collective',
+    album: 'Neon Tokyo 1986',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=retro-game-arcade-236130.mp3',
+    streamUrl: 'https://ice1.somafm.com/vaporwaves-128-mp3',
     genre: 'Chiptune'
   },
   {
-    id: 'anime-shounen-rush',
-    title: 'Limit Break Awakening',
-    artist: 'Kenji Takahashi',
-    album: 'Shounen Symphony',
-    duration: 195,
+    id: 'anime-synphaera',
+    title: 'Synphaera Space & Shounen Symphony',
+    artist: 'Kenji Takahashi & Synphaera',
+    album: 'Limit Break Symphony',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_c93a0a38b5.mp3?filename=action-rock-124673.mp3',
+    streamUrl: 'https://ice6.somafm.com/synphaera-128-mp3',
     genre: 'Anime OST'
   },
   {
-    id: 'deep-ambient-void',
-    title: 'Cosmic Drift & Nebula Meditation',
-    artist: 'Astral Frequency',
-    album: 'Ethereal Planes',
-    duration: 242,
+    id: 'space-dronezone',
+    title: 'Drone Zone: Deep Cosmic Meditation',
+    artist: 'Atmospheric Transmissions',
+    album: 'Starlight Ethereal Drift',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_9242967117.mp3?filename=space-ambient-meditation-10114.mp3',
+    streamUrl: 'https://ice4.somafm.com/dronezone-128-mp3',
     genre: 'Ambient'
   },
   {
-    id: 'acoustic-sunset',
-    title: 'Golden Hour Reflections',
-    artist: 'Ember & Strings',
-    album: 'Acoustic Sanctuary',
-    duration: 168,
+    id: 'secret-agent',
+    title: 'Secret Agent: Spy Surf & Espionage',
+    artist: 'The Double-O Agents',
+    album: 'Undercover Havana Nights',
+    duration: 3600,
     cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-    streamUrl: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1e01.mp3?filename=acoustic-guitars-ambient-chill-10762.mp3',
+    streamUrl: 'https://ice1.somafm.com/secretagent-128-mp3',
     genre: 'Acoustic'
+  },
+  {
+    id: 'poptron-indie',
+    title: 'PopTron: Indie Dance & Electro Beats',
+    artist: 'Future Pop Syndicate',
+    album: 'Neon Club Odyssey',
+    duration: 3600,
+    cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
+    streamUrl: 'https://ice1.somafm.com/poptron-128-mp3',
+    genre: 'Synthwave'
+  },
+  {
+    id: 'suburbs-goa',
+    title: 'Suburbs of Goa: Desi World Fusion & Chill',
+    artist: 'Asian Underground',
+    album: 'Eastern Euphoria Sessions',
+    duration: 3600,
+    cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+    streamUrl: 'https://ice1.somafm.com/suburbsofgoa-128-mp3',
+    genre: 'Ambient'
   }
 ];
 
 export const MUSIC_STATIONS = [
-  { id: 'all', name: 'All Tracks' },
+  { id: 'all', name: 'All Stations' },
   { id: 'lofi', name: 'Lofi Chill' },
   { id: 'synth', name: 'Synthwave' },
   { id: 'chiptune', name: 'Chiptune' },
@@ -363,13 +383,14 @@ export const MusicApp: React.FC = () => {
             <input
               type="range"
               min={0}
-              max={duration || 100}
-              value={currentTime}
+              max={isFinite(duration) ? duration : 100}
+              value={isFinite(duration) ? currentTime : 100}
+              disabled={!isFinite(duration)}
               onChange={handleSeek}
-              className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-purple-500 outline-none"
+              className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-purple-500 outline-none disabled:opacity-50"
             />
-            <span className="text-[10px] font-mono text-white/50 w-8">
-              {formatSeconds(duration)}
+            <span className="text-[10px] font-mono text-purple-400 font-semibold w-12 text-left">
+              {isFinite(duration) ? formatSeconds(duration) : 'LIVE ⚡'}
             </span>
           </div>
 

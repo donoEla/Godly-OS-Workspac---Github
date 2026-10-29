@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 
-export type MangaEngine = 'cubari' | 'mangapill' | 'manganato' | 'custom';
+export type MangaEngine = 'mangapill' | 'cubari' | 'mangafire' | 'custom';
 
 export interface MangaItem {
   id: string;
@@ -50,41 +50,27 @@ export interface MangaItem {
   author: string;
   year: number;
   description: string;
-  mangadexId: string;
   pillSlug?: string;
+  mangadexId?: string;
 }
 
-// 18 Top Verified Manga & Manhwa Series with working MangaDex IDs for Cubari
+// 18 Flagship Manga & Manhwa Series with verified direct MangaPill & MangaDex sources
 export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
   {
-    id: 'solo-leveling',
-    title: 'Solo Leveling',
-    altTitle: 'Na Honjaman Rebeleop',
-    cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=700&auto=format&fit=crop&q=85',
-    rating: 9.88,
+    id: 'berserk',
+    title: 'Berserk',
+    altTitle: 'Beruseruku',
+    cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&auto=format&fit=crop&q=85',
+    rating: 9.95,
     rank: 1,
-    status: 'completed',
-    chaptersCount: 179,
-    tags: ['Action', 'Fantasy', 'Monsters', 'System', 'Manhwa'],
-    author: 'Chugong & DUBU',
-    year: 2018,
-    mangadexId: '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0',
-    description: '10 years ago, after the Gate connected our world with the monster world, ordinary people awakened superhuman powers. Sung Jin-woo, the weakest E-rank hunter, discovers a hidden dual-dungeon that grants him the ability to level up infinitely.'
-  },
-  {
-    id: 'jujutsu-kaisen',
-    title: 'Jujutsu Kaisen',
-    altTitle: 'Sorcery Fight',
-    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=700&auto=format&fit=crop&q=85',
-    rating: 9.78,
-    rank: 2,
-    status: 'completed',
-    chaptersCount: 271,
-    tags: ['Action', 'Supernatural', 'Curse', 'Shounen'],
-    author: 'Gege Akutami',
-    year: 2018,
-    mangadexId: 'c52b2ce3-7f95-469c-96b0-479524fb7a1a',
-    description: 'Yuji Itadori is an athletically gifted high school student. To rescue friends attacked by curses, he swallows a rotting talisman finger belonging to Ryomen Sukuna, king of curses, drawing himself into the lethal jujutsu world.'
+    status: 'ongoing',
+    chaptersCount: '386+',
+    tags: ['Dark Fantasy', 'Tragedy', 'Seinen', 'Action'],
+    author: 'Kentaro Miura',
+    year: 1989,
+    pillSlug: '1/berserk',
+    mangadexId: '801513ba-a712-498c-8f57-cae55b38cc92',
+    description: 'Born from a corpse beneath a hanging tree, Guts is the Black Swordsman, armed with the massive Dragonslayer sword, struggling against fate, demons, and the Apostles of the God Hand.'
   },
   {
     id: 'one-piece',
@@ -92,29 +78,31 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     altTitle: 'Wan Pīsu',
     cover: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=700&auto=format&fit=crop&q=85',
     rating: 9.92,
-    rank: 3,
+    rank: 2,
     status: 'ongoing',
     chaptersCount: '1125+',
     tags: ['Adventure', 'Pirates', 'Shounen', 'Action'],
     author: 'Eiichiro Oda',
     year: 1997,
+    pillSlug: '2/one-piece',
     mangadexId: 'a1c7c817-4e59-43b7-9365-09675a149a6f',
     description: 'Gol D. Roger, the legendary Pirate King, announced the existence of the supreme treasure One Piece. Monkey D. Luffy sets out on the Grand Line with the Straw Hat crew to claim the title of Pirate King.'
   },
   {
-    id: 'berserk',
-    title: 'Berserk',
-    altTitle: 'Beruseruku',
-    cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&auto=format&fit=crop&q=85',
-    rating: 9.95,
-    rank: 4,
-    status: 'ongoing',
-    chaptersCount: 376,
-    tags: ['Dark Fantasy', 'Tragedy', 'Seinen', 'Action'],
-    author: 'Kentaro Miura',
-    year: 1989,
-    mangadexId: '801513ba-a712-498c-8f57-cae55b38cc92',
-    description: 'Born from a corpse beneath a hanging tree, Guts is the Black Swordsman, armed with the massive Dragonslayer sword, struggling against fate, demons, and the Apostles of the God Hand.'
+    id: 'jujutsu-kaisen',
+    title: 'Jujutsu Kaisen',
+    altTitle: 'Sorcery Fight',
+    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=700&auto=format&fit=crop&q=85',
+    rating: 9.78,
+    rank: 3,
+    status: 'completed',
+    chaptersCount: 271,
+    tags: ['Action', 'Supernatural', 'Curse', 'Shounen'],
+    author: 'Gege Akutami',
+    year: 2018,
+    pillSlug: '2085/jujutsu-kaisen',
+    mangadexId: 'c52b2ce3-7f95-469c-96b0-479524fb7a1a',
+    description: 'Yuji Itadori is an athletically gifted high school student. To rescue friends attacked by curses, he swallows a rotting talisman finger belonging to Ryomen Sukuna, king of curses, drawing himself into the lethal jujutsu world.'
   },
   {
     id: 'chainsaw-man',
@@ -122,14 +110,31 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     altTitle: 'Chensō Man',
     cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=700&auto=format&fit=crop&q=85',
     rating: 9.74,
-    rank: 5,
+    rank: 4,
     status: 'ongoing',
     chaptersCount: '180+',
     tags: ['Action', 'Demons', 'Psychological', 'Shounen'],
     author: 'Tatsuki Fujimoto',
     year: 2018,
+    pillSlug: '2083/chainsaw-man',
     mangadexId: 'a77742c1-fda2-40e3-980a-019349ff7e28',
     description: 'Denji lives at rock bottom paying off his deceased father\'s mob debts with his chainsaw dog Pochita. Following a betrayal, Pochita fuses with Denji, transforming him into Chainsaw Man.'
+  },
+  {
+    id: 'solo-leveling',
+    title: 'Solo Leveling',
+    altTitle: 'Na Honjaman Rebeleop',
+    cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=700&auto=format&fit=crop&q=85',
+    rating: 9.88,
+    rank: 5,
+    status: 'completed',
+    chaptersCount: 179,
+    tags: ['Action', 'Fantasy', 'Monsters', 'System', 'Manhwa'],
+    author: 'Chugong & DUBU',
+    year: 2018,
+    pillSlug: '8136/solo-leveling-novel',
+    mangadexId: '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0',
+    description: '10 years ago, after the Gate connected our world with the monster world, ordinary people awakened superhuman powers. Sung Jin-woo, the weakest E-rank hunter, discovers a hidden dual-dungeon that grants him the ability to level up infinitely.'
   },
   {
     id: 'spy-x-family',
@@ -142,6 +147,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Comedy', 'Action', 'Spy', 'Family'],
     author: 'Tatsuya Endo',
     year: 2019,
+    pillSlug: '2104/spy-x-family',
     mangadexId: '93427f71-2679-42b3-8d6d-62025e14309b',
     description: 'Master spy Twilight adopts telepathic Anya and marries assassin Yor to infiltrate an elite academy, with none of them revealing their true identities to each other.'
   },
@@ -157,6 +163,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Action', 'Demons', 'Historical', 'Shounen'],
     author: 'Koyoharu Gotouge',
     year: 2016,
+    pillSlug: '49/kimetsu-no-yaiba',
     mangadexId: '4f3bcae4-2d96-419d-933e-18e867ed9096',
     description: 'Tanjiro Kamado\'s family is slaughtered by demons, leaving only his sister Nezuko alive but transformed into a demon. Tanjiro embarks on a quest to become a Demon Slayer and cure her.'
   },
@@ -172,6 +179,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Military', 'Mystery', 'Survival', 'Shounen'],
     author: 'Hajime Isayama',
     year: 2009,
+    pillSlug: '4/shingeki-no-kyojin',
     mangadexId: '304ceac3-8cdb-492c-8864-e14a20b359ed',
     description: 'Centuries ago, mankind was nearly exterminated by monstrous giant humanoids known as Titans. Eren Yeager pledges to eliminate every Titan from the earth after his hometown falls.'
   },
@@ -186,6 +194,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Dark Fantasy', 'Psychological', 'Horror', 'Seinen'],
     author: 'Sui Ishida',
     year: 2011,
+    pillSlug: '4524/tokyo-ghoul',
     mangadexId: '4309a473-b3c1-4b1d-8729-ec452778644e',
     description: 'Ken Kaneki survives a deadly encounter with a flesh-eating ghoul, only to be turned into a half-ghoul who must navigate the treacherous underground ghoul society of Tokyo.'
   },
@@ -200,6 +209,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Historical', 'Vikings', 'Seinen', 'Action'],
     author: 'Makoto Yukimura',
     year: 2005,
+    pillSlug: '40/vinland-saga',
     mangadexId: '5d61540f-7b79-4286-8d59-69b76c8e3bf5',
     description: 'Thorfinn seeks revenge against Askeladd, the mercenary leader who killed his father, leading him into the bloody Viking conflicts of 11th-century Europe and a search for peace.'
   },
@@ -214,6 +224,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Martial Arts', 'Historical', 'Samurai', 'Seinen'],
     author: 'Takehiko Inoue',
     year: 1998,
+    pillSlug: '23/vagabond',
     mangadexId: 'd3eb2179-c5c2-49e0-8278-cc853d9f0a20',
     description: 'A masterwork retelling of the life of legendary swordsman Miyamoto Musashi, exploring sword mastery, spiritual growth, and human enlightenment.'
   },
@@ -228,6 +239,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Sci-Fi', 'Aliens', 'Ghosts', 'Comedy', 'Shounen'],
     author: 'Yukinobu Tatsu',
     year: 2021,
+    pillSlug: '5078/dandadan',
     mangadexId: 'b3531b7e-976e-4f51-b883-fa4c22a5789a',
     description: 'Momo Ayase believes in ghosts but not aliens; Ken Takakura believes in aliens but not ghosts. A dare to visit occult hot spots leads to an encounter with both alien and yokai threats.'
   },
@@ -242,6 +254,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Monsters', 'Action', 'Sci-Fi', 'Military'],
     author: 'Naoya Matsumoto',
     year: 2020,
+    pillSlug: '4214/kaiju-no-8',
     mangadexId: '11c6d1e5-8296-492b-9285-3e284ef75574',
     description: 'Kafka Hibino cleans up kaiju corpses for a living. After unexpectedly ingesting a miniature kaiju, he gains monstrous power and attempts to join the elite Defense Force.'
   },
@@ -256,6 +269,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Sports', 'Soccer', 'Psychological', 'Shounen'],
     author: 'Muneyuki Kaneshiro',
     year: 2018,
+    pillSlug: '2089/blue-lock',
     mangadexId: 'd3f6630a-d820-43be-ba55-9dcb80e46114',
     description: '300 high school strikers are locked inside the revolutionary Blue Lock training facility to create the ultimate egoist striker who can lead Japan to World Cup glory.'
   },
@@ -270,6 +284,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Psychological', 'Supernatural', 'Thriller', 'Mystery'],
     author: 'Tsugumi Ohba & Takeshi Obata',
     year: 2003,
+    pillSlug: '938/death-note',
     mangadexId: 'b4c93297-b363-4390-84b7-874f676c6b42',
     description: 'Light Yagami finds a supernatural notebook dropped by a Shinigami that kills anyone whose name is written in it. A deadly game of cat and mouse begins with the eccentric detective L.'
   },
@@ -284,6 +299,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Action', 'Supernatural', 'Shounen', 'Sword'],
     author: 'Tite Kubo',
     year: 2001,
+    pillSlug: '3/bleach',
     mangadexId: 'b14beab2-780c-4860-bb4b-32bc8d91f868',
     description: 'Ichigo Kurosaki gains the abilities of a Soul Reaper after meeting Rukia Kuchiki and takes on the duty of defending humans from evil spirits known as Hollows.'
   },
@@ -298,6 +314,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Action', 'Historical', 'Ninja', 'Supernatural'],
     author: 'Yuji Kaku',
     year: 2018,
+    pillSlug: '2035/jigokuraku',
     mangadexId: '2b23a9d7-83eb-460b-80fb-4054238e8ec7',
     description: 'Gabimaru the Hollow, an unkillable ninja on death row, is offered a full pardon if he retrieves the Elixir of Life from a mythical island teeming with grotesque monsters.'
   },
@@ -312,6 +329,7 @@ export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
     tags: ['Drama', 'Mystery', 'Reincarnation', 'Entertainment'],
     author: 'Aka Akasaka & Mengo Yokoyari',
     year: 2020,
+    pillSlug: '4037/oshi-no-ko',
     mangadexId: '2961b79e-4ddc-461f-947a-e386f9a1bda5',
     description: 'A rural gynecologist is murdered and reincarnated as the child of his favorite pop idol Ai Hoshino, plunging into the dark realities of the entertainment industry.'
   }
@@ -322,14 +340,14 @@ export const GENRE_TAGS = [
   'Action',
   'Adventure',
   'Fantasy',
-  'Manhwa',
   'Dark Fantasy',
   'Shounen',
   'Supernatural',
   'Seinen',
   'Psychological',
   'Mystery',
-  'Comedy'
+  'Comedy',
+  'Manhwa'
 ];
 
 export const MangaApp: React.FC = () => {
@@ -337,7 +355,7 @@ export const MangaApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'catalog' | 'reader' | 'hub' | 'bookmarks'>('catalog');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeEngine, setActiveEngine] = useState<MangaEngine>('cubari');
+  const [activeEngine, setActiveEngine] = useState<MangaEngine>('mangapill');
 
   // Reader State
   const [activeManga, setActiveManga] = useState<MangaItem>(FLAGSHIP_MANGA_CATALOG[0]);
@@ -350,9 +368,9 @@ export const MangaApp: React.FC = () => {
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('godly_manga_bookmarks');
-      return saved ? JSON.parse(saved) : ['solo-leveling', 'jujutsu-kaisen', 'berserk'];
+      return saved ? JSON.parse(saved) : ['berserk', 'one-piece', 'jujutsu-kaisen'];
     } catch {
-      return ['solo-leveling'];
+      return ['berserk'];
     }
   });
 
@@ -405,23 +423,11 @@ export const MangaApp: React.FC = () => {
     sound.playSuccess();
     const val = customInputVal.trim();
 
-    // If user entered a full URL or MangaDex ID
     if (val.startsWith('http://') || val.startsWith('https://')) {
-      if (val.includes('cubari.moe')) {
-        setCustomReaderUrl(val);
-      } else if (val.includes('mangadex.org/title/')) {
-        const id = val.split('/title/')[1]?.split('/')[0];
-        setCustomReaderUrl(`https://cubari.moe/read/mangadex/${id}/`);
-      } else {
-        // Route through Cloudmoon Unblocker worker
-        setCustomReaderUrl(`https://google-classroom.sriail.workers.dev/?url=${encodeURIComponent(val)}`);
-      }
-    } else if (val.length === 36 && val.includes('-')) {
-      // Looks like a MangaDex UUID
-      setCustomReaderUrl(`https://cubari.moe/read/mangadex/${val}/`);
+      setCustomReaderUrl(val);
     } else {
-      // Search term: search MangaPill via unblocker
-      setCustomReaderUrl(`https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/search?q=${encodeURIComponent(val)}`);
+      // Search MangaPill directly
+      setCustomReaderUrl(`https://mangapill.com/search?q=${encodeURIComponent(val)}`);
     }
 
     setActiveTab('reader');
@@ -444,16 +450,21 @@ export const MangaApp: React.FC = () => {
   const currentReaderSrc = useMemo(() => {
     if (customReaderUrl) return customReaderUrl;
 
-    if (activeEngine === 'cubari') {
+    if (activeEngine === 'mangapill') {
+      if (activeManga.pillSlug) {
+        return `https://mangapill.com/manga/${activeManga.pillSlug}`;
+      }
+      return `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
+    }
+    if (activeEngine === 'cubari' && activeManga.mangadexId) {
       return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
     }
-    if (activeEngine === 'mangapill') {
-      return `https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
+    if (activeEngine === 'mangafire') {
+      return `https://mangafire.to/filter?keyword=${encodeURIComponent(activeManga.title)}`;
     }
-    if (activeEngine === 'manganato') {
-      return `https://google-classroom.sriail.workers.dev/?url=https://chapmanganato.to/search/story/${encodeURIComponent(activeManga.title.replace(/\s+/g, '_'))}`;
-    }
-    return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
+    return activeManga.pillSlug
+      ? `https://mangapill.com/manga/${activeManga.pillSlug}`
+      : `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
   }, [customReaderUrl, activeEngine, activeManga]);
 
   return (
@@ -470,7 +481,7 @@ export const MangaApp: React.FC = () => {
               <span className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
                 Godly Manga
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono font-bold">
-                  CUBARI HD
+                  UNBLOCKED
                 </span>
               </span>
             </div>
@@ -509,7 +520,7 @@ export const MangaApp: React.FC = () => {
                 activeTab === 'hub' ? 'bg-pink-600 text-white shadow-md' : 'text-white/60 hover:text-white'
               }`}
             >
-              <Globe size={13} /> Unblocked Hub
+              <Globe size={13} /> Manga Library (10,000+)
             </button>
             <button
               onClick={() => {
@@ -525,13 +536,13 @@ export const MangaApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Quick Manga / Cubari / URL Bar */}
+        {/* Right: Quick Manga Search / URL Bar */}
         <div className="flex items-center gap-3">
           <div className="relative w-72 hidden md:block">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
             <input
               type="text"
-              placeholder="Paste MangaDex link, UUID, or title..."
+              placeholder="Search manga or paste reader URL..."
               value={customInputVal}
               onChange={(e) => setCustomInputVal(e.target.value)}
               onKeyDown={(e) => {
@@ -543,7 +554,7 @@ export const MangaApp: React.FC = () => {
               onClick={handleLaunchCustomManga}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-pink-600 hover:bg-pink-500 text-[10px] font-bold text-white shadow-sm"
             >
-              Read
+              Search
             </button>
           </div>
 
@@ -575,13 +586,13 @@ export const MangaApp: React.FC = () => {
           <div className="relative rounded-3xl overflow-hidden p-8 bg-gradient-to-r from-pink-950 via-purple-950 to-slate-950 border border-white/10 shadow-2xl">
             <div className="relative z-10 max-w-xl space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-[11px] font-bold">
-                <Sparkles size={13} /> Official Cubari Moe Engine
+                <Sparkles size={13} /> High-Definition Real Scans Engine
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">
-                Solo Leveling &bull; Full Scanlation
+                Berserk &bull; Full Manga Series
               </h1>
               <p className="text-xs text-white/70 leading-relaxed">
-                Experience real, high-resolution manga and manhwa chapters directly via MangaDex & Cubari with zero ads, true multi-page flip, and vertical webtoon scrolling.
+                Read all 386+ chapters with authentic high-resolution scanlation panels, zero ad redirects, continuous webtoon vertical scroll, and instant chapter selection.
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <button
@@ -678,7 +689,7 @@ export const MangaApp: React.FC = () => {
                     </button>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
                       <span className="w-full py-1.5 rounded-xl bg-pink-600 text-center font-bold text-xs text-white shadow-lg flex items-center justify-center gap-1.5">
-                        <Eye size={13} /> Read Now
+                        <Eye size={13} /> Read Chapters
                       </span>
                     </div>
                   </div>
@@ -699,7 +710,7 @@ export const MangaApp: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW: ACTIVE READER VIEW (Cubari Moe Native Scans Engine) */}
+      {/* VIEW: ACTIVE READER VIEW (Embedded MangaPill / Real Scans Engine) */}
       {activeTab === 'reader' && (
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Reader Sub-Bar: Switch Engines & Series Info */}
@@ -717,8 +728,8 @@ export const MangaApp: React.FC = () => {
                   {customReaderUrl ? 'Custom Source Stream' : activeManga.title}
                 </span>
                 {!customReaderUrl && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono font-bold">
-                    MangaDex Verified
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">
+                    0 Block / Real Scans
                   </span>
                 )}
               </div>
@@ -726,22 +737,8 @@ export const MangaApp: React.FC = () => {
 
             {/* Engine Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-white/40 uppercase">Reader Engine:</span>
+              <span className="text-[10px] font-mono text-white/40 uppercase">Engine:</span>
               <div className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-xl border border-white/10">
-                <button
-                  onClick={() => {
-                    setActiveEngine('cubari');
-                    setCustomReaderUrl('');
-                    sound.playClick();
-                  }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
-                    activeEngine === 'cubari' && !customReaderUrl
-                      ? 'bg-pink-600 text-white'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  Cubari HD (Official)
-                </button>
                 <button
                   onClick={() => {
                     setActiveEngine('mangapill');
@@ -754,7 +751,35 @@ export const MangaApp: React.FC = () => {
                       : 'text-white/60 hover:text-white'
                   }`}
                 >
-                  MangaPill Cloud
+                  MangaPill (Recommended)
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('mangafire');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    activeEngine === 'mangafire' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  MangaFire
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('cubari');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    activeEngine === 'cubari' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Cubari Proxy
                 </button>
               </div>
             </div>
@@ -769,28 +794,28 @@ export const MangaApp: React.FC = () => {
               title="Godly Manga Reader"
               allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
               className="w-full h-full border-0 bg-black"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           </div>
         </div>
       )}
 
-      {/* VIEW: UNBLOCKED MANGA HUB (MangaPill / Online Search) */}
+      {/* VIEW: UNBLOCKED MANGA HUB (10,000+ Series) */}
       {activeTab === 'hub' && (
         <div className="flex-1 flex flex-col overflow-hidden bg-black">
           <div className="h-10 bg-[#090c20] border-b border-white/10 px-5 flex items-center justify-between text-xs text-white/60 shrink-0">
             <span className="flex items-center gap-2">
               <Globe size={14} className="text-pink-400" />
-              Unblocked Manga Discovery Hub &bull; Powered by Cloudmoon Edge Worker
+              Manga Library &bull; 10,000+ Manga, Manhwa & Comics
             </span>
-            <span className="text-[10px] font-mono text-emerald-400">0 CORS Restrictions &bull; 10,000+ Series</span>
+            <span className="text-[10px] font-mono text-emerald-400">Zero CORS &bull; Full Chapter Scans</span>
           </div>
           <iframe
-            src="https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/mangas"
-            title="Manga Hub"
+            src="https://mangapill.com/mangas"
+            title="Manga Library"
             allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
             className="w-full h-full border-0 bg-black"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         </div>
       )}
@@ -800,7 +825,7 @@ export const MangaApp: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           <div>
             <h1 className="text-2xl font-black text-white">Your Bookmarks</h1>
-            <p className="text-xs text-white/50">Manga and manhwa series saved to your local browser storage.</p>
+            <p className="text-xs text-white/50">Manga series saved to your local browser storage.</p>
           </div>
 
           {bookmarks.length === 0 ? (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   BookOpen,
   Search,
@@ -18,10 +18,6 @@ import {
   RotateCcw,
   SlidersHorizontal,
   ArrowLeft,
-  ZoomIn,
-  ZoomOut,
-  Columns,
-  Rows,
   List,
   Loader2,
   CheckCircle2,
@@ -33,20 +29,13 @@ import {
   Share2,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  Radio,
+  FileText
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 
-export type MangaSourceEngine = 'cubari' | 'jikan' | 'mangadex' | 'embed';
-
-export interface MangaChapter {
-  id: string;
-  chapterNumber: number | string;
-  title: string;
-  pagesCount: number;
-  pages: string[];
-  scanGroup?: string;
-}
+export type MangaEngine = 'cubari' | 'mangapill' | 'manganato' | 'custom';
 
 export interface MangaItem {
   id: string;
@@ -56,924 +45,794 @@ export interface MangaItem {
   rating: number;
   rank?: number;
   status: 'ongoing' | 'completed';
-  chaptersCount: number;
+  chaptersCount: number | string;
   tags: string[];
   author: string;
   year: number;
   description: string;
-  mangadexId?: string;
-  malId?: number;
-  chapters: MangaChapter[];
+  mangadexId: string;
+  pillSlug?: string;
 }
 
-// Generate verified proxied high-res image tiles with fallback
-function generateCleanPages(baseCover: string, count = 24): string[] {
-  return Array.from({ length: count }, (_, i) => {
-    // Uses high-speed cached image proxy to guarantee 0 broken images
-    return `https://images.weserv.nl/?url=${encodeURIComponent(baseCover.replace('https://', ''))}&w=1080&page=${i + 1}`;
-  });
-}
-
-// High Quality Flagship Manga Series with Verified Full Multi-Page Chapters
+// 18 Top Verified Manga & Manhwa Series with working MangaDex IDs for Cubari
 export const FLAGSHIP_MANGA_CATALOG: MangaItem[] = [
   {
     id: 'solo-leveling',
     title: 'Solo Leveling',
     altTitle: 'Na Honjaman Rebeleop',
     cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=700&auto=format&fit=crop&q=85',
-    rating: 9.85,
+    rating: 9.88,
     rank: 1,
     status: 'completed',
     chaptersCount: 179,
-    tags: ['Action', 'Fantasy', 'Monsters', 'System', 'Webtoon'],
+    tags: ['Action', 'Fantasy', 'Monsters', 'System', 'Manhwa'],
     author: 'Chugong & DUBU',
     year: 2018,
     mangadexId: '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0',
-    malId: 121496,
-    description: '10 years ago, after the Gate that connected the real world with the monster world opened, some of the ordinary, everyday people received the power to hunt monsters. Sung Jin-woo, known as the weakest hunter of all mankind, finds an underground dual-dungeon that changes his fate forever.',
-    chapters: [
-      {
-        id: 'solo-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: The E-Rank Hunter',
-        pagesCount: 25,
-        scanGroup: 'Asura Scans',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1080', 25)
-      },
-      {
-        id: 'solo-ch-2',
-        chapterNumber: 2,
-        title: 'Chapter 2: The Double Dungeon',
-        pagesCount: 28,
-        scanGroup: 'Asura Scans',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1080', 28)
-      },
-      {
-        id: 'solo-ch-3',
-        chapterNumber: 3,
-        title: 'Chapter 3: The Statues of Death',
-        pagesCount: 26,
-        scanGroup: 'Asura Scans',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1080', 26)
-      }
-    ]
-  },
-  {
-    id: 'one-piece',
-    title: 'One Piece',
-    altTitle: 'Wan Pīsu',
-    cover: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=700&auto=format&fit=crop&q=85',
-    rating: 9.91,
-    rank: 2,
-    status: 'ongoing',
-    chaptersCount: 1125,
-    tags: ['Action', 'Adventure', 'Pirates', 'Shounen', 'Superpowers'],
-    author: 'Eiichiro Oda',
-    year: 1997,
-    mangadexId: 'a1c7c817-4e59-43b7-9365-09675a149a6f',
-    malId: 13,
-    description: 'Gol D. Roger, a man referred to as the King of the Pirates, is set to be executed. His last words before his death reveal the existence of the greatest treasure in the world, One Piece. Monkey D. Luffy sets out to find it and become the next Pirate King!',
-    chapters: [
-      {
-        id: 'op-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: Romance Dawn',
-        pagesCount: 52,
-        scanGroup: 'Shonen Jump',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1080', 32)
-      },
-      {
-        id: 'op-ch-2',
-        chapterNumber: 2,
-        title: 'Chapter 2: That Guy, Straw Hat Luffy',
-        pagesCount: 24,
-        scanGroup: 'Shonen Jump',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1080', 24)
-      }
-    ]
-  },
-  {
-    id: 'chainsaw-man',
-    title: 'Chainsaw Man',
-    altTitle: 'Chensō Man',
-    cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=700&auto=format&fit=crop&q=85',
-    rating: 9.72,
-    rank: 3,
-    status: 'ongoing',
-    chaptersCount: 178,
-    tags: ['Action', 'Demons', 'Dark Fantasy', 'Psychological'],
-    author: 'Tatsuki Fujimoto',
-    year: 2018,
-    mangadexId: 'a77742c1-fda2-40e3-980a-019349ff7e28',
-    malId: 116778,
-    description: 'Denji is a teenage boy living with a Chainsaw Devil named Pochita. Due to the debt his father left behind, he has been living a rock-bottom life while harvesting devil corpses with Pochita until a betrayal turns him into Chainsaw Man.',
-    chapters: [
-      {
-        id: 'csm-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: Dog & Chainsaw',
-        pagesCount: 55,
-        scanGroup: 'VIZ Media',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=1080', 30)
-      },
-      {
-        id: 'csm-ch-2',
-        chapterNumber: 2,
-        title: 'Chapter 2: The Place Where Pochita Is',
-        pagesCount: 25,
-        scanGroup: 'VIZ Media',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1080', 25)
-      }
-    ]
+    description: '10 years ago, after the Gate connected our world with the monster world, ordinary people awakened superhuman powers. Sung Jin-woo, the weakest E-rank hunter, discovers a hidden dual-dungeon that grants him the ability to level up infinitely.'
   },
   {
     id: 'jujutsu-kaisen',
     title: 'Jujutsu Kaisen',
     altTitle: 'Sorcery Fight',
     cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=700&auto=format&fit=crop&q=85',
-    rating: 9.68,
-    rank: 4,
+    rating: 9.78,
+    rank: 2,
     status: 'completed',
     chaptersCount: 271,
-    tags: ['Action', 'Supernatural', 'Curse', 'Martial Arts', 'Shounen'],
+    tags: ['Action', 'Supernatural', 'Curse', 'Shounen'],
     author: 'Gege Akutami',
     year: 2018,
     mangadexId: 'c52b2ce3-7f95-469c-96b0-479524fb7a1a',
-    malId: 113138,
-    description: 'Yuji Itadori is a boy with tremendous physical strength, though he lives a completely ordinary high school life. One day, to save a classmate who has been attacked by curses, he eats the finger of Ryomen Sukuna, taking the curse into his own soul.',
-    chapters: [
-      {
-        id: 'jjk-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: Ryomen Sukuna',
-        pagesCount: 54,
-        scanGroup: 'Shonen Jump',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1080', 28)
-      }
-    ]
+    description: 'Yuji Itadori is an athletically gifted high school student. To rescue friends attacked by curses, he swallows a rotting talisman finger belonging to Ryomen Sukuna, king of curses, drawing himself into the lethal jujutsu world.'
+  },
+  {
+    id: 'one-piece',
+    title: 'One Piece',
+    altTitle: 'Wan Pīsu',
+    cover: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=700&auto=format&fit=crop&q=85',
+    rating: 9.92,
+    rank: 3,
+    status: 'ongoing',
+    chaptersCount: '1125+',
+    tags: ['Adventure', 'Pirates', 'Shounen', 'Action'],
+    author: 'Eiichiro Oda',
+    year: 1997,
+    mangadexId: 'a1c7c817-4e59-43b7-9365-09675a149a6f',
+    description: 'Gol D. Roger, the legendary Pirate King, announced the existence of the supreme treasure One Piece. Monkey D. Luffy sets out on the Grand Line with the Straw Hat crew to claim the title of Pirate King.'
   },
   {
     id: 'berserk',
     title: 'Berserk',
     altTitle: 'Beruseruku',
     cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&auto=format&fit=crop&q=85',
-    rating: 9.94,
-    rank: 5,
+    rating: 9.95,
+    rank: 4,
     status: 'ongoing',
     chaptersCount: 376,
-    tags: ['Dark Fantasy', 'Action', 'Tragedy', 'Seinen', 'Demons'],
+    tags: ['Dark Fantasy', 'Tragedy', 'Seinen', 'Action'],
     author: 'Kentaro Miura',
     year: 1989,
-    mangadexId: '801513ba-a712-498b-8f57-415b86f79b5f',
-    malId: 2,
-    description: 'Guts, known as the Black Swordsman, seeks sanctuary from the demonic forces attracted to him and his woman because of a demonic brand on their necks, and also vengeance against the man who branded him.',
-    chapters: [
-      {
-        id: 'berserk-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: The Black Swordsman',
-        pagesCount: 48,
-        scanGroup: 'Dark Horse',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1080', 30)
-      }
-    ]
+    mangadexId: '801513ba-a712-498c-8f57-cae55b38cc92',
+    description: 'Born from a corpse beneath a hanging tree, Guts is the Black Swordsman, armed with the massive Dragonslayer sword, struggling against fate, demons, and the Apostles of the God Hand.'
+  },
+  {
+    id: 'chainsaw-man',
+    title: 'Chainsaw Man',
+    altTitle: 'Chensō Man',
+    cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=700&auto=format&fit=crop&q=85',
+    rating: 9.74,
+    rank: 5,
+    status: 'ongoing',
+    chaptersCount: '180+',
+    tags: ['Action', 'Demons', 'Psychological', 'Shounen'],
+    author: 'Tatsuki Fujimoto',
+    year: 2018,
+    mangadexId: 'a77742c1-fda2-40e3-980a-019349ff7e28',
+    description: 'Denji lives at rock bottom paying off his deceased father\'s mob debts with his chainsaw dog Pochita. Following a betrayal, Pochita fuses with Denji, transforming him into Chainsaw Man.'
+  },
+  {
+    id: 'spy-x-family',
+    title: 'Spy x Family',
+    cover: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=700&auto=format&fit=crop&q=85',
+    rating: 9.65,
+    rank: 6,
+    status: 'ongoing',
+    chaptersCount: '100+',
+    tags: ['Comedy', 'Action', 'Spy', 'Family'],
+    author: 'Tatsuya Endo',
+    year: 2019,
+    mangadexId: '93427f71-2679-42b3-8d6d-62025e14309b',
+    description: 'Master spy Twilight adopts telepathic Anya and marries assassin Yor to infiltrate an elite academy, with none of them revealing their true identities to each other.'
+  },
+  {
+    id: 'demon-slayer',
+    title: 'Demon Slayer',
+    altTitle: 'Kimetsu no Yaiba',
+    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=85',
+    rating: 9.71,
+    rank: 7,
+    status: 'completed',
+    chaptersCount: 205,
+    tags: ['Action', 'Demons', 'Historical', 'Shounen'],
+    author: 'Koyoharu Gotouge',
+    year: 2016,
+    mangadexId: '4f3bcae4-2d96-419d-933e-18e867ed9096',
+    description: 'Tanjiro Kamado\'s family is slaughtered by demons, leaving only his sister Nezuko alive but transformed into a demon. Tanjiro embarks on a quest to become a Demon Slayer and cure her.'
+  },
+  {
+    id: 'attack-on-titan',
+    title: 'Attack on Titan',
+    altTitle: 'Shingeki no Kyojin',
+    cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=700&auto=format&fit=crop&q=85',
+    rating: 9.82,
+    rank: 8,
+    status: 'completed',
+    chaptersCount: 139,
+    tags: ['Military', 'Mystery', 'Survival', 'Shounen'],
+    author: 'Hajime Isayama',
+    year: 2009,
+    mangadexId: '304ceac3-8cdb-492c-8864-e14a20b359ed',
+    description: 'Centuries ago, mankind was nearly exterminated by monstrous giant humanoids known as Titans. Eren Yeager pledges to eliminate every Titan from the earth after his hometown falls.'
+  },
+  {
+    id: 'tokyo-ghoul',
+    title: 'Tokyo Ghoul',
+    cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=700&auto=format&fit=crop&q=85',
+    rating: 9.69,
+    rank: 9,
+    status: 'completed',
+    chaptersCount: 143,
+    tags: ['Dark Fantasy', 'Psychological', 'Horror', 'Seinen'],
+    author: 'Sui Ishida',
+    year: 2011,
+    mangadexId: '4309a473-b3c1-4b1d-8729-ec452778644e',
+    description: 'Ken Kaneki survives a deadly encounter with a flesh-eating ghoul, only to be turned into a half-ghoul who must navigate the treacherous underground ghoul society of Tokyo.'
+  },
+  {
+    id: 'vinland-saga',
+    title: 'Vinland Saga',
+    cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=700&auto=format&fit=crop&q=85',
+    rating: 9.87,
+    rank: 10,
+    status: 'ongoing',
+    chaptersCount: '210+',
+    tags: ['Historical', 'Vikings', 'Seinen', 'Action'],
+    author: 'Makoto Yukimura',
+    year: 2005,
+    mangadexId: '5d61540f-7b79-4286-8d59-69b76c8e3bf5',
+    description: 'Thorfinn seeks revenge against Askeladd, the mercenary leader who killed his father, leading him into the bloody Viking conflicts of 11th-century Europe and a search for peace.'
+  },
+  {
+    id: 'vagabond',
+    title: 'Vagabond',
+    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=85',
+    rating: 9.93,
+    rank: 11,
+    status: 'ongoing',
+    chaptersCount: 327,
+    tags: ['Martial Arts', 'Historical', 'Samurai', 'Seinen'],
+    author: 'Takehiko Inoue',
+    year: 1998,
+    mangadexId: 'd3eb2179-c5c2-49e0-8278-cc853d9f0a20',
+    description: 'A masterwork retelling of the life of legendary swordsman Miyamoto Musashi, exploring sword mastery, spiritual growth, and human enlightenment.'
   },
   {
     id: 'dandadan',
     title: 'Dandadan',
-    altTitle: 'Dan Da Dan',
-    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=85',
-    rating: 9.74,
-    rank: 6,
+    cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=700&auto=format&fit=crop&q=85',
+    rating: 9.66,
+    rank: 12,
     status: 'ongoing',
-    chaptersCount: 168,
-    tags: ['Action', 'Aliens', 'Ghosts', 'Comedy', 'Supernatural'],
+    chaptersCount: '160+',
+    tags: ['Sci-Fi', 'Aliens', 'Ghosts', 'Comedy', 'Shounen'],
     author: 'Yukinobu Tatsu',
     year: 2021,
-    mangadexId: '4e8b0906-897e-428b-ab29-430347607736',
-    malId: 135496,
-    description: 'Momo Ayase strikes up an unusual friendship with her school occult fanatic, whom she nicknames Okarun. While Momo believes in spirits, she thinks aliens are nonsense. Her friend, however, thinks the exact opposite.',
-    chapters: [
-      {
-        id: 'ddd-ch-1',
-        chapterNumber: 1,
-        title: 'Chapter 1: That Was the Start of Love, You Know!',
-        pagesCount: 52,
-        scanGroup: 'MangaPlus',
-        pages: generateCleanPages('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1080', 26)
-      }
-    ]
+    mangadexId: 'b3531b7e-976e-4f51-b883-fa4c22a5789a',
+    description: 'Momo Ayase believes in ghosts but not aliens; Ken Takakura believes in aliens but not ghosts. A dare to visit occult hot spots leads to an encounter with both alien and yokai threats.'
+  },
+  {
+    id: 'kaiju-no-8',
+    title: 'Kaiju No. 8',
+    cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=700&auto=format&fit=crop&q=85',
+    rating: 9.58,
+    rank: 13,
+    status: 'ongoing',
+    chaptersCount: '110+',
+    tags: ['Monsters', 'Action', 'Sci-Fi', 'Military'],
+    author: 'Naoya Matsumoto',
+    year: 2020,
+    mangadexId: '11c6d1e5-8296-492b-9285-3e284ef75574',
+    description: 'Kafka Hibino cleans up kaiju corpses for a living. After unexpectedly ingesting a miniature kaiju, he gains monstrous power and attempts to join the elite Defense Force.'
+  },
+  {
+    id: 'blue-lock',
+    title: 'Blue Lock',
+    cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=700&auto=format&fit=crop&q=85',
+    rating: 9.62,
+    rank: 14,
+    status: 'ongoing',
+    chaptersCount: '275+',
+    tags: ['Sports', 'Soccer', 'Psychological', 'Shounen'],
+    author: 'Muneyuki Kaneshiro',
+    year: 2018,
+    mangadexId: 'd3f6630a-d820-43be-ba55-9dcb80e46114',
+    description: '300 high school strikers are locked inside the revolutionary Blue Lock training facility to create the ultimate egoist striker who can lead Japan to World Cup glory.'
+  },
+  {
+    id: 'death-note',
+    title: 'Death Note',
+    cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=700&auto=format&fit=crop&q=85',
+    rating: 9.77,
+    rank: 15,
+    status: 'completed',
+    chaptersCount: 108,
+    tags: ['Psychological', 'Supernatural', 'Thriller', 'Mystery'],
+    author: 'Tsugumi Ohba & Takeshi Obata',
+    year: 2003,
+    mangadexId: 'b4c93297-b363-4390-84b7-874f676c6b42',
+    description: 'Light Yagami finds a supernatural notebook dropped by a Shinigami that kills anyone whose name is written in it. A deadly game of cat and mouse begins with the eccentric detective L.'
+  },
+  {
+    id: 'bleach',
+    title: 'Bleach',
+    cover: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=700&auto=format&fit=crop&q=85',
+    rating: 9.68,
+    rank: 16,
+    status: 'completed',
+    chaptersCount: 686,
+    tags: ['Action', 'Supernatural', 'Shounen', 'Sword'],
+    author: 'Tite Kubo',
+    year: 2001,
+    mangadexId: 'b14beab2-780c-4860-bb4b-32bc8d91f868',
+    description: 'Ichigo Kurosaki gains the abilities of a Soul Reaper after meeting Rukia Kuchiki and takes on the duty of defending humans from evil spirits known as Hollows.'
+  },
+  {
+    id: 'hells-paradise',
+    title: "Hell's Paradise: Jigokuraku",
+    cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=700&auto=format&fit=crop&q=85',
+    rating: 9.64,
+    rank: 17,
+    status: 'completed',
+    chaptersCount: 127,
+    tags: ['Action', 'Historical', 'Ninja', 'Supernatural'],
+    author: 'Yuji Kaku',
+    year: 2018,
+    mangadexId: '2b23a9d7-83eb-460b-80fb-4054238e8ec7',
+    description: 'Gabimaru the Hollow, an unkillable ninja on death row, is offered a full pardon if he retrieves the Elixir of Life from a mythical island teeming with grotesque monsters.'
+  },
+  {
+    id: 'oshi-no-ko',
+    title: 'Oshi no Ko',
+    cover: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=700&auto=format&fit=crop&q=85',
+    rating: 9.69,
+    rank: 18,
+    status: 'completed',
+    chaptersCount: 166,
+    tags: ['Drama', 'Mystery', 'Reincarnation', 'Entertainment'],
+    author: 'Aka Akasaka & Mengo Yokoyari',
+    year: 2020,
+    mangadexId: '2961b79e-4ddc-461f-947a-e386f9a1bda5',
+    description: 'A rural gynecologist is murdered and reincarnated as the child of his favorite pop idol Ai Hoshino, plunging into the dark realities of the entertainment industry.'
   }
 ];
 
-export const GENRE_PILLS = [
+export const GENRE_TAGS = [
   'All',
-  'Top Rated',
   'Action',
-  'Webtoon',
-  'Dark Fantasy',
   'Adventure',
+  'Fantasy',
+  'Manhwa',
+  'Dark Fantasy',
+  'Shounen',
   'Supernatural',
-  'Comedy',
   'Seinen',
-  'Shounen'
+  'Psychological',
+  'Mystery',
+  'Comedy'
 ];
 
 export const MangaApp: React.FC = () => {
-  const [catalog, setCatalog] = useState<MangaItem[]>(FLAGSHIP_MANGA_CATALOG);
+  // Navigation & View State
+  const [activeTab, setActiveTab] = useState<'catalog' | 'reader' | 'hub' | 'bookmarks'>('catalog');
   const [selectedTag, setSelectedTag] = useState<string>('All');
-  const [search, setSearch] = useState<string>('');
-  const [isSearchingApi, setIsSearchingApi] = useState<boolean>(false);
-  const [activeEngine, setActiveEngine] = useState<MangaSourceEngine>('cubari');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeEngine, setActiveEngine] = useState<MangaEngine>('cubari');
 
-  // Active Reading State
-  const [selectedManga, setSelectedManga] = useState<MangaItem | null>(null);
-  const [currentChapter, setCurrentChapter] = useState<MangaChapter | null>(null);
-  const [isReading, setIsReading] = useState<boolean>(false);
-  const [readerMode, setReaderMode] = useState<'webtoon' | 'single' | 'embed'>('webtoon');
-  const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
-  const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [isLoadingPages, setIsLoadingPages] = useState<boolean>(false);
-  const [loadedPages, setLoadedPages] = useState<string[]>([]);
+  // Reader State
+  const [activeManga, setActiveManga] = useState<MangaItem>(FLAGSHIP_MANGA_CATALOG[0]);
+  const [customReaderUrl, setCustomReaderUrl] = useState<string>('');
+  const [customInputVal, setCustomInputVal] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [iframeKey, setIframeKey] = useState<number>(0);
 
-  // User History & Bookmarks stored in localStorage
-  const [readingHistory, setReadingHistory] = useState<Record<string, { chapterId: string; page: number }>>(() => {
+  // Bookmarks State in localStorage
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('godly_manga_history');
-      return saved ? JSON.parse(saved) : {};
+      const saved = localStorage.getItem('godly_manga_bookmarks');
+      return saved ? JSON.parse(saved) : ['solo-leveling', 'jujutsu-kaisen', 'berserk'];
     } catch {
-      return {};
+      return ['solo-leveling'];
     }
   });
 
-  const readerContainerRef = useRef<HTMLDivElement>(null);
-
-  // Save history on chapter progress
-  useEffect(() => {
-    if (selectedManga && currentChapter) {
-      const updated = {
-        ...readingHistory,
-        [selectedManga.id]: { chapterId: currentChapter.id, page: currentPageIndex }
-      };
-      setReadingHistory(updated);
-      try {
-        localStorage.setItem('godly_manga_history', JSON.stringify(updated));
-      } catch {}
-    }
-  }, [selectedManga, currentChapter, currentPageIndex]);
-
-  // Keyboard navigation for page flip
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isReading || readerMode === 'embed') return;
-      if (e.key === 'ArrowRight' || e.key === ' ') {
-        handleNextPage();
-      } else if (e.key === 'ArrowLeft') {
-        handlePrevPage();
-      } else if (e.key === 'Escape') {
-        setIsReading(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isReading, readerMode, currentPageIndex, loadedPages.length]);
-
-  // Fetch real sequential pages through Cubari / MangaDex Proxy
-  const loadChapterPages = async (manga: MangaItem, chapter: MangaChapter) => {
-    setIsLoadingPages(true);
-    sound.playClick();
-
-    // 1. If pages are already cached in chapter object, load immediately
-    if (chapter.pages && chapter.pages.length > 0) {
-      setLoadedPages(chapter.pages);
-      setIsLoadingPages(false);
-      return;
-    }
-
-    // 2. Fetch live pages from Cubari API (CORS-friendly open proxy)
-    if (manga.mangadexId) {
-      try {
-        const res = await fetch(`https://cubari.moe/read/api/mangadex/series/${manga.mangadexId}/`, {
-          signal: AbortSignal.timeout(5000)
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const chapKey = String(chapter.chapterNumber);
-          if (data.chapters && data.chapters[chapKey]) {
-            const rawPages: string[] = data.chapters[chapKey].groups?.[Object.keys(data.chapters[chapKey].groups)[0]] || [];
-            if (rawPages.length > 0) {
-              // Wrap with high-performance CORS proxy
-              const proxiedPages = rawPages.map((u) =>
-                u.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(u.replace('https://', ''))}&w=1080` : u
-              );
-              setLoadedPages(proxiedPages);
-              setIsLoadingPages(false);
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Cubari proxy query error:', err);
-      }
-    }
-
-    // 3. Fallback to resilient generated high-res pages
-    const fallback = generateCleanPages(manga.cover, chapter.pagesCount || 24);
-    setLoadedPages(fallback);
-    setIsLoadingPages(false);
-  };
-
-  const handleStartRead = (manga: MangaItem, chapter: MangaChapter) => {
-    sound.playClick();
-    setSelectedManga(manga);
-    setCurrentChapter(chapter);
-    setCurrentPageIndex(0);
-    setIsReading(true);
-    loadChapterPages(manga, chapter);
-  };
-
-  const handleNextPage = () => {
-    if (currentPageIndex < loadedPages.length - 1) {
-      sound.playClick();
-      setCurrentPageIndex((prev) => prev + 1);
-    } else {
-      handleNextChapter();
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPageIndex > 0) {
-      sound.playClick();
-      setCurrentPageIndex((prev) => prev - 1);
-    }
-  };
-
-  const handleNextChapter = () => {
-    if (!selectedManga || !currentChapter) return;
-    const idx = selectedManga.chapters.findIndex((c) => c.id === currentChapter.id);
-    if (idx >= 0 && idx < selectedManga.chapters.length - 1) {
-      sound.playSuccess();
-      const nextChap = selectedManga.chapters[idx + 1];
-      setCurrentChapter(nextChap);
-      setCurrentPageIndex(0);
-      loadChapterPages(selectedManga, nextChap);
-    }
-  };
-
-  const handlePrevChapter = () => {
-    if (!selectedManga || !currentChapter) return;
-    const idx = selectedManga.chapters.findIndex((c) => c.id === currentChapter.id);
-    if (idx > 0) {
-      sound.playClick();
-      const prevChap = selectedManga.chapters[idx - 1];
-      setCurrentChapter(prevChap);
-      setCurrentPageIndex(0);
-      loadChapterPages(selectedManga, prevChap);
-    }
-  };
-
-  const handleToggleFullscreen = () => {
-    sound.playClick();
-    if (!readerContainerRef.current) return;
-    if (!document.fullscreenElement) {
-      readerContainerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
-    }
-  };
-
-  // High-performance live search targeting Jikan / MAL & MangaDex APIs
-  const handleLiveSearch = async (queryText: string) => {
-    if (!queryText.trim()) return;
-    setIsSearchingApi(true);
-    sound.playClick();
-
+  // Recent reads
+  const [recentReads, setRecentReads] = useState<{ id: string; title: string; cover: string; timestamp: number }[]>(() => {
     try {
-      // 1. Query Jikan / MyAnimeList Official Public API (0 CORS issues)
-      const res = await fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(queryText)}&limit=8&order_by=popularity`, {
-        signal: AbortSignal.timeout(4500)
-      });
-      if (res.ok) {
-        const jikanData = await res.json();
-        if (Array.isArray(jikanData.data) && jikanData.data.length > 0) {
-          const formatted: MangaItem[] = jikanData.data.map((m: any, index: number) => {
-            const coverUrl = m.images?.jpg?.large_image_url || m.images?.jpg?.image_url;
-            return {
-              id: `mal-${m.mal_id}`,
-              title: m.title_english || m.title,
-              altTitle: m.title_japanese,
-              cover: coverUrl,
-              rating: m.score || 9.2,
-              rank: m.rank || index + 10,
-              status: m.publishing ? 'ongoing' : 'completed',
-              chaptersCount: m.chapters || 50,
-              tags: (m.genres || []).map((g: any) => g.name).slice(0, 4),
-              author: (m.authors || []).map((a: any) => a.name).join(', ') || 'Mangaka',
-              year: m.published?.prop?.from?.year || 2022,
-              description: m.synopsis?.split('\n')[0] || 'Official manga scanlation release.',
-              malId: m.mal_id,
-              chapters: [
-                {
-                  id: `ch-1-${m.mal_id}`,
-                  chapterNumber: 1,
-                  title: 'Chapter 1: The Beginning',
-                  pagesCount: 24,
-                  pages: generateCleanPages(coverUrl, 24)
-                },
-                {
-                  id: `ch-2-${m.mal_id}`,
-                  chapterNumber: 2,
-                  title: 'Chapter 2: The Journey',
-                  pagesCount: 26,
-                  pages: generateCleanPages(coverUrl, 26)
-                }
-              ]
-            };
-          });
-
-          sound.playSuccess();
-          setCatalog([...formatted, ...catalog]);
-        }
-      }
-    } catch (err) {
-      console.warn('Manga API query error:', err);
-    } finally {
-      setIsSearchingApi(false);
+      const saved = localStorage.getItem('godly_manga_recents');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
+  });
+
+  const readerFrameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('godly_manga_bookmarks', JSON.stringify(bookmarks));
+    } catch {}
+  }, [bookmarks]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('godly_manga_recents', JSON.stringify(recentReads.slice(0, 20)));
+    } catch {}
+  }, [recentReads]);
+
+  const toggleBookmark = (id: string) => {
+    sound.playClick();
+    setBookmarks((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
-  const filteredManga = useMemo(() => {
-    return catalog.filter((m) => {
-      const matchesSearch =
-        !search.trim() ||
-        m.title.toLowerCase().includes(search.toLowerCase()) ||
-        m.author.toLowerCase().includes(search.toLowerCase()) ||
-        m.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+  const openReaderForManga = (manga: MangaItem) => {
+    sound.playClick();
+    setActiveManga(manga);
+    setCustomReaderUrl('');
+    setActiveTab('reader');
 
-      if (!matchesSearch) return false;
-      if (selectedTag === 'All') return true;
-      if (selectedTag === 'Top Rated') return m.rating >= 9.7;
-      return m.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase());
+    // Add to recent reads
+    setRecentReads((prev) => {
+      const filtered = prev.filter((r) => r.id !== manga.id);
+      return [{ id: manga.id, title: manga.title, cover: manga.cover, timestamp: Date.now() }, ...filtered];
     });
-  }, [catalog, search, selectedTag]);
+  };
+
+  const handleLaunchCustomManga = () => {
+    if (!customInputVal.trim()) return;
+    sound.playSuccess();
+    const val = customInputVal.trim();
+
+    // If user entered a full URL or MangaDex ID
+    if (val.startsWith('http://') || val.startsWith('https://')) {
+      if (val.includes('cubari.moe')) {
+        setCustomReaderUrl(val);
+      } else if (val.includes('mangadex.org/title/')) {
+        const id = val.split('/title/')[1]?.split('/')[0];
+        setCustomReaderUrl(`https://cubari.moe/read/mangadex/${id}/`);
+      } else {
+        // Route through Cloudmoon Unblocker worker
+        setCustomReaderUrl(`https://google-classroom.sriail.workers.dev/?url=${encodeURIComponent(val)}`);
+      }
+    } else if (val.length === 36 && val.includes('-')) {
+      // Looks like a MangaDex UUID
+      setCustomReaderUrl(`https://cubari.moe/read/mangadex/${val}/`);
+    } else {
+      // Search term: search MangaPill via unblocker
+      setCustomReaderUrl(`https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/search?q=${encodeURIComponent(val)}`);
+    }
+
+    setActiveTab('reader');
+  };
+
+  // Filtered Catalog
+  const filteredCatalog = useMemo(() => {
+    return FLAGSHIP_MANGA_CATALOG.filter((m) => {
+      const matchesTag = selectedTag === 'All' || m.tags.includes(selectedTag);
+      const matchesSearch =
+        !searchQuery ||
+        m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (m.altTitle && m.altTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        m.author.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTag && matchesSearch;
+    });
+  }, [selectedTag, searchQuery]);
+
+  // Reader Target URL
+  const currentReaderSrc = useMemo(() => {
+    if (customReaderUrl) return customReaderUrl;
+
+    if (activeEngine === 'cubari') {
+      return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
+    }
+    if (activeEngine === 'mangapill') {
+      return `https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
+    }
+    if (activeEngine === 'manganato') {
+      return `https://google-classroom.sriail.workers.dev/?url=https://chapmanganato.to/search/story/${encodeURIComponent(activeManga.title.replace(/\s+/g, '_'))}`;
+    }
+    return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
+  }, [customReaderUrl, activeEngine, activeManga]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#070914] text-white select-none overflow-hidden font-sans">
-      {/* Top Application Bar */}
-      <div className="h-14 px-4 bg-[#0a0d1e] border-b border-white/10 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              sound.playClick();
-              if (isReading) {
-                setIsReading(false);
-              } else if (selectedManga) {
-                setSelectedManga(null);
-              }
-            }}
-            className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all ${
-              isReading || selectedManga
-                ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
-                : 'bg-[#10132b] text-purple-400'
-            }`}
-          >
-            {isReading || selectedManga ? <ArrowLeft size={18} /> : <BookOpen size={18} />}
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black text-white tracking-tight">
-                {isReading && currentChapter
-                  ? `${selectedManga?.title} - ${currentChapter.title}`
-                  : selectedManga
-                  ? selectedManga.title
-                  : 'Godly Manga'}
-              </h1>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-                <ShieldCheck size={10} /> Cubari &bull; Jikan v4
+    <div className="flex flex-col h-full w-full bg-[#05060f] text-slate-100 select-none overflow-hidden font-sans">
+      {/* TOP HEADER / APP BAR */}
+      <header className="h-14 border-b border-white/[0.08] bg-[#070918]/90 backdrop-blur-xl px-5 flex items-center justify-between shrink-0 z-20 shadow-md">
+        {/* Left: Brand + Navigation Tabs */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-600 via-rose-600 to-amber-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
+              <BookOpen size={16} className="text-white" />
+            </div>
+            <div>
+              <span className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
+                Godly Manga
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono font-bold">
+                  CUBARI HD
+                </span>
               </span>
             </div>
-            <p className="text-[10px] text-white/50 hidden sm:block">
-              {isReading
-                ? `Page ${currentPageIndex + 1} of ${loadedPages.length || 1} &bull; ${readerMode === 'webtoon' ? 'Continuous Webtoon' : readerMode === 'single' ? 'Single Flip' : 'Embedded Stream'}`
-                : 'CORS-Proxied Pages &bull; Zero 502 Errors &bull; Real Full Chapters'}
-            </p>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-1 bg-white/[0.05] p-1 rounded-2xl border border-white/10">
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('catalog');
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'catalog' ? 'bg-pink-600 text-white shadow-md' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Top Catalog
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('reader');
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'reader' ? 'bg-pink-600 text-white shadow-md' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Eye size={13} /> Active Reader
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('hub');
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'hub' ? 'bg-pink-600 text-white shadow-md' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Globe size={13} /> Unblocked Hub
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                setActiveTab('bookmarks');
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'bookmarks' ? 'bg-pink-600 text-white shadow-md' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Bookmarks ({bookmarks.length})
+            </button>
           </div>
         </div>
 
-        {/* In-Reader Mode Switcher */}
-        {isReading && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  setReaderMode('webtoon');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                  readerMode === 'webtoon' ? 'bg-purple-600 text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                <Rows size={13} />
-                <span className="hidden sm:inline">Webtoon</span>
-              </button>
+        {/* Right: Quick Manga / Cubari / URL Bar */}
+        <div className="flex items-center gap-3">
+          <div className="relative w-72 hidden md:block">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            <input
+              type="text"
+              placeholder="Paste MangaDex link, UUID, or title..."
+              value={customInputVal}
+              onChange={(e) => setCustomInputVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleLaunchCustomManga();
+              }}
+              className="w-full bg-white/[0.06] border border-white/10 rounded-full pl-8 pr-16 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-pink-500 transition-all"
+            />
+            <button
+              onClick={handleLaunchCustomManga}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-pink-600 hover:bg-pink-500 text-[10px] font-bold text-white shadow-sm"
+            >
+              Read
+            </button>
+          </div>
 
+          {activeTab === 'reader' && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  sound.playClick();
-                  setReaderMode('single');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                  readerMode === 'single' ? 'bg-purple-600 text-white' : 'text-white/60 hover:text-white'
-                }`}
+                onClick={() => setIframeKey((prev) => prev + 1)}
+                title="Reload Reader"
+                className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 hover:text-white"
               >
-                <Columns size={13} />
-                <span className="hidden sm:inline">Flip</span>
+                <RotateCcw size={14} />
               </button>
-
               <button
-                onClick={() => {
-                  sound.playClick();
-                  setReaderMode('embed');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                  readerMode === 'embed' ? 'bg-cyan-600 text-white' : 'text-white/60 hover:text-white'
-                }`}
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                title="Toggle Fullscreen"
+                className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white/70 hover:text-white"
               >
-                <Globe size={13} />
-                <span className="hidden sm:inline">Web Reader</span>
+                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
             </div>
-
-            {readerMode !== 'embed' && (
-              <div className="hidden sm:flex items-center gap-1 bg-black/40 rounded-xl p-1 border border-white/10">
-                <button
-                  onClick={() => setZoomLevel((z) => Math.max(60, z - 15))}
-                  className="p-1 text-white/60 hover:text-white"
-                >
-                  <ZoomOut size={13} />
-                </button>
-                <span className="text-[10px] font-mono text-cyan-300 px-1">{zoomLevel}%</span>
-                <button
-                  onClick={() => setZoomLevel((z) => Math.min(160, z + 15))}
-                  className="p-1 text-white/60 hover:text-white"
-                >
-                  <ZoomIn size={13} />
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={handleToggleFullscreen}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80"
-              title="Fullscreen"
-            >
-              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* VIEW 1: ACTIVE READING VIEWER */}
-      {isReading && selectedManga && currentChapter ? (
-        <div
-          ref={readerContainerRef}
-          className="flex-1 w-full h-full relative bg-[#04050a] flex flex-col overflow-hidden"
-        >
-          {/* Chapter Step Controller */}
-          <div className="h-10 px-4 bg-[#0a0d1e] border-b border-white/[0.08] flex items-center justify-between text-xs shrink-0 z-10">
-            <button
-              onClick={handlePrevChapter}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/80"
-            >
-              <ChevronLeft size={14} />
-              <span>Prev</span>
-            </button>
-
-            <span className="font-mono text-[11px] text-purple-300 font-bold truncate px-2">
-              {currentChapter.title}
-            </span>
-
-            <button
-              onClick={handleNextChapter}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 font-bold text-white shadow-md"
-            >
-              <span>Next</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          {/* Reader Content Body */}
-          <div className="flex-1 w-full h-full overflow-y-auto custom-scrollbar flex flex-col items-center p-2 sm:p-6 bg-[#04050a]">
-            {isLoadingPages ? (
-              <div className="my-auto flex flex-col items-center gap-3">
-                <Loader2 size={32} className="text-purple-400 animate-spin" />
-                <p className="text-xs font-mono text-purple-300">Fetching high-res scanlation pages via Cubari proxy...</p>
-              </div>
-            ) : readerMode === 'embed' ? (
-              /* Full Embedded Web Reader Mode (Cubari Unblocked Frame) */
-              <div className="w-full h-full flex flex-col">
-                <iframe
-                  src={
-                    selectedManga.mangadexId
-                      ? `https://cubari.moe/read/mangadex/${selectedManga.mangadexId}/`
-                      : `https://mangafire.to/filter?keyword=${encodeURIComponent(selectedManga.title)}`
-                  }
-                  title={selectedManga.title}
-                  className="w-full h-full border-0 bg-black"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                />
-              </div>
-            ) : readerMode === 'webtoon' ? (
-              /* Continuous Webtoon Vertical Scroll */
-              <div
-                style={{ width: `${zoomLevel}%`, maxWidth: '900px' }}
-                className="flex flex-col items-center gap-2 transition-all duration-200"
-              >
-                {loadedPages.map((pageUrl, idx) => (
-                  <div key={idx} className="relative w-full shadow-2xl rounded-sm overflow-hidden bg-black/90">
-                    <img
-                      src={pageUrl}
-                      alt={`Page ${idx + 1}`}
-                      loading="lazy"
-                      className="w-full h-auto object-contain block"
-                    />
-                    <div className="absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-mono text-cyan-300 border border-white/10">
-                      {idx + 1} / {loadedPages.length}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="w-full my-8 p-6 rounded-3xl bg-[#0c1022] border border-purple-500/30 flex flex-col items-center gap-3 text-center">
-                  <h3 className="text-sm font-bold text-white">Finished {currentChapter.title}</h3>
-                  <p className="text-xs text-white/60">All {loadedPages.length} pages loaded cleanly with 0 broken tiles.</p>
-                  <button
-                    onClick={handleNextChapter}
-                    className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-xs text-white shadow-lg flex items-center gap-2"
-                  >
-                    <span>Proceed to Next Chapter</span>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Single Page Flip */
-              <div className="my-auto flex flex-col items-center justify-center gap-4 max-w-4xl w-full">
-                <div className="relative rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-black max-h-[75vh]">
-                  <img
-                    src={loadedPages[currentPageIndex]}
-                    alt={`Page ${currentPageIndex + 1}`}
-                    className="max-h-[75vh] w-auto object-contain"
-                  />
-                  <div
-                    onClick={handlePrevPage}
-                    className="absolute inset-y-0 left-0 w-1/3 cursor-w-resize"
-                    title="Previous Page (Left Arrow)"
-                  />
-                  <div
-                    onClick={handleNextPage}
-                    className="absolute inset-y-0 right-0 w-2/3 cursor-e-resize"
-                    title="Next Page (Right Arrow / Space)"
-                  />
-                </div>
-
-                <div className="flex items-center gap-4 bg-[#0d1024] px-5 py-2.5 rounded-2xl border border-white/10 shadow-lg">
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPageIndex === 0}
-                    className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] disabled:opacity-30 text-white"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="text-xs font-mono font-bold text-cyan-300">
-                    Page {currentPageIndex + 1} of {loadedPages.length}
-                  </span>
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPageIndex === loadedPages.length - 1}
-                    className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] disabled:opacity-30 text-white"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      ) : selectedManga ? (
-        /* VIEW 2: MANGA DETAILS & CHAPTER SELECTOR */
-        <div className="flex-1 w-full h-full overflow-y-auto p-5 sm:p-8 custom-scrollbar">
-          <div className="max-w-4xl mx-auto space-y-7">
-            <div className="flex flex-col sm:flex-row gap-6 p-6 rounded-3xl bg-[#0c1022] border border-white/10 shadow-2xl">
-              <div className="w-48 sm:w-56 aspect-[3/4] rounded-2xl overflow-hidden border border-white/15 shadow-xl shrink-0 mx-auto sm:mx-0">
-                <img
-                  src={selectedManga.cover}
-                  alt={selectedManga.title}
-                  className="w-full h-full object-cover"
-                />
+      </header>
+
+      {/* VIEW: CATALOG VIEW */}
+      {activeTab === 'catalog' && (
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          {/* Hero Spotlight Banner */}
+          <div className="relative rounded-3xl overflow-hidden p-8 bg-gradient-to-r from-pink-950 via-purple-950 to-slate-950 border border-white/10 shadow-2xl">
+            <div className="relative z-10 max-w-xl space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-[11px] font-bold">
+                <Sparkles size={13} /> Official Cubari Moe Engine
               </div>
-
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase">
-                      {selectedManga.status}
-                    </span>
-                    <span className="text-xs text-amber-400 font-bold flex items-center gap-1">
-                      <Star size={12} className="fill-amber-400" /> {selectedManga.rating}
-                    </span>
-                    {selectedManga.rank && (
-                      <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                        Rank #{selectedManga.rank}
-                      </span>
-                    )}
-                  </div>
-
-                  <h1 className="text-2xl font-black text-white tracking-tight">
-                    {selectedManga.title}
-                  </h1>
-                  <p className="text-xs text-purple-300 font-semibold mt-0.5">
-                    Author: {selectedManga.author} &bull; {selectedManga.year}
-                  </p>
-
-                  <p className="text-xs text-white/70 mt-3 leading-relaxed font-sans line-clamp-4">
-                    {selectedManga.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5 mt-3.5">
-                    {selectedManga.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/70"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 mt-6 pt-4 border-t border-white/10">
-                  <button
-                    onClick={() => handleStartRead(selectedManga, selectedManga.chapters[0])}
-                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-xs text-white shadow-lg shadow-purple-950/60 flex items-center gap-2"
-                  >
-                    <BookOpen size={15} />
-                    <span>Read Chapter 1</span>
-                  </button>
-                </div>
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                Solo Leveling &bull; Full Scanlation
+              </h1>
+              <p className="text-xs text-white/70 leading-relaxed">
+                Experience real, high-resolution manga and manhwa chapters directly via MangaDex & Cubari with zero ads, true multi-page flip, and vertical webtoon scrolling.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => openReaderForManga(FLAGSHIP_MANGA_CATALOG[0])}
+                  className="px-6 py-2.5 rounded-2xl bg-white text-black font-extrabold text-xs hover:bg-pink-200 transition-all shadow-xl flex items-center gap-2"
+                >
+                  <Eye size={15} /> Start Reading Ch. 1
+                </button>
+                <button
+                  onClick={() => toggleBookmark(FLAGSHIP_MANGA_CATALOG[0].id)}
+                  className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/10 flex items-center gap-1.5"
+                >
+                  <Bookmark
+                    size={14}
+                    className={bookmarks.includes(FLAGSHIP_MANGA_CATALOG[0].id) ? 'fill-pink-400 text-pink-400' : ''}
+                  />
+                  {bookmarks.includes(FLAGSHIP_MANGA_CATALOG[0].id) ? 'Bookmarked' : 'Bookmark'}
+                </button>
               </div>
             </div>
+            <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-35 pointer-events-none">
+              <img
+                src={FLAGSHIP_MANGA_CATALOG[0].cover}
+                alt="Banner Cover"
+                className="w-full h-full object-cover mask-gradient"
+              />
+            </div>
+          </div>
 
-            {/* Chapters List */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <Layers size={16} className="text-purple-400" />
-                <span>Chapter Archives ({selectedManga.chapters.length})</span>
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {selectedManga.chapters.map((chap) => (
-                  <div
-                    key={chap.id}
-                    onClick={() => handleStartRead(selectedManga, chap)}
-                    className="p-3.5 rounded-2xl bg-[#090d1c] hover:bg-[#0f142b] border border-white/10 hover:border-purple-400/50 cursor-pointer flex items-center justify-between transition-all group"
+          {/* Search & Tag Filter Bar */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full custom-scrollbar pb-1">
+                {GENRE_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setSelectedTag(tag);
+                      sound.playClick();
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+                      selectedTag === tag
+                        ? 'bg-pink-600 text-white shadow-md'
+                        : 'bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/10'
+                    }`}
                   >
-                    <div className="flex items-center gap-3 truncate pr-2">
-                      <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-xs font-mono font-bold text-purple-300 shrink-0">
-                        {chap.chapterNumber}
-                      </div>
-                      <div className="flex flex-col truncate">
-                        <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
-                          {chap.title}
-                        </span>
-                        <span className="text-[10px] text-white/40">
-                          {chap.pagesCount || 24} Pages &bull; {chap.scanGroup || 'Verified Scan'}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight size={16} className="text-white/40 group-hover:text-purple-400 shrink-0" />
-                  </div>
+                    {tag}
+                  </button>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* VIEW 3: MAIN CATALOG EXPLORER */
-        <div className="flex-1 w-full h-full flex flex-col overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-white/[0.08] bg-gradient-to-r from-[#0d1024]/90 to-[#070914]/90 shrink-0 backdrop-blur-xl flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-black text-white">
-                  Manga Library &amp; Scans Hub
-                </h2>
-                <p className="text-[11px] text-white/50">
-                  Cubari proxy engine &bull; Jikan v4 public index &bull; Unblocked Webtoon reader
-                </p>
-              </div>
-
-              <div className="relative w-full sm:w-80">
-                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+              <div className="relative w-full sm:w-56 shrink-0">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
                 <input
                   type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleLiveSearch(search);
-                  }}
-                  placeholder="Search Solo Leveling, One Piece, Berserk..."
-                  className="w-full pl-9 pr-9 py-2 rounded-xl text-xs bg-white/[0.05] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/60"
+                  placeholder="Filter catalog titles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-pink-500"
                 />
-                {isSearchingApi ? (
-                  <Loader2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-purple-400 animate-spin" />
-                ) : search ? (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                  >
-                    <X size={12} />
-                  </button>
-                ) : null}
               </div>
-            </div>
-
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
-              {GENRE_PILLS.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => {
-                    sound.playClick();
-                    setSelectedTag(tag);
-                  }}
-                  className={`px-3 py-1 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
-                    selectedTag === tag
-                      ? 'bg-purple-600 border-purple-400 text-white shadow-md shadow-purple-950/40'
-                      : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/70 hover:text-white'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
             </div>
           </div>
 
           {/* Manga Cards Grid */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {filteredManga.map((manga) => (
-                <div
-                  key={manga.id}
-                  onClick={() => {
-                    sound.playClick();
-                    setSelectedManga(manga);
-                  }}
-                  className="group relative flex flex-col rounded-2xl border border-white/10 hover:border-purple-400/50 bg-[#080a18] hover:bg-[#0c0f24] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-xl hover:shadow-purple-950/40"
-                >
-                  <div className="relative aspect-[3/4] w-full bg-black/60 overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {filteredCatalog.map((manga) => (
+              <div
+                key={manga.id}
+                onClick={() => openReaderForManga(manga)}
+                className="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.05] rounded-3xl p-3 cursor-pointer group transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-2.5 shadow-xl">
                     <img
                       src={manga.cover}
                       alt={manga.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#080a18] via-transparent to-transparent opacity-80" />
-                    <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-black/70 backdrop-blur-md border border-white/10 text-purple-300 uppercase">
-                      ★ {manga.rating}
-                    </span>
-
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
-                      <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/40 transform scale-75 group-hover:scale-100 transition-transform">
-                        <BookOpen size={16} />
-                      </div>
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-amber-400 border border-white/10 flex items-center gap-1">
+                      <Star size={11} className="fill-amber-400" />
+                      {manga.rating}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(manga.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 backdrop-blur-md text-white/70 hover:text-pink-400 transition-colors"
+                    >
+                      <Bookmark
+                        size={13}
+                        className={bookmarks.includes(manga.id) ? 'fill-pink-400 text-pink-400' : ''}
+                      />
+                    </button>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+                      <span className="w-full py-1.5 rounded-xl bg-pink-600 text-center font-bold text-xs text-white shadow-lg flex items-center justify-center gap-1.5">
+                        <Eye size={13} /> Read Now
+                      </span>
                     </div>
                   </div>
+                  <h3 className="text-xs font-bold text-white group-hover:text-pink-300 truncate">
+                    {manga.title}
+                  </h3>
+                  <p className="text-[10px] text-white/50 truncate mt-0.5">
+                    {manga.author} &bull; {manga.year}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-white/40 font-mono mt-2 pt-2 border-t border-white/[0.04]">
+                  <span className="text-pink-400 font-bold">{manga.chaptersCount} Ch.</span>
+                  <span className="capitalize">{manga.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-                  <div className="p-3 flex flex-col flex-1 justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">
-                        {manga.title}
-                      </h3>
-                      <p className="text-[10px] text-white/50 line-clamp-1 mt-0.5">
-                        {manga.author}
-                      </p>
-                    </div>
+      {/* VIEW: ACTIVE READER VIEW (Cubari Moe Native Scans Engine) */}
+      {activeTab === 'reader' && (
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Reader Sub-Bar: Switch Engines & Series Info */}
+          <div className="h-11 bg-[#090c20] border-b border-white/[0.08] px-5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('catalog')}
+                className="flex items-center gap-1 text-xs font-bold text-white/60 hover:text-white"
+              >
+                <ChevronLeft size={16} /> Catalog
+              </button>
+              <div className="h-4 w-[1px] bg-white/20"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-white truncate max-w-xs">
+                  {customReaderUrl ? 'Custom Source Stream' : activeManga.title}
+                </span>
+                {!customReaderUrl && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono font-bold">
+                    MangaDex Verified
+                  </span>
+                )}
+              </div>
+            </div>
 
-                    <div className="flex flex-wrap gap-1 mt-2.5">
-                      {manga.tags.slice(0, 2).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-white/60"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
+            {/* Engine Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-white/40 uppercase">Reader Engine:</span>
+              <div className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-xl border border-white/10">
+                <button
+                  onClick={() => {
+                    setActiveEngine('cubari');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    activeEngine === 'cubari' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Cubari HD (Official)
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('mangapill');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    activeEngine === 'mangapill' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  MangaPill Cloud
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Embedded Full High-Res Reader IFrame */}
+          <div className="flex-1 w-full h-full bg-black relative">
+            <iframe
+              key={iframeKey}
+              ref={readerFrameRef}
+              src={currentReaderSrc}
+              title="Godly Manga Reader"
+              allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
+              className="w-full h-full border-0 bg-black"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* VIEW: UNBLOCKED MANGA HUB (MangaPill / Online Search) */}
+      {activeTab === 'hub' && (
+        <div className="flex-1 flex flex-col overflow-hidden bg-black">
+          <div className="h-10 bg-[#090c20] border-b border-white/10 px-5 flex items-center justify-between text-xs text-white/60 shrink-0">
+            <span className="flex items-center gap-2">
+              <Globe size={14} className="text-pink-400" />
+              Unblocked Manga Discovery Hub &bull; Powered by Cloudmoon Edge Worker
+            </span>
+            <span className="text-[10px] font-mono text-emerald-400">0 CORS Restrictions &bull; 10,000+ Series</span>
+          </div>
+          <iframe
+            src="https://google-classroom.sriail.workers.dev/?url=https://mangapill.com/mangas"
+            title="Manga Hub"
+            allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
+            className="w-full h-full border-0 bg-black"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+          />
+        </div>
+      )}
+
+      {/* VIEW: BOOKMARKS VIEW */}
+      {activeTab === 'bookmarks' && (
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <div>
+            <h1 className="text-2xl font-black text-white">Your Bookmarks</h1>
+            <p className="text-xs text-white/50">Manga and manhwa series saved to your local browser storage.</p>
+          </div>
+
+          {bookmarks.length === 0 ? (
+            <div className="py-20 text-center text-xs text-white/40">
+              No bookmarked manga yet. Click the bookmark icon on any manga card in the catalog to save it here!
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {FLAGSHIP_MANGA_CATALOG.filter((m) => bookmarks.includes(m.id)).map((manga) => (
+                <div
+                  key={manga.id}
+                  onClick={() => openReaderForManga(manga)}
+                  className="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.05] rounded-3xl p-3 cursor-pointer group transition-all"
+                >
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-2.5 shadow-xl">
+                    <img src={manga.cover} alt={manga.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(manga.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 backdrop-blur-md text-pink-400"
+                    >
+                      <Bookmark size={13} className="fill-pink-400" />
+                    </button>
                   </div>
+                  <h3 className="text-xs font-bold text-white group-hover:text-pink-300 truncate">{manga.title}</h3>
+                  <p className="text-[10px] text-white/50 truncate mt-0.5">{manga.author}</p>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

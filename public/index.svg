@@ -72,7 +72,7 @@
           <div class="os-title">Godly OS — Divine Edition</div>
           <div class="os-status" id="godly-status">Streaming Godly OS from jsDelivr CDN...</div>
           <div id="godly-fallback-wrap" style="display:none; flex-direction:column; align-items:center; gap:8px; margin-top:20px; z-index:30; pointer-events:auto;">
-            <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/dist/" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; background:linear-gradient(135deg, #9333ea, #4f46e5); color:#ffffff; border-radius:12px; text-decoration:none; font-size:13px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 0 25px rgba(168,85,247,0.5); pointer-events:auto; cursor:pointer;">
+            <a id="godly-fallback-btn" href="https://donoela.github.io/Godly-OS-Workspac---Github/" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; background:linear-gradient(135deg, #9333ea, #4f46e5); color:#ffffff; border-radius:12px; text-decoration:none; font-size:13px; font-weight:700; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 0 25px rgba(168,85,247,0.5); pointer-events:auto; cursor:pointer;">
               <span>🚀 Open Live Mirror (GitHub Pages) ↗</span>
             </a>
             <span style="font-size:10px; color:rgba(255,255,255,0.4); font-family:monospace;">Edge CDN fallback if streaming is blocked</span>
@@ -108,7 +108,7 @@
             // Handle jsDelivr direct streaming:
             if (isJsDelivr) {
               try {
-                let tag = 'v4.4.3';
+                let tag = 'v4.6.4';
                 const tagMatch = loc.match(/@([^/]+)/);
                 if (tagMatch && tagMatch[1] && tagMatch[1] !== 'main') {
                   tag = tagMatch[1];
@@ -159,7 +159,7 @@
             // Fallback only if inline streaming was blocked:
             if (status) status.textContent = 'CDN stream blocked. Click below to launch:';
             if (fallbackWrap) fallbackWrap.style.display = 'flex';
-            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/dist/';
+            frame.src = 'https://donoela.github.io/Godly-OS-Workspac---Github/';
             setTimeout(dismiss, 3500);
           })();
         ]]></script>

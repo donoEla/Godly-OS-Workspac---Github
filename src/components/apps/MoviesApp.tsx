@@ -67,15 +67,6 @@ export interface StreamProvider {
 
 export const STREAM_PROVIDERS: StreamProvider[] = [
   {
-    id: 'jellyfin',
-    name: 'Jellyfin :8096',
-    badge: 'Self-Hosted REST',
-    getUrl: () => {
-      const stored = localStorage.getItem('godly_movies_jellyfin') || 'http://localhost:8096';
-      return stored;
-    },
-  },
-  {
     id: 'autoembed',
     name: 'AutoEmbed',
     badge: 'Multi-Res Fast',
@@ -83,15 +74,6 @@ export const STREAM_PROVIDERS: StreamProvider[] = [
       type === 'movie'
         ? `https://player.autoembed.cc/embed/movie/${id}`
         : `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'vidsrc',
-    name: 'VidSrc',
-    badge: '1080p HD',
-    getUrl: (id, type, s = 1, e = 1) =>
-      type === 'movie'
-        ? `https://vidsrc.to/embed/movie/${id}`
-        : `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
   },
   {
     id: 'superembed',
@@ -121,6 +103,15 @@ export const STREAM_PROVIDERS: StreamProvider[] = [
         : `https://embed.su/embed/tv/${id}/${s}/${e}`,
   },
   {
+    id: 'smashystream',
+    name: 'SmashyStream',
+    badge: 'Fast VIP',
+    getUrl: (id, type, s = 1, e = 1) =>
+      type === 'movie'
+        ? `https://player.smashystream.com/movie/${id}`
+        : `https://player.smashystream.com/tv/${id}/${s}/${e}`,
+  },
+  {
     id: '2embed',
     name: '2Embed',
     badge: 'Classic Mirror',
@@ -130,13 +121,22 @@ export const STREAM_PROVIDERS: StreamProvider[] = [
         : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
   },
   {
-    id: 'smashystream',
-    name: 'SmashyStream',
-    badge: 'Fast VIP',
+    id: 'vidsrc',
+    name: 'VidSrc',
+    badge: '1080p HD',
     getUrl: (id, type, s = 1, e = 1) =>
       type === 'movie'
-        ? `https://player.smashystream.com/movie/${id}`
-        : `https://player.smashystream.com/tv/${id}/${s}/${e}`,
+        ? `https://vidsrc.xyz/embed/movie/${id}`
+        : `https://vidsrc.xyz/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'jellyfin',
+    name: 'Jellyfin :8096',
+    badge: 'Self-Hosted REST',
+    getUrl: () => {
+      const stored = localStorage.getItem('godly_movies_jellyfin') || 'http://localhost:8096';
+      return stored;
+    },
   },
 ];
 

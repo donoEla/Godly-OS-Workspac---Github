@@ -36,8 +36,9 @@ import {
   Check
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
+import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 
-export type MangaEngine = 'komga' | 'suwayomi' | 'kavita' | 'cubari' | 'mangapill' | 'custom';
+export type MangaEngine = 'mangafire' | 'cubari' | 'mangapill' | 'komga' | 'suwayomi' | 'kavita' | 'custom';
 
 export interface MangaItem {
   id: string;
@@ -357,7 +358,8 @@ export const MangaApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'catalog' | 'reader' | 'hub' | 'bookmarks'>('catalog');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeEngine, setActiveEngine] = useState<MangaEngine>('cubari');
+  const [activeEngine, setActiveEngine] = useState<MangaEngine>('mangafire');
+  const [streamMode, setStreamMode] = useState<'proxy' | 'direct'>('proxy');
 
   // Self-Hosted Servers State (Komga :25600, Suwayomi :4567, Kavita :5000)
   const [komgaUrl, setKomgaUrl] = useState<string>(() => localStorage.getItem('godly_manga_komga') || 'http://localhost:25600');
@@ -468,6 +470,9 @@ export const MangaApp: React.FC = () => {
     if (activeEngine === 'kavita') {
       return kavitaUrl;
     }
+    if (activeEngine === 'mangafire') {
+      return `https://mangafire.to/filter?keyword=${encodeURIComponent(activeManga.title)}`;
+    }
     if (activeEngine === 'cubari' && activeManga.mangadexId) {
       return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
     }
@@ -477,9 +482,7 @@ export const MangaApp: React.FC = () => {
       }
       return `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
     }
-    return activeManga.mangadexId
-      ? `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`
-      : `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
+    return `https://mangafire.to/filter?keyword=${encodeURIComponent(activeManga.title)}`;
   }, [customReaderUrl, activeEngine, activeManga, komgaUrl, suwayomiUrl, kavitaUrl]);
 
   return (
@@ -763,10 +766,55 @@ export const MangaApp: React.FC = () => {
               </div>
             </div>
 
-            {/* Engine Selector */}
+            {/* Engine Selector & Controls */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-white/40 uppercase">Engine:</span>
+              <span className="text-[10px] font-mono text-white/40 uppercase hidden sm:inline">Engine:</span>
               <div className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-xl border border-white/10 overflow-x-auto max-w-full">
+                <button
+                  onClick={() => {
+                    setActiveEngine('mangafire');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'mangafire' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="MangaFire 50k+ Manga & Manhwa Reader"
+                >
+                  MangaFire (50k+)
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('cubari');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'cubari' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Cubari MangaDex Proxy Reader"
+                >
+                  Cubari HD
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('mangapill');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'mangapill' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="MangaPill Direct Scans"
+                >
+                  MangaPill
+                </button>
                 <button
                   onClick={() => {
                     setActiveEngine('komga');
@@ -812,50 +860,68 @@ export const MangaApp: React.FC = () => {
                 >
                   Kavita :5000
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveEngine('cubari');
-                    setCustomReaderUrl('');
-                    sound.playClick();
-                  }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
-                    activeEngine === 'cubari' && !customReaderUrl
-                      ? 'bg-pink-600 text-white'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                  title="Cubari MangaDex Proxy Reader"
-                >
-                  Cubari HD
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveEngine('mangapill');
-                    setCustomReaderUrl('');
-                    sound.playClick();
-                  }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
-                    activeEngine === 'mangapill' && !customReaderUrl
-                      ? 'bg-pink-600 text-white'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                  title="MangaPill Direct Web Engine"
-                >
-                  MangaPill
-                </button>
               </div>
+
+              {/* Direct vs UV Proxy Switcher */}
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setStreamMode((m) => (m === 'direct' ? 'proxy' : 'direct'));
+                  setIframeKey((k) => k + 1);
+                }}
+                className={`px-2 py-1 rounded-xl border text-[11px] font-semibold flex items-center gap-1 transition-all ${
+                  streamMode === 'direct'
+                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                    : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                }`}
+                title="Toggle between Direct Embed and Ultraviolet Unblocked Proxy"
+              >
+                {streamMode === 'direct' ? '⚡ Direct' : '🛡️ Proxy'}
+              </button>
+
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setIframeKey((k) => k + 1);
+                }}
+                className="p-1 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                title="Reload reader"
+              >
+                <RotateCcw size={13} />
+              </button>
+
+              <a
+                href={currentReaderSrc}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                title="Open in new window"
+              >
+                <ExternalLink size={13} />
+              </a>
             </div>
           </div>
 
-          {/* Embedded Full High-Res Reader IFrame */}
+          {/* Embedded Full High-Res Reader IFrame or UV Proxy View */}
           <div className="flex-1 w-full h-full bg-black relative">
-            <iframe
-              key={iframeKey}
-              ref={readerFrameRef}
-              src={currentReaderSrc}
-              title="Godly Manga Reader"
-              allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
-              className="w-full h-full border-0 bg-black"
-            />
+            {streamMode === 'direct' ? (
+              <iframe
+                key={`direct-${currentReaderSrc}-${iframeKey}`}
+                ref={readerFrameRef}
+                src={currentReaderSrc}
+                title="Godly Manga Reader"
+                allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
+                className="w-full h-full border-0 bg-black"
+              />
+            ) : (
+              <ServiceWorkerAppView
+                key={`proxy-${currentReaderSrc}-${iframeKey}`}
+                url={currentReaderSrc}
+                appName={`${activeManga.title} (${activeEngine.toUpperCase()})`}
+                fallbackUrl={currentReaderSrc}
+                fallbackName={activeEngine}
+              />
+            )}
           </div>
         </div>
       )}
@@ -881,11 +947,11 @@ export const MangaApp: React.FC = () => {
               <span className="text-[10px] font-mono text-emerald-400">Zero CORS &bull; Full Chapter Scans</span>
             </div>
           </div>
-          <iframe
-            src="https://mangapill.com"
-            title="Manga Library"
-            allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
-            className="w-full h-full border-0 bg-black"
+          <ServiceWorkerAppView
+            url="https://mangafire.to"
+            appName="Manga Library (50,000+ Series)"
+            fallbackUrl="https://mangapill.com"
+            fallbackName="MangaPill"
           />
         </div>
       )}

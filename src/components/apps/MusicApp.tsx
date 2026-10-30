@@ -437,10 +437,109 @@ export const MASTER_TRACKS_CATALOG: TrackItem[] = [
     youtubeId: 'jfKfPfyJRdk',
     streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3',
     genre: 'Lo-Fi Chillhop',
-    source: 'ytm',
-    qualityBadge: 'YouTube Music Live',
+    source: 'radio',
+    qualityBadge: '24/7 Live Radio',
     releaseYear: 2024,
     plays: 5400000
+  },
+  {
+    id: 'track-synthwave-plaza',
+    title: 'Nightwave Plaza (Vaporwave / Synthwave)',
+    artist: 'Nightwave Plaza FM',
+    album: 'Plaza One Broadcast',
+    duration: 99999,
+    cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop',
+    streamUrl: 'https://radio.plaza.one/mp3',
+    genre: 'Vaporwave / Synth',
+    source: 'radio',
+    qualityBadge: '320k Crystal Live',
+    releaseYear: 2024,
+    plays: 3200000
+  },
+  {
+    id: 'track-bad-guy',
+    title: 'bad guy',
+    artist: 'Billie Eilish',
+    artistId: 'artist-billie',
+    album: 'WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?',
+    albumId: 'album-wwafawdwg',
+    duration: 194,
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3b/b7/65/3bb765b8-503b-c035-773a-e99e0ff96057/19UMGIM16401.rgb.jpg/600x600bb.jpg',
+    youtubeId: 'DyDFGwXx2ek',
+    streamUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/a5/d5/47/a5d547f3-e5d7-e0d0-4bf6-d249f05a963e/mzaf_10793666579634739564.plus.aac.p.m4a',
+    genre: 'Alternative / Pop',
+    source: 'ytm',
+    qualityBadge: 'YouTube Music 160k AAC',
+    releaseYear: 2019,
+    plays: 3450000
+  },
+  {
+    id: 'track-goosebumps',
+    title: 'goosebumps',
+    artist: 'Travis Scott',
+    artistId: 'artist-travis',
+    album: 'Birds in the Trap Sing McKnight',
+    albumId: 'album-bittsm',
+    duration: 243,
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/df/e0/75/dfe0759f-0925-5452-9f37-124b8989f5bc/886446077369.jpg/600x600bb.jpg',
+    youtubeId: 'Dst9gZkq1a8',
+    streamUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/f5/00/cb/f500cb4a-939e-c800-410a-d830b4da481f/mzaf_1684496056345053723.plus.aac.p.m4a',
+    genre: 'Hip-Hop/Rap',
+    source: 'ytm',
+    qualityBadge: 'YouTube Music 160k AAC',
+    releaseYear: 2016,
+    plays: 3120000
+  },
+  {
+    id: 'track-sunflower',
+    title: 'Sunflower (Spider-Man: Into the Spider-Verse)',
+    artist: 'Post Malone & Swae Lee',
+    artistId: 'artist-post-malone',
+    album: 'Spider-Man: Into the Spider-Verse',
+    albumId: 'album-spiderverse',
+    duration: 158,
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/1f/c0/81/1fc08197-0f6d-318e-fa68-1518f8eb5e1e/18UMGIM72688.rgb.jpg/600x600bb.jpg',
+    youtubeId: 'ApXoWvfEYVU',
+    streamUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/ad/7e/40/ad7e4088-bfb6-b510-bbef-b31c93a9fa93/mzaf_10332857467665720138.plus.aac.p.m4a',
+    genre: 'Hip-Hop/Soundtrack',
+    source: 'ytm',
+    qualityBadge: 'YouTube Music 160k AAC',
+    releaseYear: 2018,
+    plays: 3880000
+  },
+  {
+    id: 'track-levitating',
+    title: 'Levitating',
+    artist: 'Dua Lipa',
+    artistId: 'artist-dua-lipa',
+    album: 'Future Nostalgia',
+    albumId: 'album-future-nostalgia',
+    duration: 203,
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ee/1f/bf/ee1fbfd2-a7d1-e633-85b9-75a7c5a0fb71/190295286101.jpg/600x600bb.jpg',
+    youtubeId: 'TUVcZfQe-Kw',
+    streamUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/11/4c/a1/114ca10a-fe96-c189-d9fc-6ee29f7cf91c/mzaf_14479532588320479144.plus.aac.p.m4a',
+    genre: 'Pop / Disco',
+    source: 'ytm',
+    qualityBadge: 'YouTube Music 160k AAC',
+    releaseYear: 2020,
+    plays: 2950000
+  },
+  {
+    id: 'track-kill-bill',
+    title: 'Kill Bill',
+    artist: 'SZA',
+    artistId: 'artist-sza',
+    album: 'SOS',
+    albumId: 'album-sos',
+    duration: 153,
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/9c/61/13/9c6113b2-6752-9443-479c-7d9258278783/196589574483.jpg/600x600bb.jpg',
+    youtubeId: 'm7g38D8f4-Q',
+    streamUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/c3/0f/d0/c30fd0b7-f0ce-1798-e7dc-3be5bf888dfb/mzaf_10915830985223019183.plus.aac.p.m4a',
+    genre: 'R&B/Soul',
+    source: 'ytm',
+    qualityBadge: 'YouTube Music 160k AAC',
+    releaseYear: 2022,
+    plays: 3100000
   }
 ];
 
@@ -972,8 +1071,11 @@ export const MusicApp: React.FC = () => {
                 }
               },
               onError: (err: any) => {
-                console.warn('YouTube playback notice, retrying alternate video stream:', err);
-                if (currentTrack) {
+                console.warn('YouTube embed restricted, switching to native audio stream fallback:', err);
+                if (currentTrack && currentTrack.streamUrl && audioRef.current) {
+                  audioRef.current.src = currentTrack.streamUrl;
+                  audioRef.current.play().catch(() => {});
+                } else if (currentTrack) {
                   resolveTrackYoutubeId({ ...currentTrack, title: `${currentTrack.title} official video` }).then((newVid) => {
                     if (newVid && newVid !== currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
                       try {
@@ -1001,6 +1103,16 @@ export const MusicApp: React.FC = () => {
 
   // Sync track change
   useEffect(() => {
+    if (currentTrack.source === 'navidrome' || currentTrack.source === 'radio' || (currentTrack.streamUrl && !currentTrack.youtubeId)) {
+      if (audioRef.current && currentTrack.streamUrl) {
+        audioRef.current.src = currentTrack.streamUrl;
+        if (isPlaying) {
+          audioRef.current.play().catch(() => {});
+        }
+      }
+      return;
+    }
+
     if (currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
       try {
         ytPlayerRef.current.loadVideoById(currentTrack.youtubeId);
@@ -1008,9 +1120,17 @@ export const MusicApp: React.FC = () => {
           ytPlayerRef.current.playVideo();
         }
       } catch (err) {
-        console.warn('Error loading video by ID:', err);
+        console.warn('Error loading video by ID, falling back to audio stream:', err);
+        if (audioRef.current && currentTrack.streamUrl && isPlaying) {
+          audioRef.current.src = currentTrack.streamUrl;
+          audioRef.current.play().catch(() => {});
+        }
       }
-    } else if (!currentTrack.youtubeId && currentTrack.source !== 'radio') {
+    } else if (!currentTrack.youtubeId) {
+      if (audioRef.current && currentTrack.streamUrl && isPlaying) {
+        audioRef.current.src = currentTrack.streamUrl;
+        audioRef.current.play().catch(() => {});
+      }
       resolveTrackYoutubeId(currentTrack).then((vid) => {
         if (vid && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
           try {
@@ -1030,19 +1150,29 @@ export const MusicApp: React.FC = () => {
 
   // Sync play/pause
   useEffect(() => {
-    if (currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
-      try {
+    const isNativeTrack = currentTrack.source === 'navidrome' || currentTrack.source === 'radio' || !currentTrack.youtubeId;
+    if (isNativeTrack) {
+      if (audioRef.current) {
         if (isPlaying) {
-          ytPlayerRef.current.playVideo();
+          audioRef.current.play().catch(() => {});
         } else {
-          ytPlayerRef.current.pauseVideo();
+          audioRef.current.pause();
         }
-      } catch {}
-    }
-    if (audioRef.current) {
-      if (isPlaying && (!currentTrack.youtubeId || currentTrack.source === 'radio')) {
-        audioRef.current.play().catch(() => {});
-      } else {
+      }
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+        try { ytPlayerRef.current.pauseVideo(); } catch {}
+      }
+    } else {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+        try {
+          if (isPlaying) {
+            ytPlayerRef.current.playVideo();
+          } else {
+            ytPlayerRef.current.pauseVideo();
+          }
+        } catch {}
+      }
+      if (audioRef.current) {
         audioRef.current.pause();
       }
     }
@@ -1064,7 +1194,11 @@ export const MusicApp: React.FC = () => {
   // Polling playback time
   useEffect(() => {
     const timer = setInterval(() => {
-      if (currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+      const isNativeTrack = currentTrack.source === 'navidrome' || currentTrack.source === 'radio' || !currentTrack.youtubeId;
+      if (isNativeTrack && audioRef.current && audioRef.current.duration) {
+        setCurrentTime(Math.round(audioRef.current.currentTime));
+        setDuration(Math.round(audioRef.current.duration || currentTrack.duration));
+      } else if (currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
         try {
           const t = ytPlayerRef.current.getCurrentTime();
           const d = ytPlayerRef.current.getDuration();
@@ -1097,28 +1231,66 @@ export const MusicApp: React.FC = () => {
 
   const togglePlay = () => {
     sound.playClick();
-    setIsPlaying(!isPlaying);
+    const nextState = !isPlaying;
+    setIsPlaying(nextState);
+    const isNativeTrack = currentTrack.source === 'navidrome' || currentTrack.source === 'radio' || !currentTrack.youtubeId;
+    if (isNativeTrack) {
+      if (audioRef.current) {
+        if (nextState) audioRef.current.play().catch(() => {});
+        else audioRef.current.pause();
+      }
+    } else if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+      try {
+        if (nextState) ytPlayerRef.current.playVideo();
+        else ytPlayerRef.current.pauseVideo();
+      } catch {
+        if (audioRef.current && currentTrack.streamUrl) {
+          if (nextState) audioRef.current.play().catch(() => {});
+          else audioRef.current.pause();
+        }
+      }
+    } else if (audioRef.current && currentTrack.streamUrl) {
+      if (nextState) audioRef.current.play().catch(() => {});
+      else audioRef.current.pause();
+    }
   };
 
   const playTrackFromList = async (trackList: TrackItem[], index: number) => {
     sound.playClick();
     const target = trackList[index];
+    if (!target) return;
     setQueue(trackList);
     setCurrentTrackIndex(index);
     setIsPlaying(true);
     setCurrentTime(0);
 
-    if (target && !target.youtubeId && target.source !== 'radio') {
-      const vid = await resolveTrackYoutubeId(target);
-      if (vid) {
-        setQueue((prev) => prev.map((t, idx) => (idx === index ? { ...t, youtubeId: vid } : t)));
-        if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
-          try {
-            ytPlayerRef.current.loadVideoById(vid);
-            ytPlayerRef.current.playVideo();
-          } catch {}
-        }
+    // If Navidrome, Radio, or direct stream without YouTube ID, play via native audio immediately
+    if (target.source === 'navidrome' || target.source === 'radio' || (target.streamUrl && !target.youtubeId)) {
+      if (audioRef.current && target.streamUrl) {
+        audioRef.current.src = target.streamUrl;
+        audioRef.current.play().catch(() => {});
       }
+      return;
+    }
+
+    // If track has YouTube ID, trigger YouTube playback
+    if (target.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+      try {
+        ytPlayerRef.current.loadVideoById(target.youtubeId);
+        ytPlayerRef.current.playVideo();
+      } catch {}
+    } else if (target.streamUrl && audioRef.current) {
+      audioRef.current.src = target.streamUrl;
+      audioRef.current.play().catch(() => {});
+    }
+
+    // In background, attempt resolution if no youtubeId
+    if (!target.youtubeId) {
+      resolveTrackYoutubeId(target).then((vid) => {
+        if (vid) {
+          setQueue((prev) => prev.map((t, idx) => (idx === index ? { ...t, youtubeId: vid } : t)));
+        }
+      });
     }
   };
 

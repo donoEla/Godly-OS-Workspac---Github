@@ -119,7 +119,22 @@ export const Desktop: React.FC = () => {
     openContextMenu(e, 'desktop');
   };
 
-  const wallpaperUrl = getAssetUrl(settings.wallpaper);
+  const [effectiveWallpaperUrl, setEffectiveWallpaperUrl] = useState<string>(() => getAssetUrl(settings.wallpaper));
+
+  useEffect(() => {
+    const rawUrl = getAssetUrl(settings.wallpaper);
+    if (!rawUrl) return;
+    const img = new Image();
+    img.src = rawUrl;
+    img.onload = () => {
+      setEffectiveWallpaperUrl(rawUrl);
+    };
+    img.onerror = () => {
+      // Fallback to verified immutable release CDN wallpaper if local/pages path stalls
+      const fallbackUrl = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@v4.7.1/dist/assets/backgrounds/kali-ferrofluid-1298846866.jpg';
+      setEffectiveWallpaperUrl(fallbackUrl);
+    };
+  }, [settings.wallpaper]);
 
   return (
     <div
@@ -128,7 +143,7 @@ export const Desktop: React.FC = () => {
       className="relative w-full h-full overflow-hidden select-none z-0"
       style={{
         backgroundColor: '#060814',
-        backgroundImage: wallpaperUrl ? `url("${encodeURI(wallpaperUrl)}")` : 'radial-gradient(ellipse at 50% 0%, #171038 0%, #060814 100%)',
+        backgroundImage: effectiveWallpaperUrl ? `url("${encodeURI(effectiveWallpaperUrl)}")` : 'radial-gradient(ellipse at 50% 0%, #171038 0%, #060814 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

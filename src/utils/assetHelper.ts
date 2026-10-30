@@ -10,7 +10,7 @@
 
 const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
 const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
-const CURRENT_RELEASE_TAG = 'v4.7.0';
+const CURRENT_RELEASE_TAG = 'v4.7.1';
 
 export function getJsDelivrOrigin(): string {
   const candidates: string[] = [];
@@ -92,14 +92,19 @@ export function getAssetUrl(path: string | undefined | null): string {
 
   // Detect jsDelivr context
   const isJsDelivr =
-    (typeof window !== 'undefined' && window.location?.hostname === 'cdn.jsdelivr.net') ||
+    (typeof window !== 'undefined' && (
+      window.location?.hostname === 'cdn.jsdelivr.net' ||
+      Boolean(window.location?.href && window.location.href.includes('cdn.jsdelivr.net'))
+    )) ||
     (typeof document !== 'undefined' && Boolean(document.baseURI && document.baseURI.includes('cdn.jsdelivr.net')));
 
   const cleanQuery = query
     ? query.split('&').filter((p) => !p.startsWith('v=')).join('&')
     : '';
 
-  // Route static media & catalogs to valid dist paths (both jsDelivr and GitHub Pages store bundled assets in /dist/)
+  // Route static media & catalogs:
+  // - jsDelivr serves from the Git tree, so bundled assets reside in /dist/
+  // - GitHub Pages deploys the built /dist/ directly as the web root, so no /dist/ prefix
   if (
     cleanPath.startsWith('assets/backgrounds/') ||
     cleanPath.startsWith('assets/browser-backgrounds/') ||
@@ -107,13 +112,14 @@ export function getAssetUrl(path: string | undefined | null): string {
     cleanPath === 'catalog.json' ||
     cleanPath.endsWith('/catalog.json')
   ) {
-    const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
     if (isJsDelivr) {
       const baseOrigin = getJsDelivrOrigin();
+      const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
       const url = `${baseOrigin}/${distPath}`;
       return cleanQuery ? `${url}?${cleanQuery}` : url;
     }
-    const url = `${GITHUB_PAGES_ORIGIN}/${distPath}`;
+    const ghCleanPath = cleanPath.startsWith('dist/') ? cleanPath.slice(5) : cleanPath;
+    const url = `${GITHUB_PAGES_ORIGIN}/${ghCleanPath}`;
     return cleanQuery ? `${url}?${cleanQuery}` : url;
   }
 

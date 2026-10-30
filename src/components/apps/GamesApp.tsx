@@ -48,6 +48,7 @@ import { getAssetUrl } from '../../utils/assetHelper';
 import { GameSaveManager, GameSaveSlot } from '../../utils/gameSaveManager';
 import { GamepadMapperModal } from '../games/GamepadMapperModal';
 import { EmulatorHubApp } from './EmulatorHubApp';
+import { CLOUDMOON_URL, CLOUDMOON_GAMES } from './CloudGamingApp';
 import { EaglercraftApp } from './EaglercraftApp';
 import { useOS } from '../../context/OSContext';
 
@@ -363,7 +364,7 @@ export type GameSourceTab =
   | 'ynrbsu'
   | 'nettleweb'
   | 'nowgg'
-  | 'stratus'
+  | 'cloudmoon'
   | 'p2p'
   | 'emulator'
   | 'eaglercraft'
@@ -588,25 +589,9 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     setUniversalRefreshKey((k) => k + 1);
   };
 
-  // ── Stratus Cloud Games (225 AAA Cloud Games from x8rr/stratus-api & RaccoonGame) ──
-  const [stratusGames, setStratusGames] = useState<Array<{
-    name: string;
-    game_key: string;
-    description: string;
-    image: string;
-    cover: string;
-    tags: string[];
-  }>>([]);
-  const [stratusSearch, setStratusSearch] = useState('');
-  const [stratusTag, setStratusTag] = useState('All');
-  const [selectedStratusGame, setSelectedStratusGame] = useState<{
-    name: string;
-    game_key: string;
-    description: string;
-    image: string;
-    cover: string;
-    tags: string[];
-  } | null>(null);
+  // ── CloudMoon WebRTC Cloud Games ──
+  const [cloudmoonSearch, setCloudmoonSearch] = useState('');
+  const [cloudmoonTag, setCloudmoonTag] = useState('All');
 
   // ── Unified 28,534 Games Catalog (64 Sources: Nebula, UGS, js13kGames, Godly OS, CVK, Hydra, Lumin, Diesmos, GN-Math, GhostProxy, Alexr, GameZone, Petezah, Daknux, Seraph, Truffled, DuckMath, Solstice OS, Other) ──
   const [catalogGames, setCatalogGames] = useState<CatalogGame[]>([]);
@@ -628,19 +613,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       } catch (e) {
         console.warn('Failed to load catalog.json:', e);
         if (isMounted) setCatalogLoading(false);
-      }
-
-      try {
-        const stratusUrl = getAssetUrl('stratus_cloud_games.json');
-        const stratusRes = await fetch(stratusUrl);
-        if (stratusRes.ok) {
-          const sData = await stratusRes.json();
-          if (isMounted) {
-            setStratusGames(sData);
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load stratus_cloud_games.json:', e);
       }
     };
     loadCatalog();
@@ -1395,7 +1367,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     { id: 'p2p', name: 'P2P GameWebSight', badge: '500+ Games', icon: <Radio size={14} />, desc: 'Bitbucket raw HTML5 arcade mirror', color: '#f97316', group: 'core' },
 
     // Cloud & Consoles
-    { id: 'stratus', name: 'Cloudgaming', badge: 'CloudMoon & 225 AAA', icon: <Cloud size={14} />, desc: 'Instant Web Cloud Gaming (CloudMoon & Stratus 225 AAA)', color: '#06b6d4', group: 'consoles' },
+    { id: 'cloudmoon', name: 'CloudMoon Gaming', badge: 'WebRTC 60FPS', icon: <Cloud size={14} />, desc: 'Instant CloudMoon Web Engine (Roblox, Free Fire, Brawl Stars)', color: '#06b6d4', group: 'consoles' },
     { id: 'nowgg', name: 'NowGG Cloud', badge: 'Android 60FPS', icon: <Cloud size={14} />, desc: 'High-speed cloud Android playables (Roblox)', color: '#f59e0b', group: 'consoles' },
     { id: 'emulator', name: 'WASM Emulator Hub', badge: 'RetroArch', icon: <Gamepad2 size={14} />, desc: 'Retro console custom ROM emulator (NES/SNES/GBA/PS1)', color: '#a855f7', group: 'consoles' },
     { id: 'eaglercraft', name: 'Eaglercraft Studio', badge: '12 Editions', icon: <Box size={14} />, desc: 'Minecraft web clients & multiplayer SMP relays', color: '#10b981', group: 'consoles' },
@@ -2675,7 +2647,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 {activeTab === 'zengs' && '1,700+ Zen GS Cloud'}
                 {activeTab === 'nettleweb' && 'NettleWeb Web Hub'}
                 {activeTab === 'nowgg' && 'nowgg.fun 60FPS'}
-                {activeTab === 'stratus' && `${stratusGames.length || 225} Stratus Cloud AAA Titles`}
+                {activeTab === 'cloudmoon' && 'CloudMoon InPlay Web Engine'}
                 {activeTab === 'p2p' && '500+ P2P GameWebSight'}
                 {activeTab === 'emulator' && 'WASM Emulator Hub'}
                 {activeTab === 'eaglercraft' && '12 Eaglercraft Editions'}
@@ -3943,11 +3915,11 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         )}
 
         {/* =========================================================================
-            TAB: STRATUS CLOUD GAMING (225 AAA Titles from x8rr/stratus-api)
+            TAB: CLOUDMOON CLOUD GAMING (WebRTC 60FPS InPlay)
            ========================================================================= */}
-        {activeTab === 'stratus' && (
+        {activeTab === 'cloudmoon' && (
           <div className="w-full h-full flex flex-col overflow-hidden">
-            {/* Stratus Hero Banner & Filter Bar */}
+            {/* CloudMoon Hero Banner & Filter Bar */}
             <div className="p-6 border-b border-white/[0.08] bg-gradient-to-r from-[#081a28]/80 via-[#0a1220]/80 to-[#070b14]/80 shrink-0 backdrop-blur-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -3959,39 +3931,52 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-black tracking-tight text-white flex items-center gap-2">
-                        Cloudgaming <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">CloudMoon &amp; Stratus 225</span>
+                        CloudMoon Gaming <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">WebRTC 60 FPS</span>
                       </h3>
                     </div>
                     <p className="text-[11px] text-white/50">
-                      CloudMoon Web &amp; 225 Next-Gen AAA Console &amp; PC cloud titles streamed directly to browser.
+                      Official CloudMoon WebRTC in-browser cloud gaming: Roblox, Genshin Impact, Free Fire MAX &amp; more.
                     </p>
                   </div>
                 </div>
 
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-72">
-                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                  <input
-                    type="text"
-                    value={stratusSearch}
-                    onChange={(e) => setStratusSearch(e.target.value)}
-                    placeholder="Search 225 cloud titles..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white/[0.05] border border-white/10 text-white placeholder-white/30 outline-none focus:border-cyan-500/60"
-                  />
+                {/* Search Bar & Pop-out */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-72">
+                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                    <input
+                      type="text"
+                      value={cloudmoonSearch}
+                      onChange={(e) => setCloudmoonSearch(e.target.value)}
+                      placeholder="Search CloudMoon titles..."
+                      className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white/[0.05] border border-white/10 text-white placeholder-white/30 outline-none focus:border-cyan-500/60"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound.playClick();
+                      window.open(CLOUDMOON_URL, '_blank');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/40 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shrink-0"
+                    title="Open CloudMoon in Native Window"
+                  >
+                    <ExternalLink size={13} />
+                    <span className="hidden sm:inline">Pop-out</span>
+                  </button>
                 </div>
               </div>
 
               {/* Tag Filter Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
-                {['All', '3A', 'Action', 'RPG', 'Fighting', 'Adventure', 'Racing', 'Anime', 'Horror', 'Open World'].map((tag) => (
+                {['All', 'Sandbox MMO', 'Battle Royale', 'Shooter', 'Open World RPG', 'Arcade Runner', 'MOBA', 'Strategy MMO'].map((tag) => (
                   <button
                     key={tag}
                     onClick={() => {
                       sound.playClick();
-                      setStratusTag(tag);
+                      setCloudmoonTag(tag);
                     }}
                     className={`px-3 py-1 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
-                      stratusTag === tag
+                      cloudmoonTag === tag
                         ? 'bg-cyan-600 border-cyan-400 text-white shadow-md shadow-cyan-950/30'
                         : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/70 hover:text-white'
                     }`}
@@ -4005,32 +3990,32 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             {/* Cloud Games Grid */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {stratusGames
+                {CLOUDMOON_GAMES
                   .filter((g) => {
-                    const matchesSearch = !stratusSearch.trim() || g.name.toLowerCase().includes(stratusSearch.toLowerCase()) || g.description.toLowerCase().includes(stratusSearch.toLowerCase());
-                    const matchesTag = stratusTag === 'All' || g.tags.includes(stratusTag);
+                    const matchesSearch = !cloudmoonSearch.trim() || g.title.toLowerCase().includes(cloudmoonSearch.toLowerCase()) || g.desc.toLowerCase().includes(cloudmoonSearch.toLowerCase());
+                    const matchesTag = cloudmoonTag === 'All' || g.category.toLowerCase().includes(cloudmoonTag.toLowerCase());
                     return matchesSearch && matchesTag;
                   })
                   .map((game) => (
                     <div
-                      key={game.game_key}
+                      key={game.id}
                       onClick={() => {
                         sound.playClick();
                         handleLaunchUniversalGame({
-                          id: `stratus-${game.game_key}`,
-                          title: game.name,
-                          url: `https://www.raccoongame.com/#/game-detail?gameKey=${game.game_key}`,
-                          thumbnail: game.cover || game.image,
-                          source: 'Stratus Cloud',
-                          category: game.tags[0] || 'Cloud 3A'
+                          id: `cloudmoon-${game.id}`,
+                          title: game.title,
+                          url: CLOUDMOON_URL,
+                          thumbnail: game.thumbnail,
+                          source: 'CloudMoon InPlay',
+                          category: game.category
                         });
                       }}
                       className="group relative flex flex-col rounded-2xl border border-white/10 hover:border-cyan-400/50 bg-[#080f1a] hover:bg-[#0c1626] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-xl hover:shadow-cyan-950/40"
                     >
                       <div className="relative aspect-[16/10] w-full bg-black/60 overflow-hidden">
                         <img
-                          src={game.cover || game.image}
-                          alt={game.name}
+                          src={game.thumbnail}
+                          alt={game.title}
                           loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
@@ -4039,7 +4024,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#080f1a] via-transparent to-transparent opacity-80" />
                         <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-black/70 backdrop-blur-md border border-white/10 text-cyan-300 uppercase">
-                          STRATUS CLOUD
+                          {game.category}
                         </span>
 
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
@@ -4051,17 +4036,11 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
                       <div className="p-3 flex flex-col justify-between flex-1 gap-1.5">
                         <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
-                          {game.name}
+                          {game.title}
                         </h4>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {game.tags.slice(0, 2).map((t) => (
-                            <span
-                              key={t}
-                              className="text-[9px] px-1.5 py-0.2 rounded-md bg-white/[0.04] text-white/60 border border-white/[0.06]"
-                            >
-                              {t}
-                            </span>
-                          ))}
+                        <div className="flex items-center justify-between text-[9px] text-white/50">
+                          <span className="text-cyan-400 font-mono">{game.players || '60 FPS'}</span>
+                          {game.rating && <span className="text-amber-400 font-bold">★ {game.rating}</span>}
                         </div>
                       </div>
                     </div>

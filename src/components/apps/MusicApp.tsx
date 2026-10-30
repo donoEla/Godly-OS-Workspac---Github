@@ -726,6 +726,44 @@ export const MusicApp: React.FC = () => {
     } catch {}
   }, [historyTracks]);
 
+  const ytResolutionCache = useRef<Map<string, string>>(new Map());
+
+  const resolveTrackYoutubeId = useCallback(async (track: TrackItem): Promise<string | null> => {
+    if (track.youtubeId) return track.youtubeId;
+    const cacheKey = `${track.title}-${track.artist}`.toLowerCase();
+    if (ytResolutionCache.current.has(cacheKey)) {
+      return ytResolutionCache.current.get(cacheKey)!;
+    }
+
+    const localMatch = MASTER_TRACKS_CATALOG.find(
+      (m) => m.title.toLowerCase() === track.title.toLowerCase() && m.youtubeId
+    );
+    if (localMatch && localMatch.youtubeId) {
+      ytResolutionCache.current.set(cacheKey, localMatch.youtubeId);
+      return localMatch.youtubeId;
+    }
+
+    try {
+      const q = encodeURIComponent(`${track.title} ${track.artist} audio`);
+      const res = await fetch(`https://yt.chocolatemoo53.com/api/v1/search?q=${q}&type=video`, {
+        signal: AbortSignal.timeout(3500)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const match = data.find((v: any) => v && v.videoId && (v.type === 'video' || !v.type));
+          if (match && match.videoId) {
+            ytResolutionCache.current.set(cacheKey, match.videoId);
+            return match.videoId;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Dynamic YouTube stream resolution notice:', e);
+    }
+    return null;
+  }, []);
+
   // Sync to OS Taskbar / Dynamic Island
   useEffect(() => {
     if (currentTrack) {
@@ -824,9 +862,16 @@ export const MusicApp: React.FC = () => {
                 }
               },
               onError: (err: any) => {
-                console.warn('YouTube playback notice, fallback to audio element:', err);
-                if (audioRef.current && currentTrack.streamUrl) {
-                  audioRef.current.play().catch(() => {});
+                console.warn('YouTube playback notice, retrying alternate video stream:', err);
+                if (currentTrack) {
+                  resolveTrackYoutubeId({ ...currentTrack, title: `${currentTrack.title} official video` }).then((newVid) => {
+                    if (newVid && newVid !== currentTrack.youtubeId && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+                      try {
+                        ytPlayerRef.current.loadVideoById(newVid);
+                        ytPlayerRef.current.playVideo();
+                      } catch {}
+                    }
+                  });
                 }
               }
             }
@@ -855,12 +900,23 @@ export const MusicApp: React.FC = () => {
       } catch (err) {
         console.warn('Error loading video by ID:', err);
       }
+    } else if (!currentTrack.youtubeId && currentTrack.source !== 'radio') {
+      resolveTrackYoutubeId(currentTrack).then((vid) => {
+        if (vid && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+          try {
+            ytPlayerRef.current.loadVideoById(vid);
+            if (isPlaying) {
+              ytPlayerRef.current.playVideo();
+            }
+          } catch {}
+        }
+      });
     } else if (audioRef.current && currentTrack.streamUrl) {
       if (isPlaying) {
         audioRef.current.play().catch(() => {});
       }
     }
-  }, [currentTrackIndex, currentTrack?.youtubeId]);
+  }, [currentTrackIndex, currentTrack?.youtubeId, currentTrack?.id, resolveTrackYoutubeId]);
 
   // Sync play/pause
   useEffect(() => {
@@ -934,12 +990,26 @@ export const MusicApp: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const playTrackFromList = (trackList: TrackItem[], index: number) => {
+  const playTrackFromList = async (trackList: TrackItem[], index: number) => {
     sound.playClick();
+    const target = trackList[index];
     setQueue(trackList);
     setCurrentTrackIndex(index);
     setIsPlaying(true);
     setCurrentTime(0);
+
+    if (target && !target.youtubeId && target.source !== 'radio') {
+      const vid = await resolveTrackYoutubeId(target);
+      if (vid) {
+        setQueue((prev) => prev.map((t, idx) => (idx === index ? { ...t, youtubeId: vid } : t)));
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+          try {
+            ytPlayerRef.current.loadVideoById(vid);
+            ytPlayerRef.current.playVideo();
+          } catch {}
+        }
+      }
+    }
   };
 
   const handleNextTrack = useCallback(() => {
@@ -1021,7 +1091,8 @@ export const MusicApp: React.FC = () => {
         if (invRes.ok) {
           const invData = await invRes.json();
           if (Array.isArray(invData)) {
-            const ytItems: TrackItem[] = invData.slice(0, 15).map((v: any) => ({
+            const validVideos = invData.filter((v: any) => v && v.videoId && (v.type === 'video' || !v.type));
+            const ytItems: TrackItem[] = validVideos.slice(0, 15).map((v: any) => ({
               id: `yt-${v.videoId}`,
               title: (v.title || 'Untitled Track')
                 .replace(/\s*\(Official Video\)/i, '')
@@ -1203,27 +1274,27 @@ export const MusicApp: React.FC = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: showVideoViewer ? 84 : -9999,
-          right: showVideoViewer ? 24 : -9999,
-          width: showVideoViewer ? 340 : 1,
-          height: showVideoViewer ? 192 : 1,
-          opacity: showVideoViewer ? 1 : 0.001,
+          bottom: showVideoViewer ? 84 : 84,
+          right: showVideoViewer ? 24 : 16,
+          width: showVideoViewer ? 360 : 240,
+          height: showVideoViewer ? 202 : 135,
+          opacity: showVideoViewer ? 1 : 0.04,
           pointerEvents: showVideoViewer ? 'auto' : 'none',
-          zIndex: showVideoViewer ? 60 : -1,
-          transition: 'opacity 0.2s ease',
+          zIndex: showVideoViewer ? 60 : 10,
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           borderRadius: 16,
           overflow: 'hidden',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.85)',
-          border: showVideoViewer ? '1px solid rgba(168,85,247,0.5)' : 'none',
+          boxShadow: showVideoViewer ? '0 20px 40px rgba(0,0,0,0.85)' : 'none',
+          border: showVideoViewer ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.05)',
           background: '#000'
         }}
       >
         {showVideoViewer && (
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
             <button
               onClick={() => setShowVideoViewer(false)}
               className="p-1.5 rounded-full bg-black/80 hover:bg-black text-white text-xs backdrop-blur-md"
-              title="Hide Video (Pure Audio)"
+              title="Hide Video (Audio Only Mode)"
             >
               <X size={14} />
             </button>

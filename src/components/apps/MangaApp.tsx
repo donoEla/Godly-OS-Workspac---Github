@@ -794,7 +794,6 @@ export const MangaApp: React.FC = () => {
               title="Godly Manga Reader"
               allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
               className="w-full h-full border-0 bg-black"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           </div>
         </div>
@@ -808,14 +807,24 @@ export const MangaApp: React.FC = () => {
               <Globe size={14} className="text-pink-400" />
               Manga Library &bull; 10,000+ Manga, Manhwa & Comics
             </span>
-            <span className="text-[10px] font-mono text-emerald-400">Zero CORS &bull; Full Chapter Scans</span>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://mangapill.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] font-mono text-pink-400 hover:underline flex items-center gap-1"
+              >
+                <span>Open in Tab</span>
+                <ExternalLink size={10} />
+              </a>
+              <span className="text-[10px] font-mono text-emerald-400">Zero CORS &bull; Full Chapter Scans</span>
+            </div>
           </div>
           <iframe
-            src="https://mangapill.com/mangas"
+            src="https://mangapill.com"
             title="Manga Library"
             allow="autoplay; fullscreen; clipboard-read; clipboard-write; cross-origin-isolated"
             className="w-full h-full border-0 bg-black"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         </div>
       )}

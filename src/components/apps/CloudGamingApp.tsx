@@ -358,7 +358,7 @@ export const CloudGamingApp: React.FC = () => {
                   onClick={() => {
                     sound.playClick();
                     setStreamEngine('direct');
-                    launchRunner('https://www.raccoongame.com/#/game-detail?gameKey=bs0078', 'Dragon Ball: Sparking! ZERO (Stratus)');
+                    launchRunner('https://www.raccoongame.com/#/platform/cloudgame/categories', 'Stratus 225 AAA Cloud Catalog');
                   }}
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold transition-all border ${
                     activeRunningUrl.includes('raccoongame.com')
@@ -422,7 +422,6 @@ export const CloudGamingApp: React.FC = () => {
                   className="w-full h-full border-0 bg-black"
                   allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; encrypted-media; accelerometer; gyroscope; camera; microphone; display-capture"
                   allowFullScreen
-                  sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-modals allow-popups allow-downloads allow-presentation"
                 />
               )}
             </div>
@@ -532,13 +531,13 @@ export const CloudGamingApp: React.FC = () => {
                           STRATUS
                         </span>
 
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               sound.playClick();
                               launchRunner(
-                                `https://www.raccoongame.com/#/game-detail?gameKey=${game.game_key}`,
+                                'https://www.raccoongame.com/#/platform/cloudgame/categories',
                                 `${game.name} (Stratus Cloud)`
                               );
                             }}
@@ -546,6 +545,17 @@ export const CloudGamingApp: React.FC = () => {
                             title="Instant Launch on Stratus"
                           >
                             <Play size={16} className="ml-0.5 fill-white" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sound.playClick();
+                              window.open('https://www.raccoongame.com/#/platform/cloudgame/categories', '_blank');
+                            }}
+                            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shadow-md transform scale-75 group-hover:scale-100 transition-all hover:scale-110"
+                            title="Open in Native Cloud Tab"
+                          >
+                            <ExternalLink size={14} />
                           </button>
                         </div>
                       </div>
@@ -673,31 +683,43 @@ export const CloudGamingApp: React.FC = () => {
               </h4>
 
               {/* Launch on Stratus Cloud Stream */}
-              <button
-                onClick={() => {
-                  setSelectedGameForModal(null);
-                  launchRunner(
-                    `https://www.raccoongame.com/#/game-detail?gameKey=${selectedGameForModal.game_key}`,
-                    `${selectedGameForModal.name} (Stratus Cloud)`
-                  );
-                }}
-                className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-purple-900/60 to-indigo-900/50 hover:from-purple-800/80 hover:to-indigo-800/70 border border-purple-500/40 flex items-center justify-between transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/25 flex items-center justify-center text-purple-300 text-lg">
-                    🎮
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedGameForModal(null);
+                    launchRunner(
+                      'https://www.raccoongame.com/#/platform/cloudgame/categories',
+                      `${selectedGameForModal.name} (Stratus Cloud)`
+                    );
+                  }}
+                  className="flex-1 p-3.5 rounded-2xl bg-gradient-to-r from-purple-900/60 to-indigo-900/50 hover:from-purple-800/80 hover:to-indigo-800/70 border border-purple-500/40 flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/25 flex items-center justify-center text-purple-300 text-lg">
+                      🎮
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-black text-white group-hover:text-purple-300 transition-colors">
+                        Launch on Stratus Cloud Stream
+                      </p>
+                      <span className="text-[10px] text-white/60">
+                        Direct 60 FPS WebRTC stream for {selectedGameForModal.name}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-xs font-black text-white group-hover:text-purple-300 transition-colors">
-                      Launch on Stratus Cloud Stream
-                    </p>
-                    <span className="text-[10px] text-white/60">
-                      Direct 60 FPS WebRTC stream for {selectedGameForModal.name} with gamepad support
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-purple-400" />
-              </button>
+                  <ChevronRight size={16} className="text-purple-400" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedGameForModal(null);
+                    window.open('https://www.raccoongame.com/#/platform/cloudgame/categories', '_blank');
+                  }}
+                  className="px-3.5 rounded-2xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 flex items-center justify-center text-white"
+                  title="Open Stratus in Native Tab"
+                >
+                  <ExternalLink size={16} />
+                </button>
+              </div>
 
               {/* Launch on CloudMoon Web Engine */}
               <button

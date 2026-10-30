@@ -10,7 +10,7 @@
 
 const GITHUB_PAGES_ORIGIN = 'https://donoela.github.io/Godly-OS-Workspac---Github';
 const JSDELIVR_DIST_ORIGIN = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@main/dist';
-const CURRENT_RELEASE_TAG = 'v4.6.9';
+const CURRENT_RELEASE_TAG = 'v4.7.0';
 
 export function getJsDelivrOrigin(): string {
   const candidates: string[] = [];
@@ -99,7 +99,7 @@ export function getAssetUrl(path: string | undefined | null): string {
     ? query.split('&').filter((p) => !p.startsWith('v=')).join('&')
     : '';
 
-  // Route heavy static media to GitHub Pages edge CDN to keep jsDelivr repository release < 25MB
+  // Route static media & catalogs to valid dist paths (both jsDelivr and GitHub Pages store bundled assets in /dist/)
   if (
     cleanPath.startsWith('assets/backgrounds/') ||
     cleanPath.startsWith('assets/browser-backgrounds/') ||
@@ -107,7 +107,13 @@ export function getAssetUrl(path: string | undefined | null): string {
     cleanPath === 'catalog.json' ||
     cleanPath.endsWith('/catalog.json')
   ) {
-    const url = `${GITHUB_PAGES_ORIGIN}/${cleanPath}`;
+    const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
+    if (isJsDelivr) {
+      const baseOrigin = getJsDelivrOrigin();
+      const url = `${baseOrigin}/${distPath}`;
+      return cleanQuery ? `${url}?${cleanQuery}` : url;
+    }
+    const url = `${GITHUB_PAGES_ORIGIN}/${distPath}`;
     return cleanQuery ? `${url}?${cleanQuery}` : url;
   }
 
@@ -150,7 +156,8 @@ export function getAssetUrl(path: string | undefined | null): string {
       }
     } catch {}
 
-    const url = `${GITHUB_PAGES_ORIGIN}/${cleanPath}`;
+    const distPath = cleanPath.startsWith('dist/') ? cleanPath : `dist/${cleanPath}`;
+    const url = `${GITHUB_PAGES_ORIGIN}/${distPath}`;
     return cleanQuery ? `${url}?${cleanQuery}` : url;
   }
 

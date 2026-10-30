@@ -31,11 +31,13 @@ import {
   Zap,
   Info,
   Radio,
-  FileText
+  FileText,
+  Server,
+  Check
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 
-export type MangaEngine = 'mangapill' | 'cubari' | 'mangafire' | 'custom';
+export type MangaEngine = 'komga' | 'suwayomi' | 'kavita' | 'cubari' | 'mangapill' | 'custom';
 
 export interface MangaItem {
   id: string;
@@ -355,7 +357,14 @@ export const MangaApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'catalog' | 'reader' | 'hub' | 'bookmarks'>('catalog');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeEngine, setActiveEngine] = useState<MangaEngine>('mangapill');
+  const [activeEngine, setActiveEngine] = useState<MangaEngine>('cubari');
+
+  // Self-Hosted Servers State (Komga :25600, Suwayomi :4567, Kavita :5000)
+  const [komgaUrl, setKomgaUrl] = useState<string>(() => localStorage.getItem('godly_manga_komga') || 'http://localhost:25600');
+  const [suwayomiUrl, setSuwayomiUrl] = useState<string>(() => localStorage.getItem('godly_manga_suwayomi') || 'http://localhost:4567');
+  const [kavitaUrl, setKavitaUrl] = useState<string>(() => localStorage.getItem('godly_manga_kavita') || 'http://localhost:5000');
+  const [showServerModal, setShowServerModal] = useState<boolean>(false);
+  const [serverTab, setServerTab] = useState<'komga' | 'suwayomi' | 'kavita'>('komga');
 
   // Reader State
   const [activeManga, setActiveManga] = useState<MangaItem>(FLAGSHIP_MANGA_CATALOG[0]);
@@ -450,22 +459,28 @@ export const MangaApp: React.FC = () => {
   const currentReaderSrc = useMemo(() => {
     if (customReaderUrl) return customReaderUrl;
 
+    if (activeEngine === 'komga') {
+      return komgaUrl;
+    }
+    if (activeEngine === 'suwayomi') {
+      return suwayomiUrl;
+    }
+    if (activeEngine === 'kavita') {
+      return kavitaUrl;
+    }
+    if (activeEngine === 'cubari' && activeManga.mangadexId) {
+      return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
+    }
     if (activeEngine === 'mangapill') {
       if (activeManga.pillSlug) {
         return `https://mangapill.com/manga/${activeManga.pillSlug}`;
       }
       return `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
     }
-    if (activeEngine === 'cubari' && activeManga.mangadexId) {
-      return `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`;
-    }
-    if (activeEngine === 'mangafire') {
-      return `https://mangafire.to/filter?keyword=${encodeURIComponent(activeManga.title)}`;
-    }
-    return activeManga.pillSlug
-      ? `https://mangapill.com/manga/${activeManga.pillSlug}`
+    return activeManga.mangadexId
+      ? `https://cubari.moe/read/mangadex/${activeManga.mangadexId}/`
       : `https://mangapill.com/search?q=${encodeURIComponent(activeManga.title)}`;
-  }, [customReaderUrl, activeEngine, activeManga]);
+  }, [customReaderUrl, activeEngine, activeManga, komgaUrl, suwayomiUrl, kavitaUrl]);
 
   return (
     <div className="flex flex-col h-full w-full bg-[#05060f] text-slate-100 select-none overflow-hidden font-sans">
@@ -557,6 +572,19 @@ export const MangaApp: React.FC = () => {
               Search
             </button>
           </div>
+
+          <button
+            onClick={() => {
+              sound.playClick();
+              setShowServerModal(true);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 text-pink-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+            title="Komga & Manga Servers (:25600, :4567, :5000)"
+          >
+            <Server size={13} className="text-pink-400" />
+            <span className="hidden sm:inline">Komga Suite</span>
+            <span className="text-[10px] font-mono opacity-60">:25600</span>
+          </button>
 
           {activeTab === 'reader' && (
             <div className="flex items-center gap-2">
@@ -738,34 +766,51 @@ export const MangaApp: React.FC = () => {
             {/* Engine Selector */}
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono text-white/40 uppercase">Engine:</span>
-              <div className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-xl border border-white/10">
+              <div className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-xl border border-white/10 overflow-x-auto max-w-full">
                 <button
                   onClick={() => {
-                    setActiveEngine('mangapill');
+                    setActiveEngine('komga');
                     setCustomReaderUrl('');
                     sound.playClick();
                   }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
-                    activeEngine === 'mangapill' && !customReaderUrl
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'komga' && !customReaderUrl
                       ? 'bg-pink-600 text-white'
                       : 'text-white/60 hover:text-white'
                   }`}
+                  title="Komga (REST API & OPDS on :25600)"
                 >
-                  MangaPill (Recommended)
+                  Komga :25600
                 </button>
                 <button
                   onClick={() => {
-                    setActiveEngine('mangafire');
+                    setActiveEngine('suwayomi');
                     setCustomReaderUrl('');
                     sound.playClick();
                   }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
-                    activeEngine === 'mangafire' && !customReaderUrl
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'suwayomi' && !customReaderUrl
                       ? 'bg-pink-600 text-white'
                       : 'text-white/60 hover:text-white'
                   }`}
+                  title="Suwayomi Live Source Engine on :4567"
                 >
-                  MangaFire
+                  Suwayomi :4567
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('kavita');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'kavita' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Kavita Manga & Novels on :5000"
+                >
+                  Kavita :5000
                 </button>
                 <button
                   onClick={() => {
@@ -773,13 +818,29 @@ export const MangaApp: React.FC = () => {
                     setCustomReaderUrl('');
                     sound.playClick();
                   }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
                     activeEngine === 'cubari' && !customReaderUrl
                       ? 'bg-pink-600 text-white'
                       : 'text-white/60 hover:text-white'
                   }`}
+                  title="Cubari MangaDex Proxy Reader"
                 >
-                  Cubari Proxy
+                  Cubari HD
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveEngine('mangapill');
+                    setCustomReaderUrl('');
+                    sound.playClick();
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${
+                    activeEngine === 'mangapill' && !customReaderUrl
+                      ? 'bg-pink-600 text-white'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="MangaPill Direct Web Engine"
+                >
+                  MangaPill
                 </button>
               </div>
             </div>
@@ -867,6 +928,245 @@ export const MangaApp: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MANGA SERVERS SUITE MODAL (Komga :25600, Suwayomi :4567, Kavita :5000) */}
+      {showServerModal && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0b0e24] border border-pink-500/30 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
+                  <Server size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-white tracking-wide">Self-Hosted Manga & Comics Suite</h2>
+                  <p className="text-[10px] text-pink-300/70 font-mono">Komga (:25600) &bull; Suwayomi (:4567) &bull; Kavita (:5000)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowServerModal(false);
+                }}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Server Selector Tabs */}
+            <div className="flex border-b border-white/10 bg-black/40 px-6 pt-3 gap-2">
+              <button
+                onClick={() => setServerTab('komga')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  serverTab === 'komga'
+                    ? 'border-pink-500 text-pink-400 bg-pink-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <span>Komga</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300">:25600</span>
+              </button>
+              <button
+                onClick={() => setServerTab('suwayomi')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  serverTab === 'suwayomi'
+                    ? 'border-pink-500 text-pink-400 bg-pink-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <span>Suwayomi</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">:4567</span>
+              </button>
+              <button
+                onClick={() => setServerTab('kavita')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  serverTab === 'kavita'
+                    ? 'border-pink-500 text-pink-400 bg-pink-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <span>Kavita</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">:5000</span>
+              </button>
+            </div>
+
+            {/* Tab Body */}
+            <div className="p-6 space-y-4">
+              {serverTab === 'komga' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-xs text-pink-200/90 leading-relaxed">
+                    <strong className="text-pink-300 font-bold block mb-1">Komga — Local Library & Tachiyomi/Mihon Integration</strong>
+                    Java/Spring, MIT license, REST API + OPDS. Reads CBZ/CBR/PDF/EPUB directly from your disk with full metadata and a built-in web reader. Mihon and Tachiyomi speak its API natively.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-white/70 block mb-1.5">Komga Server URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={komgaUrl}
+                        onChange={(e) => setKomgaUrl(e.target.value)}
+                        placeholder="http://localhost:25600"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500 font-mono"
+                      />
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('godly_manga_komga', komgaUrl);
+                          setActiveEngine('komga');
+                          setShowServerModal(false);
+                          setActiveTab('reader');
+                          sound.playSuccess();
+                        }}
+                        className="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-pink-600/30 transition-all"
+                      >
+                        <Check size={14} /> Connect & Open
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40">
+                    <span>Quick presets:</span>
+                    <button
+                      onClick={() => setKomgaUrl('http://localhost:25600')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      localhost:25600
+                    </button>
+                    <button
+                      onClick={() => setKomgaUrl('http://127.0.0.1:25600')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      127.0.0.1:25600
+                    </button>
+                    <button
+                      onClick={() => setKomgaUrl('http://komga.local:25600')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      komga.local
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {serverTab === 'suwayomi' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-200/90 leading-relaxed">
+                    <strong className="text-emerald-300 font-bold block mb-1">Suwayomi — Live Source Plugin Backend (No Local Files Needed)</strong>
+                    Runs a full Tachiyomi extension backend server that pulls from MangaDex and hundreds of live sources. Clean API and full browser-based webUI without needing gigabytes of stored files.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-white/70 block mb-1.5">Suwayomi Server URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={suwayomiUrl}
+                        onChange={(e) => setSuwayomiUrl(e.target.value)}
+                        placeholder="http://localhost:4567"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('godly_manga_suwayomi', suwayomiUrl);
+                          setActiveEngine('suwayomi');
+                          setShowServerModal(false);
+                          setActiveTab('reader');
+                          sound.playSuccess();
+                        }}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all"
+                      >
+                        <Check size={14} /> Connect & Open
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40">
+                    <span>Quick presets:</span>
+                    <button
+                      onClick={() => setSuwayomiUrl('http://localhost:4567')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      localhost:4567
+                    </button>
+                    <button
+                      onClick={() => setSuwayomiUrl('http://127.0.0.1:4567')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      127.0.0.1:4567
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {serverTab === 'kavita' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed">
+                    <strong className="text-purple-300 font-bold block mb-1">Kavita — Fast Reader for Manga, Comics & Light Novels</strong>
+                    Polished reader with bookmarking, page flipping, light novel EPUB parsing, and full collection management on port 5000.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-white/70 block mb-1.5">Kavita Server URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={kavitaUrl}
+                        onChange={(e) => setKavitaUrl(e.target.value)}
+                        placeholder="http://localhost:5000"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
+                      />
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('godly_manga_kavita', kavitaUrl);
+                          setActiveEngine('kavita');
+                          setShowServerModal(false);
+                          setActiveTab('reader');
+                          sound.playSuccess();
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all"
+                      >
+                        <Check size={14} /> Connect & Open
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40">
+                    <span>Quick presets:</span>
+                    <button
+                      onClick={() => setKavitaUrl('http://localhost:5000')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      localhost:5000
+                    </button>
+                    <button
+                      onClick={() => setKavitaUrl('http://127.0.0.1:5000')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      127.0.0.1:5000
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="h-12 px-6 border-t border-white/10 flex items-center justify-between bg-white/[0.02] text-[10px] text-white/40">
+              <span>Saved locally in browser storage</span>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowServerModal(false);
+                }}
+                className="text-white/60 hover:text-white font-bold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

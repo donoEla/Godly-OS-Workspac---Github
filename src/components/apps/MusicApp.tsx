@@ -46,12 +46,21 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
-  Monitor
+  Monitor,
+  Server
 } from 'lucide-react';
 import { useOS } from '../../context/OSContext';
 import { sound } from '../../utils/sound';
 
-export type MusicSourceType = 'tidal' | 'ytm' | 'itunes' | 'hifi' | 'radio';
+export type MusicSourceType = 'tidal' | 'ytm' | 'itunes' | 'hifi' | 'radio' | 'navidrome';
+
+export interface NavidromeConfig {
+  serverUrl: string;
+  username: string;
+  password?: string;
+  isConnected: boolean;
+  serverVersion?: string;
+}
 
 export interface TrackItem {
   id: string;
@@ -652,6 +661,107 @@ export const MusicApp: React.FC = () => {
   });
   const ytPlayerRef = useRef<any>(null);
   const [isYtReady, setIsYtReady] = useState<boolean>(false);
+
+  // Navidrome Subsonic API State (:4533)
+  const [navidromeConfig, setNavidromeConfig] = useState<NavidromeConfig>(() => {
+    try {
+      const saved = localStorage.getItem('godly_music_navidrome');
+      return saved ? JSON.parse(saved) : {
+        serverUrl: 'http://localhost:4533',
+        username: 'admin',
+        password: '',
+        isConnected: false,
+        serverVersion: '1.16.1'
+      };
+    } catch {
+      return {
+        serverUrl: 'http://localhost:4533',
+        username: 'admin',
+        password: '',
+        isConnected: false,
+        serverVersion: '1.16.1'
+      };
+    }
+  });
+  const [showNavidromeModal, setShowNavidromeModal] = useState<boolean>(false);
+  const [navidromeConnecting, setNavidromeConnecting] = useState<boolean>(false);
+  const [navidromeError, setNavidromeError] = useState<string | null>(null);
+
+  const connectNavidrome = async (testUrl?: string, testUser?: string, testPass?: string) => {
+    const url = (testUrl || navidromeConfig.serverUrl).replace(/\/+$/, '');
+    const user = testUser !== undefined ? testUser : navidromeConfig.username;
+    const pass = testPass !== undefined ? testPass : (navidromeConfig.password || '');
+    setNavidromeConnecting(true);
+    setNavidromeError(null);
+
+    try {
+      const pingUrl = `${url}/rest/ping.view?u=${encodeURIComponent(user)}&p=${encodeURIComponent(pass)}&v=1.16.1&c=GodlyMusic&f=json`;
+      const res = await fetch(pingUrl, { signal: AbortSignal.timeout(3500) });
+      if (res.ok) {
+        const data = await res.json();
+        const subRes = data['subsonic-response'];
+        if (subRes && subRes.status === 'ok') {
+          const updated: NavidromeConfig = {
+            serverUrl: url,
+            username: user,
+            password: pass,
+            isConnected: true,
+            serverVersion: subRes.version || '1.16.1'
+          };
+          setNavidromeConfig(updated);
+          localStorage.setItem('godly_music_navidrome', JSON.stringify(updated));
+          sound.playSuccess();
+
+          // Fetch recent albums from Navidrome
+          try {
+            const albUrl = `${url}/rest/getAlbumList2.view?type=recent&size=20&u=${encodeURIComponent(user)}&p=${encodeURIComponent(pass)}&v=1.16.1&c=GodlyMusic&f=json`;
+            const aRes = await fetch(albUrl, { signal: AbortSignal.timeout(3500) });
+            if (aRes.ok) {
+              const aData = await aRes.json();
+              const albums = aData['subsonic-response']?.albumList2?.album;
+              if (Array.isArray(albums)) {
+                const naviTracks: TrackItem[] = albums.map((alb: any) => ({
+                  id: `navi-${alb.id}`,
+                  title: alb.title || alb.name || 'Navidrome Track',
+                  artist: alb.artist || 'Unknown Artist',
+                  album: alb.title || 'Navidrome Album',
+                  duration: alb.duration || 240,
+                  cover: `${url}/rest/getCoverArt.view?id=${alb.coverArt || alb.id}&size=600&u=${encodeURIComponent(user)}&p=${encodeURIComponent(pass)}&v=1.16.1&c=GodlyMusic`,
+                  streamUrl: `${url}/rest/stream.view?id=${alb.id}&maxBitRate=320&u=${encodeURIComponent(user)}&p=${encodeURIComponent(pass)}&v=1.16.1&c=GodlyMusic`,
+                  genre: alb.genre || 'Lossless FLAC',
+                  source: 'navidrome',
+                  qualityBadge: 'Navidrome FLAC :4533',
+                  releaseYear: alb.year || 2024,
+                  isLossless: true
+                }));
+                if (naviTracks.length > 0) {
+                  setQueue(naviTracks);
+                  setCurrentTrackIndex(0);
+                }
+              }
+            }
+          } catch {}
+          setNavidromeConnecting(false);
+          return;
+        }
+      }
+      throw new Error('Navidrome ping returned non-OK status');
+    } catch (err: any) {
+      console.warn('Navidrome connection test notice:', err);
+      const savedConfig: NavidromeConfig = {
+        serverUrl: url,
+        username: user,
+        password: pass,
+        isConnected: false,
+        serverVersion: '1.16.1'
+      };
+      setNavidromeConfig(savedConfig);
+      localStorage.setItem('godly_music_navidrome', JSON.stringify(savedConfig));
+      setNavidromeError(`Could not connect to Navidrome on ${url}. Verify Navidrome is active on :4533`);
+    } finally {
+      setNavidromeConnecting(false);
+    }
+  };
 
   // Library & Playlists State
   const [likedTrackIds, setLikedTrackIds] = useState<string[]>(() => {
@@ -1636,6 +1746,24 @@ export const MusicApp: React.FC = () => {
 
             {/* Right Quick Controls */}
             <div className="flex items-center gap-2">
+              {/* Navidrome Subsonic Connect Button */}
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowNavidromeModal(true);
+                }}
+                title="Navidrome Server Connect (:4533 Subsonic API)"
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  navidromeConfig.isConnected
+                    ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300 shadow-md shadow-emerald-950/40'
+                    : 'bg-white/[0.05] border-white/10 text-white/70 hover:text-white hover:border-emerald-500/40'
+                }`}
+              >
+                <Server size={13} className={navidromeConfig.isConnected ? 'text-emerald-400' : 'text-purple-400'} />
+                <span className="hidden sm:inline">Navidrome</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${navidromeConfig.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
+              </button>
+
               <button
                 onClick={() => setShowVinylModal(true)}
                 title="Launch Immersive Vinyl Player"
@@ -2838,6 +2966,157 @@ export const MusicApp: React.FC = () => {
               >
                 Done
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: NAVIDROME SUBSONIC SERVER CONFIG (:4533) */}
+      {showNavidromeModal && (
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-[#0c1024] border border-emerald-500/30 p-6 space-y-4 shadow-2xl text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <Server size={18} className="text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Navidrome Subsonic Suite
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      :4533
+                    </span>
+                  </h3>
+                  <span className="text-[10px] text-white/50">Single Go binary &bull; &lt;50MB RAM &bull; OpenSubsonic 1.16.1 &bull; FLAC Stream</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNavidromeModal(false)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-xs text-white/70 leading-relaxed">
+              Connect to your self-hosted <strong>Navidrome</strong> music server. Streams high-bitrate FLAC, transcodes on-the-fly, and syncs starred tracks and albums over standard Subsonic REST.
+            </p>
+
+            {/* Connection Status Pill */}
+            <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+              navidromeConfig.isConnected
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-white/[0.03] border-white/10 text-white/60'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${navidromeConfig.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span className="text-xs font-mono font-bold">
+                  {navidromeConfig.isConnected
+                    ? `Connected to Navidrome (Subsonic v${navidromeConfig.serverVersion})`
+                    : 'Disconnected / Standalone Spotify Engine Active'}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono opacity-60">Port 4533</span>
+            </div>
+
+            {navidromeError && (
+              <div className="p-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+                <Info size={14} className="shrink-0" />
+                <span>{navidromeError}</span>
+              </div>
+            )}
+
+            {/* Server Inputs */}
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-mono font-bold text-white/70 block mb-1">
+                  Navidrome Server URL:
+                </label>
+                <input
+                  type="text"
+                  value={navidromeConfig.serverUrl}
+                  onChange={(e) => setNavidromeConfig({ ...navidromeConfig, serverUrl: e.target.value })}
+                  placeholder="http://localhost:4533"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-xs font-mono text-white outline-none focus:border-emerald-400"
+                />
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-[10px] text-white/40">Quick Presets:</span>
+                  {['http://localhost:4533', 'http://127.0.0.1:4533', 'http://navidrome.local:4533'].map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setNavidromeConfig({ ...navidromeConfig, serverUrl: preset })}
+                      className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white"
+                    >
+                      {preset.replace('http://', '')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-mono font-bold text-white/70 block mb-1">
+                    Username:
+                  </label>
+                  <input
+                    type="text"
+                    value={navidromeConfig.username}
+                    onChange={(e) => setNavidromeConfig({ ...navidromeConfig, username: e.target.value })}
+                    placeholder="admin"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-mono font-bold text-white/70 block mb-1">
+                    Password / Token:
+                  </label>
+                  <input
+                    type="password"
+                    value={navidromeConfig.password || ''}
+                    onChange={(e) => setNavidromeConfig({ ...navidromeConfig, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none focus:border-emerald-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2 flex items-center justify-between">
+              <a
+                href="https://www.navidrome.org"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+              >
+                <span>Navidrome Docs</span>
+                <ExternalLink size={11} />
+              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowNavidromeModal(false)}
+                  className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 text-xs font-bold"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => connectNavidrome()}
+                  disabled={navidromeConnecting}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white shadow-lg shadow-emerald-950/50 flex items-center gap-1.5"
+                >
+                  {navidromeConnecting ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Testing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={13} />
+                      <span>Connect &amp; Sync</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

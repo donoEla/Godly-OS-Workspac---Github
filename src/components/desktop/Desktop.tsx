@@ -127,7 +127,8 @@ export const Desktop: React.FC = () => {
       onContextMenu={handleDesktopContextMenu}
       className="relative w-full h-full overflow-hidden select-none z-0"
       style={{
-        backgroundImage: `url("${encodeURI(wallpaperUrl)}")`,
+        backgroundColor: '#060814',
+        backgroundImage: wallpaperUrl ? `url("${encodeURI(wallpaperUrl)}")` : 'radial-gradient(ellipse at 50% 0%, #171038 0%, #060814 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

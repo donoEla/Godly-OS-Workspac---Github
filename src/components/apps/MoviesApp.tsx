@@ -18,7 +18,12 @@ import {
   SlidersHorizontal,
   Clock,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  HardDrive,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
@@ -61,6 +66,15 @@ export interface StreamProvider {
 }
 
 export const STREAM_PROVIDERS: StreamProvider[] = [
+  {
+    id: 'jellyfin',
+    name: 'Jellyfin :8096',
+    badge: 'Self-Hosted REST',
+    getUrl: () => {
+      const stored = localStorage.getItem('godly_movies_jellyfin') || 'http://localhost:8096';
+      return stored;
+    },
+  },
   {
     id: 'autoembed',
     name: 'AutoEmbed',
@@ -140,12 +154,46 @@ export const GENRE_FILTERS = [
 ];
 
 export const MoviesApp: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'trending' | 'movies' | 'tv' | 'bookmarks'>('trending');
+  const [activeTab, setActiveTab] = useState<'trending' | 'movies' | 'tv' | 'bookmarks' | 'jellyfin'>('trending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Self-Hosted Jellyfin (:8096) & Radarr (:7878) Suite State
+  const [jellyfinUrl, setJellyfinUrl] = useState<string>(() => localStorage.getItem('godly_movies_jellyfin') || 'http://localhost:8096');
+  const [radarrUrl, setRadarrUrl] = useState<string>(() => localStorage.getItem('godly_movies_radarr') || 'http://localhost:7878');
+  const [showJellyfinModal, setShowJellyfinModal] = useState<boolean>(false);
+  const [jellyfinModalTab, setJellyfinModalTab] = useState<'jellyfin' | 'radarr' | 'dim'>('jellyfin');
+  const [testStatus, setTestStatus] = useState<{ testing: boolean; message?: string; success?: boolean } | null>(null);
+
+  const testJellyfinConnection = async () => {
+    setTestStatus({ testing: true });
+    try {
+      const res = await fetch(`${jellyfinUrl}/System/Info/Public`, { mode: 'cors' });
+      if (res.ok) {
+        const data = await res.json();
+        setTestStatus({
+          testing: false,
+          success: true,
+          message: `Connected! Server: ${data.ServerName || 'Jellyfin'} (v${data.Version || '10.x'})`
+        });
+      } else {
+        setTestStatus({
+          testing: false,
+          success: false,
+          message: `HTTP ${res.status}: ${res.statusText}. Please verify URL & CORS.`
+        });
+      }
+    } catch (err: any) {
+      setTestStatus({
+        testing: false,
+        success: false,
+        message: `Direct fetch blocked or offline (${err.message || 'CORS'}). If your Jellyfin is active on :8096, it will embed cleanly.`
+      });
+    }
+  };
 
   // Detail Modal State
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
@@ -445,31 +493,100 @@ export const MoviesApp: React.FC = () => {
           >
             <Bookmark size={13} /> Saved ({bookmarks.length})
           </button>
+          <button
+            onClick={() => {
+              sound.playClick();
+              setActiveTab('jellyfin');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'jellyfin'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-950/40'
+                : 'text-white/60 hover:text-white'
+            }`}
+            title="Jellyfin Open Source Media Server (:8096)"
+          >
+            <Server size={13} className="text-purple-400" /> Jellyfin :8096
+          </button>
         </div>
 
-        {/* Search input */}
-        <div className="relative w-44 sm:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search any title..."
-            className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white placeholder-white/30 focus:border-rose-500/50 outline-none transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-            >
-              <X size={12} />
-            </button>
-          )}
+        {/* Right Header: Suite Launcher & Search */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              sound.playClick();
+              setShowJellyfinModal(true);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+            title="Jellyfin & Radarr Suite (:8096, :7878)"
+          >
+            <Server size={13} className="text-purple-400" />
+            <span className="hidden sm:inline">Jellyfin Suite</span>
+            <span className="text-[10px] font-mono opacity-60">:8096</span>
+          </button>
+
+          {/* Search input */}
+          <div className="relative w-40 sm:w-60">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search any title..."
+              className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white placeholder-white/30 focus:border-rose-500/50 outline-none transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Grid View */}
-      <div className="flex-1 w-full overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+      {/* Main Grid View or Jellyfin Client */}
+      {activeTab === 'jellyfin' ? (
+        <div className="flex-1 w-full h-full flex flex-col bg-black relative">
+          <div className="h-10 bg-[#0c0d18] border-b border-white/10 px-4 sm:px-6 flex items-center justify-between text-xs text-white/60 shrink-0">
+            <div className="flex items-center gap-2">
+              <Server size={14} className="text-purple-400" />
+              <span className="font-bold text-white">Jellyfin Media Server</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                {jellyfinUrl}
+              </span>
+              <span className="text-[10px] text-white/40 hidden md:inline">&bull; Free Hardware Transcoding &bull; Zero Phoning Home</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowJellyfinModal(true);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-[11px] font-bold flex items-center gap-1 transition-all"
+              >
+                <SlidersHorizontal size={12} /> Configure Server
+              </button>
+              <a
+                href={jellyfinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-[11px] font-bold flex items-center gap-1 transition-all"
+              >
+                <ExternalLink size={12} /> Open Full WebUI
+              </a>
+            </div>
+          </div>
+          <iframe
+            src={jellyfinUrl}
+            title="Jellyfin Web Client"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            className="flex-1 w-full h-full border-0 bg-black"
+          />
+        </div>
+      ) : (
+        <div className="flex-1 w-full overflow-y-auto p-4 sm:p-6 custom-scrollbar">
         {loading ? (
           <div className="w-full h-64 flex flex-col items-center justify-center gap-3 text-white/40">
             <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
@@ -576,6 +693,7 @@ export const MoviesApp: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Detail Modal Overlay */}
       {selectedMedia && (
@@ -852,6 +970,243 @@ export const MoviesApp: React.FC = () => {
                 fallbackName={currentProviderObj.name}
               />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* JELLYFIN & RADARR SUITE MODAL */}
+      {showJellyfinModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0c0d18] border border-purple-500/30 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="h-14 px-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                  <Server size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-white tracking-wide">Self-Hosted Movies &amp; TV Suite</h2>
+                  <p className="text-[10px] text-purple-300/70 font-mono">Jellyfin (:8096) &bull; Radarr (:7878) &bull; Dim</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowJellyfinModal(false);
+                }}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Server Tabs */}
+            <div className="flex border-b border-white/10 bg-black/40 px-6 pt-3 gap-2">
+              <button
+                onClick={() => setJellyfinModalTab('jellyfin')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  jellyfinModalTab === 'jellyfin'
+                    ? 'border-purple-500 text-purple-400 bg-purple-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <Server size={12} />
+                <span>Jellyfin</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">:8096</span>
+              </button>
+              <button
+                onClick={() => setJellyfinModalTab('radarr')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  jellyfinModalTab === 'radarr'
+                    ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <HardDrive size={12} />
+                <span>Radarr</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">:7878</span>
+              </button>
+              <button
+                onClick={() => setJellyfinModalTab('dim')}
+                className={`px-4 py-2 text-xs font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  jellyfinModalTab === 'dim'
+                    ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                    : 'border-transparent text-white/50 hover:text-white'
+                }`}
+              >
+                <Zap size={12} />
+                <span>Dim</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Rust</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {jellyfinModalTab === 'jellyfin' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed">
+                    <strong className="text-purple-300 font-bold block mb-1">Jellyfin — 100% Free &amp; Open Source Media System (Port 8096)</strong>
+                    48k stars, 70+ client apps, hardware transcoding completely free (NVENC, VAAPI, QSV), zero phoning home or account lockouts. Full REST API ready to stream directly.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-white/70 block mb-1.5">Jellyfin Server URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={jellyfinUrl}
+                        onChange={(e) => setJellyfinUrl(e.target.value)}
+                        placeholder="http://localhost:8096"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
+                      />
+                      <button
+                        onClick={testJellyfinConnection}
+                        disabled={testStatus?.testing}
+                        className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+                        title="Test Public REST API"
+                      >
+                        <Activity size={13} className={testStatus?.testing ? 'animate-spin' : ''} />
+                        Test API
+                      </button>
+                    </div>
+                  </div>
+
+                  {testStatus && (
+                    <div
+                      className={`p-2.5 rounded-xl text-[11px] font-mono flex items-center gap-2 ${
+                        testStatus.success
+                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                      }`}
+                    >
+                      {testStatus.success ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                      <span>{testStatus.message}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40">
+                    <span>Quick presets:</span>
+                    <button
+                      onClick={() => setJellyfinUrl('http://localhost:8096')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      localhost:8096
+                    </button>
+                    <button
+                      onClick={() => setJellyfinUrl('http://127.0.0.1:8096')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      127.0.0.1:8096
+                    </button>
+                    <button
+                      onClick={() => setJellyfinUrl('http://jellyfin.local:8096')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      jellyfin.local
+                    </button>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('godly_movies_jellyfin', jellyfinUrl);
+                        setActiveTab('jellyfin');
+                        setShowJellyfinModal(false);
+                        sound.playSuccess();
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all"
+                    >
+                      <Check size={14} /> Save &amp; Switch to Jellyfin Player
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {jellyfinModalTab === 'radarr' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
+                    <strong className="text-amber-300 font-bold block mb-1">Radarr — Automation &amp; Quality Management Layer (Port 7878)</strong>
+                    Radarr monitors RSS feeds, grabs releases automatically, renames files cleanly, and upgrades movies to your desired quality (4K HDR, 1080p Remux). Runs upstream of Jellyfin.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-white/70 block mb-1.5">Radarr Server URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={radarrUrl}
+                        onChange={(e) => setRadarrUrl(e.target.value)}
+                        placeholder="http://localhost:7878"
+                        className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                      />
+                      <a
+                        href={radarrUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
+                      >
+                        <ExternalLink size={13} /> Open
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-white/40">
+                    <span>Quick presets:</span>
+                    <button
+                      onClick={() => setRadarrUrl('http://localhost:7878')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      localhost:7878
+                    </button>
+                    <button
+                      onClick={() => setRadarrUrl('http://127.0.0.1:7878')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/70 font-mono text-[10px]"
+                    >
+                      127.0.0.1:7878
+                    </button>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('godly_movies_radarr', radarrUrl);
+                        setShowJellyfinModal(false);
+                        sound.playSuccess();
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Check size={14} /> Save Radarr URL
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {jellyfinModalTab === 'dim' && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-200/90 leading-relaxed">
+                    <strong className="text-indigo-300 font-bold block mb-1">Dim — Rust-Based Lighter Alternative to Jellyfin</strong>
+                    Written in Rust with an ultra-clean codebase, Dim is designed as an extremely lightweight self-hosted media server for minimal RAM footprint environments (Raspberry Pi, small VPS).
+                  </div>
+                  <div className="text-xs text-white/60 leading-relaxed">
+                    If you are hosting on low-resource machines and prefer a lean Rust backend, Dim provides a nimble web client and fast direct stream playback.
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="h-12 px-6 border-t border-white/10 flex items-center justify-between bg-white/[0.02] text-[10px] text-white/40">
+              <span>Saved locally in browser storage</span>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowJellyfinModal(false);
+                }}
+                className="text-white/60 hover:text-white font-bold"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

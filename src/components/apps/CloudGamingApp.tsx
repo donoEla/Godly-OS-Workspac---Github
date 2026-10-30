@@ -41,13 +41,13 @@ export interface QuickCloudGame {
   category: string;
   thumbnail: string;
   cloudmoonUrl: string;
-  nowggUrl?: string;
   desc: string;
 }
 
-// Unblocked CloudMoon InPlay worker & direct fallbacks
-export const CLOUDMOON_UNBLOCKER_URL = 'https://google-classroom.sriail.workers.dev/';
-export const CLOUDMOON_DIRECT_URL = 'https://web.cloudmoonapp.com/';
+// Unblocked CloudMoon SVG loader & official WebRTC endpoints
+export const CLOUDMOON_UNBLOCKER_URL = 'https://cdn.jsdelivr.net/gh/CloudMoonApp/web@main/261014.svg';
+export const CLOUDMOON_DIRECT_URL = 'https://cdn.jsdelivr.net/gh/CloudMoonApp/web@main/261014.svg';
+export const PLAYSTRATUS_URL = 'https://playstratus.io';
 
 const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
   {
@@ -55,7 +55,6 @@ const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
     category: 'Sandbox MMO',
     thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop',
     cloudmoonUrl: CLOUDMOON_UNBLOCKER_URL,
-    nowggUrl: 'https://nowgg.nl/play/roblox-corporation/5349/roblox',
     desc: 'Infinite worlds, multiplayer obbies, roleplay and battlegrounds in 60 FPS cloud.'
   },
   {
@@ -63,7 +62,6 @@ const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
     category: 'Battle Royale',
     thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop',
     cloudmoonUrl: CLOUDMOON_UNBLOCKER_URL,
-    nowggUrl: 'https://nowgg.nl/play/garena-international-i-private-limited/8172/free-fire-max',
     desc: '50-player battle royale with high-octane gunplay and ultra graphics.'
   },
   {
@@ -71,7 +69,6 @@ const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
     category: 'Multiplayer Action',
     thumbnail: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=500&auto=format&fit=crop',
     cloudmoonUrl: CLOUDMOON_UNBLOCKER_URL,
-    nowggUrl: 'https://nowgg.nl/play/supercell/8505/brawl-stars',
     desc: 'Fast-paced 3v3 multiplayer and battle royale combat.'
   },
   {
@@ -79,7 +76,6 @@ const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
     category: 'Arcade Runner',
     thumbnail: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=500&auto=format&fit=crop',
     cloudmoonUrl: CLOUDMOON_UNBLOCKER_URL,
-    nowggUrl: 'https://nowgg.nl/play/sybo-games/5691/subway-surfers',
     desc: 'Dash as fast as you can through subway train tracks.'
   },
   {
@@ -87,7 +83,6 @@ const FEATURED_CLOUD_GAMES: QuickCloudGame[] = [
     category: 'Tactical FPS',
     thumbnail: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=500&auto=format&fit=crop',
     cloudmoonUrl: CLOUDMOON_UNBLOCKER_URL,
-    nowggUrl: 'https://nowgg.nl/play/activision-publishing-inc/2358/call-of-duty-mobile',
     desc: 'Iconic multiplayer maps and modes with low input latency.'
   },
   {
@@ -204,18 +199,8 @@ export const CloudGamingApp: React.FC = () => {
 
   // Compute active iframe source based on engine
   const resolvedFrameUrl = useMemo(() => {
-    if (streamEngine === 'unblocker') {
-      // If runner URL is standard CloudMoon, route through the verified Cloudflare Worker unblocker
-      if (activeRunningUrl.includes('cloudmoonapp.com')) {
-        return CLOUDMOON_UNBLOCKER_URL;
-      }
-      return activeRunningUrl;
-    }
-    if (streamEngine === 'direct') {
-      return activeRunningUrl;
-    }
     return activeRunningUrl;
-  }, [activeRunningUrl, streamEngine]);
+  }, [activeRunningUrl]);
 
   return (
     <div className="w-full h-full flex flex-col bg-[#070914] text-white select-none overflow-hidden font-sans">
@@ -343,11 +328,7 @@ export const CloudGamingApp: React.FC = () => {
                   <button
                     key={fg.title}
                     onClick={() => {
-                      if (fg.nowggUrl) {
-                        launchRunner(fg.nowggUrl, `${fg.title} (Cloud Runner)`);
-                      } else {
-                        launchRunner(CLOUDMOON_UNBLOCKER_URL, `${fg.title} (CloudMoon)`);
-                      }
+                      launchRunner(CLOUDMOON_UNBLOCKER_URL, `${fg.title} (CloudMoon)`);
                     }}
                     className="px-2.5 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-cyan-500/40 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1 transition-all text-white/80 hover:text-white"
                   >
@@ -363,43 +344,43 @@ export const CloudGamingApp: React.FC = () => {
                   onClick={() => {
                     sound.playClick();
                     setStreamEngine('unblocker');
-                    setRefreshKey((k) => k + 1);
+                    launchRunner(CLOUDMOON_UNBLOCKER_URL, 'CloudMoon InPlay');
                   }}
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold transition-all border ${
-                    streamEngine === 'unblocker'
+                    activeRunningUrl === CLOUDMOON_UNBLOCKER_URL
                       ? 'bg-cyan-500/25 border-cyan-400 text-cyan-300'
                       : 'bg-white/[0.03] border-white/10 text-white/50'
                   }`}
                 >
-                  CloudMoon InPlay
+                  CloudMoon
                 </button>
                 <button
                   onClick={() => {
                     sound.playClick();
                     setStreamEngine('direct');
-                    setRefreshKey((k) => k + 1);
+                    launchRunner('https://www.raccoongame.com/#/game-detail?gameKey=bs0078', 'Dragon Ball: Sparking! ZERO (Stratus)');
                   }}
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold transition-all border ${
-                    streamEngine === 'direct'
+                    activeRunningUrl.includes('raccoongame.com')
                       ? 'bg-purple-500/25 border-purple-400 text-purple-300'
                       : 'bg-white/[0.03] border-white/10 text-white/50'
                   }`}
                 >
-                  Direct WebRTC
+                  Stratus Cloud
                 </button>
                 <button
                   onClick={() => {
                     sound.playClick();
                     setStreamEngine('proxy');
-                    setRefreshKey((k) => k + 1);
+                    launchRunner(PLAYSTRATUS_URL, 'PlayStratus Network');
                   }}
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold transition-all border ${
-                    streamEngine === 'proxy'
+                    activeRunningUrl === PLAYSTRATUS_URL
                       ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300'
                       : 'bg-white/[0.03] border-white/10 text-white/50'
                   }`}
                 >
-                  UV Proxy
+                  PlayStratus
                 </button>
               </div>
             </div>
@@ -552,9 +533,20 @@ export const CloudGamingApp: React.FC = () => {
                         </span>
 
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
-                          <div className="w-10 h-10 rounded-full bg-cyan-600 text-white flex items-center justify-center shadow-lg shadow-cyan-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sound.playClick();
+                              launchRunner(
+                                `https://www.raccoongame.com/#/game-detail?gameKey=${game.game_key}`,
+                                `${game.name} (Stratus Cloud)`
+                              );
+                            }}
+                            className="w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center shadow-lg shadow-cyan-600/40 transform scale-75 group-hover:scale-100 transition-all hover:scale-110"
+                            title="Instant Launch on Stratus"
+                          >
                             <Play size={16} className="ml-0.5 fill-white" />
-                          </div>
+                          </button>
                         </div>
                       </div>
 
@@ -636,17 +628,6 @@ export const CloudGamingApp: React.FC = () => {
                         <Play size={13} className="fill-white" />
                         <span>CloudMoon</span>
                       </button>
-
-                      {game.nowggUrl && (
-                        <button
-                          onClick={() => {
-                            launchRunner(game.nowggUrl!, `${game.title} (NowGG Cloud)`);
-                          }}
-                          className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 font-bold text-xs text-white/80 hover:text-white transition-all"
-                        >
-                          NowGG
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -691,7 +672,34 @@ export const CloudGamingApp: React.FC = () => {
                 Launch via Cloud Runner:
               </h4>
 
-              {/* Launch on CloudMoon InPlay Unblocker */}
+              {/* Launch on Stratus Cloud Stream */}
+              <button
+                onClick={() => {
+                  setSelectedGameForModal(null);
+                  launchRunner(
+                    `https://www.raccoongame.com/#/game-detail?gameKey=${selectedGameForModal.game_key}`,
+                    `${selectedGameForModal.name} (Stratus Cloud)`
+                  );
+                }}
+                className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-purple-900/60 to-indigo-900/50 hover:from-purple-800/80 hover:to-indigo-800/70 border border-purple-500/40 flex items-center justify-between transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/25 flex items-center justify-center text-purple-300 text-lg">
+                    🎮
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-black text-white group-hover:text-purple-300 transition-colors">
+                      Launch on Stratus Cloud Stream
+                    </p>
+                    <span className="text-[10px] text-white/60">
+                      Direct 60 FPS WebRTC stream for {selectedGameForModal.name} with gamepad support
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-purple-400" />
+              </button>
+
+              {/* Launch on CloudMoon Web Engine */}
               <button
                 onClick={() => {
                   setSelectedGameForModal(null);
@@ -705,39 +713,38 @@ export const CloudGamingApp: React.FC = () => {
                   </div>
                   <div className="text-left">
                     <p className="text-xs font-black text-white group-hover:text-cyan-300 transition-colors">
-                      Launch on CloudMoon InPlay Engine
+                      Launch on CloudMoon Web Engine
                     </p>
                     <span className="text-[10px] text-white/50">
-                      Unblocked direct browser streaming with gamepad support &amp; adblocking
+                      Official CloudMoon unblocked web portal with full mobile &amp; PC game support
                     </span>
                   </div>
                 </div>
                 <ChevronRight size={16} className="text-cyan-400" />
               </button>
 
-              {/* Direct WebRTC Session Runner */}
+              {/* PlayStratus WebTransport Network */}
               <button
                 onClick={() => {
                   setSelectedGameForModal(null);
-                  const webrtcUrl = `https://nowgg.nl/play/search?q=${encodeURIComponent(selectedGameForModal.name)}`;
-                  launchRunner(webrtcUrl, `${selectedGameForModal.name} (WebRTC Stream)`);
+                  launchRunner(PLAYSTRATUS_URL, `${selectedGameForModal.name} (PlayStratus)`);
                 }}
                 className="w-full p-3.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-between transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 text-lg">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-300 text-lg">
                     ⚡
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-black text-white group-hover:text-purple-300 transition-colors">
-                      WebRTC Direct Stream Relay
+                    <p className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors">
+                      PlayStratus WebTransport Network
                     </p>
                     <span className="text-[10px] text-white/50">
-                      Tunnel stream through Godly OS low-latency WebRTC frame
+                      Ultra-low 40ms glass-to-glass latency via Wayland proxy
                     </span>
                   </div>
                 </div>
-                <ChevronRight size={16} className="text-purple-400" />
+                <ChevronRight size={16} className="text-emerald-400" />
               </button>
             </div>
 

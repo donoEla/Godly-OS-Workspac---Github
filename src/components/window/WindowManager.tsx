@@ -23,9 +23,7 @@ import { WidgetsApp } from '../apps/WidgetsApp';
 import { EmulatorHubApp } from '../apps/EmulatorHubApp';
 import { MultiplayerLobbyApp } from '../apps/MultiplayerLobbyApp';
 import { EaglercraftApp } from '../apps/EaglercraftApp';
-import { MangaApp } from '../apps/MangaApp';
 import { MoviesApp } from '../apps/MoviesApp';
-import { MusicApp } from '../apps/MusicApp';
 import { CloudGamingApp } from '../apps/CloudGamingApp';
 
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
@@ -118,12 +116,8 @@ export const WindowManager: React.FC = () => {
         return <MultiplayerLobbyApp />;
       case 'eaglercraft':
         return <EaglercraftApp />;
-      case 'manga':
-        return <MangaApp />;
       case 'movies':
         return <MoviesApp />;
-      case 'music':
-        return <MusicApp />;
       case 'cloudgaming':
         return <CloudGamingApp />;
       default:

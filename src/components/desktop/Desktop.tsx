@@ -131,7 +131,7 @@ export const Desktop: React.FC = () => {
     };
     img.onerror = () => {
       // Fallback to verified immutable release CDN wallpaper if local/pages path stalls
-      const fallbackUrl = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@v4.7.1/dist/assets/backgrounds/kali-ferrofluid-1298846866.jpg';
+      const fallbackUrl = 'https://cdn.jsdelivr.net/gh/donoEla/Godly-OS-Workspac---Github@v4.7.2/dist/assets/backgrounds/kali-ferrofluid-1298846866.jpg';
       setEffectiveWallpaperUrl(fallbackUrl);
     };
   }, [settings.wallpaper]);

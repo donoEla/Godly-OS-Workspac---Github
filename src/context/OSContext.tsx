@@ -296,8 +296,6 @@ export const DEFAULT_INSTALLED_APPS: InstalledApp[] = [
   { id: 'spotify-app', name: 'Spotify Cloud', icon: getAssetUrl('assets/icons/spotify.jpg'), category: 'Media', appId: 'spotify' },
   { id: 'octave-stream', name: 'Octave Streaming', icon: getAssetUrl('assets/icons/octave.png?v=3'), category: 'Media', url: 'https://octavestreaming.com/' },
   { id: 'movies', name: 'Movies', icon: getAssetUrl('assets/icons/movies.png'), category: 'Media', appId: 'movies' },
-  { id: 'godly-manga', name: 'Manga', icon: getAssetUrl('assets/icons/manga.svg'), category: 'Media', appId: 'manga' },
-  { id: 'music', name: 'Music', icon: getAssetUrl('assets/icons/music.svg'), category: 'Media', appId: 'music' },
   { id: 'cloudgaming', name: 'Cloud Gaming', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'cloudgaming' },
   { id: 'games-arcade', name: 'Godly Arcade', icon: getAssetUrl('assets/icons/games.jpg'), category: 'Games', appId: 'games' },
   { id: 'terminal', name: 'Terminal', icon: getAssetUrl('assets/icons/terminal.jpg'), category: 'Utilities', appId: 'terminal' },
@@ -325,9 +323,7 @@ export const APP_META: Record<AppId, { title: string; icon: string; width: numbe
   'emulator': { title: 'Web Emulator Hub', icon: getAssetUrl('assets/icons/emulator.png'), width: 1040, height: 680 },
   'multiplayer': { title: 'P2P Multiplayer Arena', icon: getAssetUrl('assets/icons/multiplayer.jpg'), width: 920, height: 620 },
   'eaglercraft': { title: 'Eaglercraft Studio', icon: getAssetUrl('assets/icons/eaglercraft.jpg'), width: 1060, height: 700 },
-  'manga': { title: 'Manga', icon: getAssetUrl('assets/icons/manga.svg'), width: 1040, height: 700 },
   'movies': { title: 'Movies', icon: getAssetUrl('assets/icons/movies.png'), width: 1060, height: 720 },
-  'music': { title: 'Music', icon: getAssetUrl('assets/icons/music.svg'), width: 940, height: 650 },
   'cloudgaming': { title: 'Cloud Gaming', icon: getAssetUrl('assets/icons/games.jpg'), width: 1080, height: 720 },
   'notes': { title: 'Notes Studio', icon: getAssetUrl('assets/icons/notes.jpg'), width: 880, height: 600 },
   'settings': { title: 'Settings', icon: getAssetUrl('assets/icons/settings.jpg'), width: 880, height: 640 },
@@ -439,9 +435,14 @@ export const OSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         }
       });
 
-      localStorage.setItem('godly_apps_version', '4.5.6');
-      localStorage.setItem('godly_installed_apps', JSON.stringify(updated));
-      return updated;
+      // Filter out decommissioned apps (manga, music)
+      const filtered = updated.filter(
+        (app) => app.appId !== ('manga' as any) && app.appId !== ('music' as any) && app.id !== 'godly-manga' && app.id !== 'music'
+      );
+
+      localStorage.setItem('godly_apps_version', '4.7.2');
+      localStorage.setItem('godly_installed_apps', JSON.stringify(filtered));
+      return filtered;
     } catch {
       return DEFAULT_INSTALLED_APPS;
     }

@@ -21,9 +21,7 @@ export type AppId =
   | 'emulator'
   | 'multiplayer'
   | 'eaglercraft'
-  | 'manga'
   | 'movies'
-  | 'music'
   | 'cloudgaming';
 
 export type AccentColor = 'violet' | 'gold' | 'cyan' | 'emerald' | 'rose' | 'amber' | 'electric' | 'obsidian';

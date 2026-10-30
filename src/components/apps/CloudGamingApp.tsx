@@ -7,14 +7,15 @@ import {
   Maximize2,
   Minimize2,
   Play,
-  Sparkles,
   Flame,
   Info,
   X,
   Tv,
   CheckCircle2,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Radio
 } from 'lucide-react';
 import { sound } from '../../utils/sound';
 
@@ -28,8 +29,9 @@ export interface CloudMoonGame {
   players?: string;
 }
 
-// Official CloudMoon WebRTC SVG bootloader
+// Official CloudMoon WebRTC SVG bootloader fallback
 export const CLOUDMOON_URL = 'https://cdn.jsdelivr.net/gh/CloudMoonApp/web@main/261014.svg';
+const PORTAL_HTML_URL = 'https://cdn.jsdelivr.net/gh/CloudMoonApp/web@main/portal-261014.html';
 
 export const CLOUDMOON_GAMES: CloudMoonGame[] = [
   {
@@ -198,14 +200,131 @@ export const CLOUDMOON_GAMES: CloudMoonGame[] = [
 
 export const CloudGamingApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stream' | 'library'>('stream');
-  const [activeGameTitle, setActiveGameTitle] = useState<string>('CloudMoon InPlay');
+  const [selectedGame, setSelectedGame] = useState<string>('Roblox');
+  const [activeGameTitle, setActiveGameTitle] = useState<string>('Roblox (CloudMoon)');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [gamepadConnected, setGamepadConnected] = useState<string | null>(null);
+  const [portalHtml, setPortalHtml] = useState<string | null>(null);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Load CloudMoon Portal HTML and inject bridge script for instant quick play launcher
+  useEffect(() => {
+    let isMounted = true;
+    fetch(PORTAL_HTML_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        return res.text();
+      })
+      .then((rawHtml) => {
+        if (!isMounted) return;
+
+        const bridgeScript = `
+<script>
+(function() {
+  function selectGame(gameTitle) {
+    if (!gameTitle) return;
+
+    function tryLaunch() {
+      try {
+        const app = window.App;
+        if (!app) return false;
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+          searchInput.value = gameTitle;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (typeof app.handleSearch === 'function') {
+          app.handleSearch(gameTitle);
+        }
+
+        const games = (app.rawGames && app.rawGames.length)
+          ? app.rawGames
+          : (app.filteredGames && app.filteredGames.length)
+            ? app.filteredGames
+            : [];
+
+        if (!games.length) return false;
+
+        const clean = function(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+        const targetClean = clean(gameTitle);
+
+        const match = games.find(function(g) {
+          const t = clean(g.title);
+          const id = clean(g.id);
+          return t.includes(targetClean) || targetClean.includes(t) || id.includes(targetClean);
+        });
+
+        if (match && match.id && typeof app.showGameDetails === 'function') {
+          app.showGameDetails(match.id);
+          return true;
+        }
+
+        const firstCard = document.querySelector('#game-grid .game-card-item');
+        if (firstCard) {
+          firstCard.click();
+          return true;
+        }
+      } catch (err) {
+        console.warn('[CloudMoon Bridge Error]', err);
+      }
+      return false;
+    }
+
+    if (!tryLaunch()) {
+      var attempts = 0;
+      var interval = setInterval(function() {
+        attempts++;
+        if (tryLaunch() || attempts > 30) {
+          clearInterval(interval);
+        }
+      }, 200);
+    }
+  }
+
+  window.addEventListener('message', function(evt) {
+    if (evt.data && evt.data.type === 'LAUNCH_GAME' && evt.data.title) {
+      selectGame(evt.data.title);
+    }
+  });
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const g = params.get('game');
+    if (g) selectGame(g);
+  } catch (err) {}
+})();
+</script>
+`;
+
+        let modified = rawHtml;
+        if (modified.includes('<head>')) {
+          modified = modified.replace(
+            '<head>',
+            '<head><base href="https://cdn.jsdelivr.net/gh/CloudMoonApp/web@main/">'
+          );
+        }
+        if (modified.includes('</body>')) {
+          modified = modified.replace('</body>', `${bridgeScript}</body>`);
+        } else {
+          modified += bridgeScript;
+        }
+
+        setPortalHtml(modified);
+      })
+      .catch((err) => {
+        console.warn('Direct CloudMoon portal fetch bypassed, using SVG bootloader fallback:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Gamepad Detection
   useEffect(() => {
@@ -236,9 +355,38 @@ export const CloudGamingApp: React.FC = () => {
 
   const handleLaunchGame = (title: string) => {
     sound.playClick();
+    setSelectedGame(title);
     setActiveGameTitle(`${title} (CloudMoon)`);
     setActiveTab('stream');
-    setRefreshKey((k) => k + 1);
+
+    const sendLaunchMessage = () => {
+      try {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          iframeRef.current.contentWindow.postMessage(
+            { type: 'LAUNCH_GAME', title },
+            '*'
+          );
+        }
+      } catch (e) {
+        // Suppress cross-origin if fallback frame
+      }
+    };
+
+    sendLaunchMessage();
+    setTimeout(sendLaunchMessage, 200);
+    setTimeout(sendLaunchMessage, 600);
+    setTimeout(sendLaunchMessage, 1200);
+  };
+
+  const handleIframeLoaded = () => {
+    if (selectedGame && iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          { type: 'LAUNCH_GAME', title: selectedGame },
+          '*'
+        );
+      } catch (e) {}
+    }
   };
 
   const handleToggleFullscreen = () => {
@@ -286,7 +434,8 @@ export const CloudGamingApp: React.FC = () => {
               <h1 className="text-sm font-black text-white tracking-tight">
                 CloudMoon Gaming
               </h1>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 WebRTC &bull; 60 FPS
               </span>
             </div>
@@ -376,17 +525,29 @@ export const CloudGamingApp: React.FC = () => {
             <div className="px-4 py-2 bg-[#080b18] border-b border-white/[0.08] flex items-center justify-between gap-3 shrink-0 flex-wrap">
               <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar">
                 <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
-                  <Flame size={12} className="text-amber-400" /> Quick Launch:
+                  <Flame size={12} className="text-amber-400" /> Quick Play:
                 </span>
-                {CLOUDMOON_GAMES.slice(0, 7).map((fg) => (
-                  <button
-                    key={fg.id}
-                    onClick={() => handleLaunchGame(fg.title)}
-                    className="px-2.5 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-cyan-500/40 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1 transition-all text-white/80 hover:text-white"
-                  >
-                    <span>{fg.title}</span>
-                  </button>
-                ))}
+                {CLOUDMOON_GAMES.slice(0, 8).map((fg) => {
+                  const isSelected = selectedGame.toLowerCase() === fg.title.toLowerCase();
+                  return (
+                    <button
+                      key={fg.id}
+                      onClick={() => handleLaunchGame(fg.title)}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border border-cyan-400 shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/40'
+                          : 'bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-cyan-500/40 text-white/80 hover:text-white'
+                      }`}
+                      title={`Quick launch ${fg.title} in CloudMoon`}
+                    >
+                      <Zap size={11} className={isSelected ? 'text-amber-300 fill-amber-300' : 'text-cyan-400'} />
+                      <span>{fg.title}</span>
+                      {isSelected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5 animate-pulse" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="flex items-center gap-2">
@@ -395,7 +556,7 @@ export const CloudGamingApp: React.FC = () => {
                     sound.playClick();
                     window.open(CLOUDMOON_URL, '_blank');
                   }}
-                  className="px-3 py-1 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/40 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+                  className="px-3 py-1.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/40 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
                   title="Open CloudMoon in Native Window"
                 >
                   <ExternalLink size={12} />
@@ -409,24 +570,40 @@ export const CloudGamingApp: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Info size={13} className="text-cyan-400 shrink-0" />
                 <span>
-                  <strong>Tip:</strong> In CloudMoon, use <strong>Email &amp; Password</strong> to sign in (third-party Google OAuth popups are restricted in iframes).
+                  <strong>Quick Play Active:</strong> Selected target is <strong>{selectedGame}</strong>. Sign in using <strong>Email &amp; Password</strong> inside CloudMoon.
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-cyan-400 shrink-0 ml-2 hidden sm:inline">
-                Official WebRTC &bull; {activeGameTitle}
+              <span className="text-[10px] font-mono text-cyan-400 shrink-0 ml-2 hidden sm:inline flex items-center gap-1">
+                <Radio size={11} className="text-emerald-400 animate-pulse" />
+                {activeGameTitle}
               </span>
             </div>
 
-            {/* Embedded CloudMoon IFrame */}
+            {/* Embedded CloudMoon IFrame with Smart Quick Launch Bridge */}
             <div className="flex-1 w-full h-full relative bg-black">
-              <iframe
-                key={`cloudmoon-stream-${refreshKey}`}
-                src={CLOUDMOON_URL}
-                title="CloudMoon Gaming InPlay"
-                className="w-full h-full border-0 bg-black"
-                allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; encrypted-media; accelerometer; gyroscope; camera; microphone; display-capture"
-                allowFullScreen
-              />
+              {portalHtml ? (
+                <iframe
+                  ref={iframeRef}
+                  key={`cloudmoon-srcdoc-${refreshKey}`}
+                  srcDoc={portalHtml}
+                  onLoad={handleIframeLoaded}
+                  title="CloudMoon Gaming InPlay"
+                  className="w-full h-full border-0 bg-black"
+                  allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; encrypted-media; accelerometer; gyroscope; camera; microphone; display-capture"
+                  allowFullScreen
+                />
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  key={`cloudmoon-stream-${refreshKey}`}
+                  src={CLOUDMOON_URL}
+                  onLoad={handleIframeLoaded}
+                  title="CloudMoon Gaming InPlay"
+                  className="w-full h-full border-0 bg-black"
+                  allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; encrypted-media; accelerometer; gyroscope; camera; microphone; display-capture"
+                  allowFullScreen
+                />
+              )}
             </div>
           </div>
         )}
@@ -533,7 +710,7 @@ export const CloudGamingApp: React.FC = () => {
                               handleLaunchGame(game.title);
                             }}
                             className="w-11 h-11 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center shadow-lg shadow-cyan-600/40 transform scale-75 group-hover:scale-100 transition-all hover:scale-110"
-                            title="Play in CloudMoon"
+                            title={`Play ${game.title} in CloudMoon`}
                           >
                             <Play size={18} className="ml-0.5 fill-white" />
                           </button>

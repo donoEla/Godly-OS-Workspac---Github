@@ -200,8 +200,9 @@ export const CLOUDMOON_GAMES: CloudMoonGame[] = [
 
 export const CloudGamingApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stream' | 'library'>('stream');
-  const [selectedGame, setSelectedGame] = useState<string>('Roblox');
-  const [activeGameTitle, setActiveGameTitle] = useState<string>('Roblox (CloudMoon)');
+  // selectedGame is null on initial open so CloudMoon starts on the full library
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [activeGameTitle, setActiveGameTitle] = useState<string>('CloudMoon Library');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshKey, setRefreshKey] = useState<number>(0);
@@ -287,9 +288,32 @@ export const CloudGamingApp: React.FC = () => {
     }
   }
 
+  function resetToAllLibrary() {
+    try {
+      const app = window.App;
+      if (!app) return;
+      if (typeof app.closeModal === 'function') {
+        app.closeModal();
+      }
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (typeof app.handleSearch === 'function') {
+        app.handleSearch('');
+      }
+    } catch (e) {
+      console.warn('[CloudMoon Reset Error]', e);
+    }
+  }
+
   window.addEventListener('message', function(evt) {
-    if (evt.data && evt.data.type === 'LAUNCH_GAME' && evt.data.title) {
+    if (!evt.data) return;
+    if (evt.data.type === 'LAUNCH_GAME' && evt.data.title) {
       selectGame(evt.data.title);
+    } else if (evt.data.type === 'RESET_LIBRARY' || evt.data.type === 'SHOW_ALL') {
+      resetToAllLibrary();
     }
   });
 
@@ -367,9 +391,7 @@ export const CloudGamingApp: React.FC = () => {
             '*'
           );
         }
-      } catch (e) {
-        // Suppress cross-origin if fallback frame
-      }
+      } catch (e) {}
     };
 
     sendLaunchMessage();
@@ -378,7 +400,30 @@ export const CloudGamingApp: React.FC = () => {
     setTimeout(sendLaunchMessage, 1200);
   };
 
+  const handleShowAllGames = () => {
+    sound.playClick();
+    setSelectedGame(null);
+    setActiveGameTitle('CloudMoon Library');
+    setActiveTab('stream');
+
+    const sendResetMessage = () => {
+      try {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          iframeRef.current.contentWindow.postMessage(
+            { type: 'RESET_LIBRARY' },
+            '*'
+          );
+        }
+      } catch (e) {}
+    };
+
+    sendResetMessage();
+    setTimeout(sendResetMessage, 200);
+    setTimeout(sendResetMessage, 600);
+  };
+
   const handleIframeLoaded = () => {
+    // Only dispatch specific game selection if user explicitly chose one
     if (selectedGame && iframeRef.current && iframeRef.current.contentWindow) {
       try {
         iframeRef.current.contentWindow.postMessage(
@@ -521,14 +566,32 @@ export const CloudGamingApp: React.FC = () => {
         {/* VIEW 1: ACTIVE CLOUDMOON STREAM */}
         {activeTab === 'stream' && (
           <div className="flex-1 w-full h-full relative bg-black flex flex-col overflow-hidden">
-            {/* Quick Launch Strip */}
+            {/* Quick Play Strip with All Games button + titles */}
             <div className="px-4 py-2 bg-[#080b18] border-b border-white/[0.08] flex items-center justify-between gap-3 shrink-0 flex-wrap">
               <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar">
                 <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
                   <Flame size={12} className="text-amber-400" /> Quick Play:
                 </span>
+
+                {/* All Games (Whole Library) Button */}
+                <button
+                  onClick={handleShowAllGames}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
+                    !selectedGame
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border border-cyan-400 shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/40'
+                      : 'bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 hover:border-cyan-500/40 text-white/80 hover:text-white'
+                  }`}
+                  title="Show all games in the CloudMoon library"
+                >
+                  <Layers size={11} className={!selectedGame ? 'text-white' : 'text-cyan-400'} />
+                  <span>All Games</span>
+                  {!selectedGame && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5 animate-pulse" />
+                  )}
+                </button>
+
                 {CLOUDMOON_GAMES.slice(0, 8).map((fg) => {
-                  const isSelected = selectedGame.toLowerCase() === fg.title.toLowerCase();
+                  const isSelected = selectedGame?.toLowerCase() === fg.title.toLowerCase();
                   return (
                     <button
                       key={fg.id}
@@ -565,12 +628,20 @@ export const CloudGamingApp: React.FC = () => {
               </div>
             </div>
 
-            {/* In-Frame Tip Banner */}
+            {/* In-Frame Tip / Status Banner */}
             <div className="px-4 py-1.5 bg-[#0e1326] border-b border-cyan-500/20 flex items-center justify-between text-[11px] text-cyan-200">
               <div className="flex items-center gap-2">
                 <Info size={13} className="text-cyan-400 shrink-0" />
                 <span>
-                  <strong>Quick Play Active:</strong> Selected target is <strong>{selectedGame}</strong>. Sign in using <strong>Email &amp; Password</strong> inside CloudMoon.
+                  {selectedGame ? (
+                    <>
+                      <strong>Quick Play Active:</strong> Target title is <strong>{selectedGame}</strong>. Sign in using <strong>Email &amp; Password</strong> inside CloudMoon.
+                    </>
+                  ) : (
+                    <>
+                      <strong>CloudMoon Library:</strong> Showing the complete 60 FPS cloud catalog. Click any game card or Quick Play title to launch.
+                    </>
+                  )}
                 </span>
               </div>
               <span className="text-[10px] font-mono text-cyan-400 shrink-0 ml-2 hidden sm:inline flex items-center gap-1">

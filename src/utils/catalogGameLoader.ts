@@ -56,6 +56,12 @@ export async function fetchPlayableGameHtml(game: CatalogGame): Promise<{ blobUr
   const m = game.url.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/(.*)$/);
   if (m) {
     list.push(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}/${m[4]}`);
+    try {
+      const decoded = decodeURIComponent(m[4]);
+      if (decoded !== m[4]) {
+        list.push(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}/${decoded}`);
+      }
+    } catch {}
   }
 
   let htmlText = '';

@@ -40,6 +40,11 @@ import {
 import { fetchPlayableGameHtml, CatalogGame } from '../../utils/catalogGameLoader';
 import sixKhoCatalogData from '../../data/sixKho_games.json';
 import ynrbsuCatalogData from '../../data/ynrbsu_games.json';
+import htmlGamesCatalogData from '../../data/htmlGames_games.json';
+import madKidCatalogData from '../../data/madKid_games.json';
+import offlinePackCatalogData from '../../data/offlinePack_games.json';
+import julianCatalogData from '../../data/julian_games.json';
+import gameMonetizePopularData from '../../data/gameMonetize_popular.json';
 import { sound } from '../../utils/sound';
 import { ServiceWorkerAppView } from '../common/ServiceWorkerAppView';
 import { encodeUvUrl } from '../../utils/uvProxy';
@@ -368,6 +373,13 @@ export type GameSourceTab =
   | 'p2p'
   | 'emulator'
   | 'eaglercraft'
+  // Web Publishers & GitHub CDN sources:
+  | 'gamemonetize'
+  | 'htmlgames'
+  | 'madkidgames'
+  | 'cooldude'
+  | 'julian'
+  | 'retrosites'
   // Other smaller sources combined:
   | 'other';
 
@@ -506,7 +518,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   // Source Selector Dropdown state
   const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
   const [dropdownSourceSearch, setDropdownSourceSearch] = useState('');
-  const [dropdownCategory, setDropdownCategory] = useState<'all' | 'major' | 'core' | 'consoles' | 'other'>('all');
+  const [dropdownCategory, setDropdownCategory] = useState<'all' | 'major' | 'publishers' | 'core' | 'consoles' | 'other'>('all');
   const sourceDropdownRef = useRef<HTMLDivElement>(null);
 
   // In-Page Source Picker state for All section
@@ -853,6 +865,229 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
   const [ynrbsuGames] = useState<WebGameItem[]>(ynrbsuCatalogData as WebGameItem[]);
   const [ynrbsuSearch, setYnrbsuSearch] = useState('');
   const [ynrbsuPage, setYnrbsuPage] = useState(1);
+
+  // GameMonetize State (~15,800 Titles Live Feed + 300 Curated Offline)
+  const [gmSearch, setGmSearch] = useState('');
+  const [gmCategory, setGmCategory] = useState('All');
+  const [gmPage, setGmPage] = useState(1);
+  const [gmLiveGames, setGmLiveGames] = useState<any[]>(gameMonetizePopularData);
+  const [gmFeedLoading, setGmFeedLoading] = useState(false);
+
+  // HTMLGames Catalog State (1,249 Games)
+  const [htmlGamesList] = useState<WebGameItem[]>(htmlGamesCatalogData as WebGameItem[]);
+  const [htmlGamesSearch, setHtmlGamesSearch] = useState('');
+  const [htmlGamesCategory, setHtmlGamesCategory] = useState('All');
+  const [htmlGamesPage, setHtmlGamesPage] = useState(1);
+
+  // MadKidGames Catalog State (509 Games)
+  const [madKidList] = useState<WebGameItem[]>(madKidCatalogData as WebGameItem[]);
+  const [madKidSearch, setMadKidSearch] = useState('');
+  const [madKidPage, setMadKidPage] = useState(1);
+
+  // CoolDude2349 Offline Pack State (352 Single-File Games)
+  const [coolDudeList] = useState<WebGameItem[]>(offlinePackCatalogData as WebGameItem[]);
+  const [coolDudeSearch, setCoolDudeSearch] = useState('');
+  const [coolDudePage, setCoolDudePage] = useState(1);
+
+  // Julian Lockibarra Games State (109 Games)
+  const [julianList] = useState<WebGameItem[]>(julianCatalogData as WebGameItem[]);
+  const [julianSearch, setJulianSearch] = useState('');
+  const [julianCategory, setJulianCategory] = useState('All');
+  const [julianPage, setJulianPage] = useState(1);
+
+  // Retro Sites State (Schplay & SerpGames)
+  const [retroSitesSearch, setRetroSitesSearch] = useState('');
+
+  // GameMonetize Live Feed Fetcher
+  useEffect(() => {
+    let active = true;
+    if (activeTab !== 'gamemonetize') return;
+
+    setGmFeedLoading(true);
+    fetch(`https://gamemonetize.com/feed.php?format=0&num=50&page=${gmPage}`, {
+      signal: AbortSignal.timeout(6000),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('GameMonetize feed failed');
+        return res.json();
+      })
+      .then((data) => {
+        if (active && Array.isArray(data) && data.length > 0) {
+          setGmLiveGames(data);
+          setGmFeedLoading(false);
+        } else if (active) {
+          setGmLiveGames(gameMonetizePopularData);
+          setGmFeedLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('GameMonetize live feed fallback:', err);
+        if (active) {
+          setGmLiveGames(gameMonetizePopularData);
+          setGmFeedLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeTab, gmPage]);
+
+  // Derived Category Lists
+  const htmlGamesCategories = useMemo(() => {
+    const cats = new Set<string>();
+    htmlGamesList.forEach((g) => {
+      if (g.category) cats.add(g.category);
+    });
+    return ['All', ...Array.from(cats).sort()];
+  }, [htmlGamesList]);
+
+  const julianCategories = useMemo(() => {
+    const cats = new Set<string>();
+    julianList.forEach((g) => {
+      if (g.category) cats.add(g.category);
+    });
+    return ['All', ...Array.from(cats).sort()];
+  }, [julianList]);
+
+  // Curated Retro Sites Games
+  const retroSiteGames = useMemo<WebGameItem[]>(() => [
+    {
+      id: 'retro_deepfreeze',
+      title: 'Deep Freeze',
+      url: 'https://schplay.github.io/g/deepfreeze/',
+      thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Retro Classic',
+      description: 'Classic Nitrome retro action: freeze enemies and kick snowballs.'
+    },
+    {
+      id: 'retro_dadish1',
+      title: 'Dadish',
+      url: 'https://schplay.github.io/g/dadish/',
+      thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Platformer',
+      description: 'He is a radish... and also a dad. Rescue your missing radish kids!'
+    },
+    {
+      id: 'retro_dadish2',
+      title: 'Dadish 2',
+      url: 'https://schplay.github.io/g/dadish2/',
+      thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Platformer',
+      description: 'The sequel to the beloved radish platformer with hilarious dialogue.'
+    },
+    {
+      id: 'retro_dadish3',
+      title: 'Dadish 3',
+      url: 'https://schplay.github.io/g/dadish3/',
+      thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Platformer',
+      description: 'Dadish sets off on an epic bus trip across the world.'
+    },
+    {
+      id: 'retro_doodlejump',
+      title: 'Doodle Jump',
+      url: 'https://schplay.github.io/g/doodlejump/',
+      thumbnail: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Arcade',
+      description: 'Jump upward endlessly on springy platforms avoiding aliens.'
+    },
+    {
+      id: 'retro_thereisnogame',
+      title: 'There Is No Game',
+      url: 'https://schplay.github.io/g/there-is-no-game/',
+      thumbnail: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Meta / Puzzle',
+      description: 'Do not click anything. There is genuinely no game here.'
+    },
+    {
+      id: 'retro_dogeminer',
+      title: 'Doge Miner',
+      url: 'https://schplay.github.io/g/dogeminer/',
+      thumbnail: 'https://images.unsplash.com/photo-1627856013091-fed6e4e30025?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Clicker / Idle',
+      description: 'Mine dogecoins to build a rocket ship to the moon. Much wow!'
+    },
+    {
+      id: 'retro_evowars',
+      title: 'EvoWars.io',
+      url: 'https://schplay.github.io/g/evowars/',
+      thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Multiplayer IO',
+      description: 'Evolve through 25 warrior classes and slash through enemies.'
+    },
+    {
+      id: 'retro_badicecream2',
+      title: 'Bad Ice Cream 2',
+      url: 'https://schplay.github.io/g/badicecream2/',
+      thumbnail: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&auto=format&fit=crop&q=80',
+      source: 'Schplay',
+      category: 'Retro Classic',
+      description: 'Nitrome 2-player arcade classic: blow ice walls and eat fruit.'
+    },
+    {
+      id: 'retro_2048',
+      title: '2048 Classic',
+      url: 'https://serpgames.github.io/game/2048/',
+      thumbnail: 'https://images.unsplash.com/photo-1612287232269-231a44c74ea0?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: 'Puzzle',
+      description: 'Join the numbers and reach the 2048 tile!'
+    },
+    {
+      id: 'retro_googlesnake',
+      title: 'Google Snake',
+      url: 'https://serpgames.github.io/game/google-snake/',
+      thumbnail: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: 'Arcade',
+      description: 'The polished Google Doodle snake engine with custom modes.'
+    },
+    {
+      id: 'retro_flappybird',
+      title: 'Flappy Bird',
+      url: 'https://serpgames.github.io/game/flappy-bird/',
+      thumbnail: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: 'Arcade',
+      description: 'Tap to flap through pipes in this precision arcade remake.'
+    },
+    {
+      id: 'retro_pacman',
+      title: 'Pacman Retro',
+      url: 'https://serpgames.github.io/game/pacman/',
+      thumbnail: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: 'Retro Classic',
+      description: 'Faithful web recreation of Namco legendary Pacman maze arcade.'
+    },
+    {
+      id: 'retro_tetris',
+      title: 'Tetris N-Blox',
+      url: 'https://serpgames.github.io/game/tetris/',
+      thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: 'Puzzle',
+      description: 'Rotate and drop tetrominoes with classic mechanics.'
+    },
+    {
+      id: 'retro_slope',
+      title: 'Slope City',
+      url: 'https://serpgames.github.io/game/slope/',
+      thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80',
+      source: 'SerpGames',
+      category: '3D Runner',
+      description: 'Speed down neon 3D downhill slopes avoiding red barriers.'
+    },
+  ], []);
   
   // Zen GS state (1,700+ CloudFront CDN games)
   const [activeZenGame, setActiveZenGame] = useState<ZenGSGameSelection | null>(null);
@@ -1343,9 +1578,9 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     icon: React.ReactNode;
     desc: string;
     color: string;
-    group: 'all' | 'major' | 'core' | 'consoles' | 'other';
+    group: 'all' | 'major' | 'publishers' | 'core' | 'consoles' | 'other';
   }>>(() => [
-    { id: 'all', name: 'All Sources Combined', badge: isDeduplicated ? '10.9K Unique' : '28.5K+ Games', icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources (duplicates removed)', color: '#a855f7', group: 'all' },
+    { id: 'all', name: 'All Sources Combined', badge: isDeduplicated ? '11.8K Unique' : `${(catalogGames.length || 31053).toLocaleString()}+ Games`, icon: <Sparkles size={14} />, desc: 'Unified sorted mega library of all sources (duplicates removed)', color: '#a855f7', group: 'all' },
     
     // Major Game Repositories (The Large Sources)
     ...MAJOR_SOURCES_CONFIG.map(s => ({
@@ -1357,6 +1592,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
       color: s.color,
       group: 'major' as const,
     })),
+
+    // Web Publishers & Curated Repos
+    { id: 'gamemonetize', name: 'GameMonetize CDN', badge: '15,800+ Games', icon: <Flame size={14} />, desc: 'Public HTML5 live feed with instant embeddable CDN games', color: '#ff5722', group: 'publishers' },
+    { id: 'htmlgames', name: 'HTMLGames Catalog', badge: `${htmlGamesList.length.toLocaleString()} Games`, icon: <Sparkles size={14} />, desc: 'Public index with free embeddable HTML5 games across all genres', color: '#10b981', group: 'publishers' },
+    { id: 'madkidgames', name: 'MadKidGames Vault', badge: `${madKidList.length} Games`, icon: <Globe size={14} />, desc: 'Sitemap unblocked HTML5 arcade collection with native popout', color: '#3b82f6', group: 'publishers' },
+    { id: 'cooldude', name: 'CoolDude Offline Pack', badge: `${coolDudeList.length} Games`, icon: <Box size={14} />, desc: 'Offline standalone single-file HTML5 arcade preservation pack', color: '#8b5cf6', group: 'publishers' },
+    { id: 'julian', name: 'Julian Games', badge: `${julianList.length} Games`, icon: <Rocket size={14} />, desc: 'Active GitHub CDN games: Drive Mad, Geometry Dash, Snow Rider 3D', color: '#ec4899', group: 'publishers' },
+    { id: 'retrosites', name: 'Retro Sites Hub', badge: 'Schplay & SerpGames', icon: <Compass size={14} />, desc: 'Direct web playable retro arcade sites & unblocked mirrors', color: '#f59e0b', group: 'publishers' },
 
     // Core Godly OS Collections
     { id: 'vault', name: 'Local Game Vault', badge: `${vaultGames.length || '1,567'} Games`, icon: <Layers size={14} />, desc: 'Local & offline vault of HTML5 and Flash games', color: '#ec4899', group: 'core' },
@@ -1374,16 +1617,30 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
 
     // Other Sources Combined
     { id: 'other', name: 'Other Sources Hub', badge: `${otherSourcesGames.length.toLocaleString() || '5,551'} Games`, icon: <Layers size={14} />, desc: '46 smaller repos: Selenite, Bloxy, Mini JS, Noah, etc.', color: '#64748b', group: 'other' },
-  ], [gamesBySource, otherSourcesGames.length, vaultGames.length, sixKhoGames.length, ynrbsuGames.length, isDeduplicated]);
+  ], [gamesBySource, otherSourcesGames.length, vaultGames.length, sixKhoGames.length, ynrbsuGames.length, htmlGamesList.length, madKidList.length, coolDudeList.length, julianList.length, catalogGames.length, isDeduplicated]);
 
   const currentSource = sourceOptions.find(s => s.id === activeTab) || sourceOptions[0];
 
   // Reusable card renderer optimized for low-power devices & laptops
-  const renderWebGameCard = (game: { id: string; title: string; url: string; thumbnail?: string; source: string; category?: string }) => {
+  const renderWebGameCard = (game: {
+    id: string;
+    title: string;
+    url: string;
+    thumbnail?: string;
+    source: string;
+    category?: string;
+    fetchGame?: boolean;
+    frameFallback?: boolean;
+    sourceColor?: string;
+  }) => {
     return (
       <div
         key={game.id}
-        onClick={() => handleLaunchUniversalGame(game)}
+        onClick={() => handleLaunchUniversalGame({
+          ...game,
+          fetchGame: game.fetchGame ?? false,
+          frameFallback: game.frameFallback ?? true,
+        })}
         className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-purple-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-purple-900/20"
         style={{
           contentVisibility: isEcoMode ? 'auto' : undefined,
@@ -1535,6 +1792,17 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               className="w-full h-full border-0 bg-black"
               sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-modals"
               allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
+              allowFullScreen
+            />
+          ) : (activeUniversalGame.frameFallback || activeUniversalGame.fetchGame === false || activeUniversalGame.url.includes('gamemonetize.co') || activeUniversalGame.url.includes('htmlgames.com') || activeUniversalGame.url.includes('madkidgames.com') || activeUniversalGame.url.includes('cloudmoon') || activeUniversalGame.url.includes('schplay.github.io') || activeUniversalGame.url.includes('serpgames.github.io') || activeUniversalGame.url.startsWith('https://cdn.jsdelivr.net')) ? (
+            <iframe
+              ref={universalFrameRef}
+              key={universalRefreshKey}
+              src={activeUniversalGame.url}
+              title={activeUniversalGame.title}
+              className="w-full h-full border-0 bg-black"
+              allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
+              allowFullScreen
             />
           ) : (
             <ServiceWorkerAppView
@@ -1780,6 +2048,1052 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     );
   };
 
+  // GameMonetize Live Feed View Renderer
+  const renderGameMonetizeView = () => {
+    const rawList = gmLiveGames.length > 0 ? gmLiveGames : gameMonetizePopularData;
+    const filtered = rawList.filter((g: any) => {
+      const title = (g.title || '').toLowerCase();
+      const desc = (g.description || '').toLowerCase();
+      const cat = (g.category || '').toLowerCase();
+      const q = gmSearch.trim().toLowerCase();
+      const matchesSearch = !q || title.includes(q) || desc.includes(q) || cat.includes(q);
+      const matchesCat = gmCategory === 'All' || cat === gmCategory.toLowerCase();
+      return matchesSearch && matchesCat;
+    });
+
+    const gmCategories = ['All', 'Action', 'Shooting', 'Driving', 'Arcade', 'Sports', 'Puzzle', 'Multiplayer', '2 Player'];
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Header Bar */}
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              <Flame size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">GameMonetize Network</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono border border-orange-500/30">
+                  ~15,800 Titles • Live CDN
+                </span>
+                {gmFeedLoading && (
+                  <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 animate-pulse font-mono">
+                    Fetching feed...
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-white/40">Direct public JSON feed with instantaneous embeddable CDN iframes</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Search */}
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={gmSearch}
+                onChange={(e) => setGmSearch(e.target.value)}
+                placeholder="Search GameMonetize..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-orange-500/50"
+              />
+              {gmSearch && (
+                <button onClick={() => setGmSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                disabled={gmPage <= 1 || gmFeedLoading}
+                onClick={() => {
+                  sound.playClick();
+                  setGmPage((p) => Math.max(1, p - 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                title="Previous 50 Games"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/70 px-2 font-semibold">
+                Page {gmPage} <span className="text-white/30 font-normal">/ 316</span>
+              </span>
+              <button
+                disabled={gmPage >= 316 || gmFeedLoading}
+                onClick={() => {
+                  sound.playClick();
+                  setGmPage((p) => p + 1);
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                title="Next 50 Games"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Bar */}
+        <div className="px-4 py-2 border-b border-white/[0.04] bg-white/[0.01] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          <span className="text-[10px] uppercase font-mono text-white/40 mr-1 flex items-center gap-1">
+            <Filter size={11} /> Genre:
+          </span>
+          {gmCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                sound.playClick();
+                setGmCategory(cat);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all border ${
+                gmCategory === cat
+                  ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 shadow-sm'
+                  : 'bg-white/[0.02] text-white/50 hover:text-white border-white/[0.06]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Games Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          {filtered.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+              {filtered.map((g: any) => {
+                const gameId = g.id ? String(g.id) : g.title;
+                const thumb = g.thumb || g.thumbnail || `https://img.gamemonetize.com/${gameId}/512x384.jpg`;
+                const embedUrl = g.url || `https://html5.gamemonetize.co/${gameId}/`;
+                return (
+                  <div
+                    key={`gm_${gameId}`}
+                    onClick={() => {
+                      sound.playClick();
+                      handleLaunchUniversalGame({
+                        id: `gm_${gameId}`,
+                        title: g.title,
+                        url: embedUrl,
+                        thumbnail: thumb,
+                        source: 'GameMonetize',
+                        category: g.category || 'Arcade',
+                        frameFallback: true,
+                        fetchGame: false,
+                        sourceColor: '#ff5722',
+                      });
+                    }}
+                    className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-orange-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-orange-900/20"
+                    style={{
+                      contentVisibility: isEcoMode ? 'auto' : undefined,
+                      containIntrinsicSize: isEcoMode ? '220px' : undefined,
+                    }}
+                  >
+                    <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                      <img
+                        src={thumb}
+                        alt={g.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                      <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-orange-950/80 backdrop-blur-md border border-orange-500/30 text-orange-300 uppercase">
+                        {g.category || 'HTML5'}
+                      </span>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                        <div className="w-10 h-10 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-lg shadow-orange-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                          <Play size={16} className="ml-0.5 fill-white" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 flex flex-col justify-between flex-1">
+                      <div>
+                        <h4 className="text-xs font-bold text-white group-hover:text-orange-300 transition-colors truncate">
+                          {g.title}
+                        </h4>
+                        <p className="text-[10px] text-white/40 truncate mt-0.5">
+                          {g.description ? g.description.slice(0, 60) + '...' : 'Instant playable HTML5 web game'}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                        <span className="text-[10px] text-orange-400 font-medium flex items-center gap-1">
+                          <Play size={10} /> Embed CDN
+                        </span>
+                        <span className="text-[9px] font-mono text-white/30">Free</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <Gamepad2 size={36} className="text-white/20 mb-2" />
+              <p className="text-sm font-semibold text-white/60">No games found matching your filter</p>
+              <p className="text-xs text-white/40 mt-1">Try clearing your search query or switching categories</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // HTMLGames Catalog View Renderer
+  const renderHtmlGamesView = () => {
+    const filtered = htmlGamesList.filter((g) => {
+      const q = htmlGamesSearch.trim().toLowerCase();
+      const matchesSearch = !q || g.title.toLowerCase().includes(q) || (g.description && g.description.toLowerCase().includes(q));
+      const matchesCat = htmlGamesCategory === 'All' || g.category === htmlGamesCategory;
+      return matchesSearch && matchesCat;
+    });
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((htmlGamesPage - 1) * pageSize, htmlGamesPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Header Bar */}
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Sparkles size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">HTMLGames Catalog</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
+                  {htmlGamesList.length.toLocaleString()} Titles • Free Embedding
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">Clean public JSON catalog with instant CDN embedding at cdn.htmlgames.com</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={htmlGamesSearch}
+                onChange={(e) => {
+                  setHtmlGamesSearch(e.target.value);
+                  setHtmlGamesPage(1);
+                }}
+                placeholder="Search HTMLGames..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-emerald-500/50"
+              />
+              {htmlGamesSearch && (
+                <button onClick={() => { setHtmlGamesSearch(''); setHtmlGamesPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                disabled={htmlGamesPage <= 1}
+                onClick={() => {
+                  sound.playClick();
+                  setHtmlGamesPage((p) => Math.max(1, p - 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/70 px-2 font-semibold">
+                {htmlGamesPage} <span className="text-white/30 font-normal">/ {totalPages}</span>
+              </span>
+              <button
+                disabled={htmlGamesPage >= totalPages}
+                onClick={() => {
+                  sound.playClick();
+                  setHtmlGamesPage((p) => Math.min(totalPages, p + 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Bar */}
+        <div className="px-4 py-2 border-b border-white/[0.04] bg-white/[0.01] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          <span className="text-[10px] uppercase font-mono text-white/40 mr-1 flex items-center gap-1">
+            <Filter size={11} /> Genre:
+          </span>
+          {htmlGamesCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                sound.playClick();
+                setHtmlGamesCategory(cat);
+                setHtmlGamesPage(1);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all border ${
+                htmlGamesCategory === cat
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                  : 'bg-white/[0.02] text-white/50 hover:text-white border-white/[0.06]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map((game) => (
+              <div
+                key={game.id}
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: game.id,
+                    title: game.title,
+                    url: game.url,
+                    thumbnail: game.thumbnail,
+                    source: 'HTMLGames',
+                    category: game.category,
+                    frameFallback: true,
+                    fetchGame: false,
+                    sourceColor: '#10b981',
+                  });
+                }}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-emerald-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-emerald-900/20"
+                style={{
+                  contentVisibility: isEcoMode ? 'auto' : undefined,
+                  containIntrinsicSize: isEcoMode ? '220px' : undefined,
+                }}
+              >
+                <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                  {game.thumbnail ? (
+                    <img
+                      src={game.thumbnail}
+                      alt={game.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Gamepad2 size={32} className="text-white/20" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-950/80 backdrop-blur-md border border-emerald-500/30 text-emerald-300 uppercase">
+                    {game.category || 'HTML5'}
+                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                      <Play size={16} className="ml-0.5 fill-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      {game.description || 'HTMLGames verified standalone title'}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <Play size={10} /> Instant CDN
+                    </span>
+                    <span className="text-[9px] font-mono text-white/30">Free</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // MadKidGames Vault View Renderer
+  const renderMadKidView = () => {
+    const filtered = madKidList.filter((g) => {
+      const q = madKidSearch.trim().toLowerCase();
+      return !q || g.title.toLowerCase().includes(q);
+    });
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((madKidPage - 1) * pageSize, madKidPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Header Bar */}
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <Globe size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">MadKidGames Vault</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono border border-blue-500/30">
+                  {madKidList.length} Titles
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">Sitemap-indexed arcade titles with full-screen embed endpoints</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={madKidSearch}
+                onChange={(e) => {
+                  setMadKidSearch(e.target.value);
+                  setMadKidPage(1);
+                }}
+                placeholder="Search MadKidGames..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-blue-500/50"
+              />
+              {madKidSearch && (
+                <button onClick={() => { setMadKidSearch(''); setMadKidPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                disabled={madKidPage <= 1}
+                onClick={() => {
+                  sound.playClick();
+                  setMadKidPage((p) => Math.max(1, p - 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/70 px-2 font-semibold">
+                {madKidPage} <span className="text-white/30 font-normal">/ {totalPages}</span>
+              </span>
+              <button
+                disabled={madKidPage >= totalPages}
+                onClick={() => {
+                  sound.playClick();
+                  setMadKidPage((p) => Math.min(totalPages, p + 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="px-4 py-2 border-b border-blue-500/20 bg-blue-950/20 flex items-center justify-between gap-3 text-[11px] text-blue-200/80 shrink-0">
+          <span>
+            💡 Embed Note: MadKidGames endpoints are rendered directly. If your origin shows "embedding unavailable", click "Popout Window" in the player toolbar or email admin@madkidgames.com for domain approval.
+          </span>
+          <button
+            onClick={() => window.open('https://www.madkidgames.com', '_blank')}
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 font-mono text-[10px] shrink-0 transition-all"
+          >
+            Visit Site <ExternalLink size={10} />
+          </button>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map((game) => (
+              <div
+                key={game.id}
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: game.id,
+                    title: game.title,
+                    url: game.url,
+                    thumbnail: game.thumbnail,
+                    source: 'MadKidGames',
+                    category: 'Unblocked Web',
+                    frameFallback: true,
+                    fetchGame: false,
+                    sourceColor: '#3b82f6',
+                  });
+                }}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-blue-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-blue-900/20"
+                style={{
+                  contentVisibility: isEcoMode ? 'auto' : undefined,
+                  containIntrinsicSize: isEcoMode ? '220px' : undefined,
+                }}
+              >
+                <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                  {game.thumbnail ? (
+                    <img
+                      src={game.thumbnail}
+                      alt={game.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Gamepad2 size={32} className="text-white/20" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-blue-950/80 backdrop-blur-md border border-blue-500/30 text-blue-300 uppercase">
+                    MadKid
+                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                      <Play size={16} className="ml-0.5 fill-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      madkidgames.com/full/{game.id.replace('madkid_', '')}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] text-blue-400 font-medium flex items-center gap-1">
+                      <Play size={10} /> Fullscreen
+                    </span>
+                    <span className="text-[9px] font-mono text-white/30">Sandboxed</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // CoolDude2349 Offline Pack View Renderer
+  const renderCoolDudeView = () => {
+    const filtered = coolDudeList.filter((g) => {
+      const q = coolDudeSearch.trim().toLowerCase();
+      return !q || g.title.toLowerCase().includes(q);
+    });
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((coolDudePage - 1) * pageSize, coolDudePage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Header Bar */}
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+              <Box size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">CoolDude2349 Offline Pack</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                  {coolDudeList.length} Games • Single-File Offline
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">Completely self-contained HTML5 games with zero external CDN dependencies</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={coolDudeSearch}
+                onChange={(e) => {
+                  setCoolDudeSearch(e.target.value);
+                  setCoolDudePage(1);
+                }}
+                placeholder="Search offline games..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50"
+              />
+              {coolDudeSearch && (
+                <button onClick={() => { setCoolDudeSearch(''); setCoolDudePage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                disabled={coolDudePage <= 1}
+                onClick={() => {
+                  sound.playClick();
+                  setCoolDudePage((p) => Math.max(1, p - 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/70 px-2 font-semibold">
+                {coolDudePage} <span className="text-white/30 font-normal">/ {totalPages}</span>
+              </span>
+              <button
+                disabled={coolDudePage >= totalPages}
+                onClick={() => {
+                  sound.playClick();
+                  setCoolDudePage((p) => Math.min(totalPages, p + 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map((game) => (
+              <div
+                key={game.id}
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: game.id,
+                    title: game.title,
+                    url: game.url,
+                    thumbnail: game.thumbnail,
+                    source: 'CoolDude2349',
+                    category: 'Offline Pack',
+                    fetchGame: true,
+                    sourceColor: '#8b5cf6',
+                  });
+                }}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-purple-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-purple-900/20"
+                style={{
+                  contentVisibility: isEcoMode ? 'auto' : undefined,
+                  containIntrinsicSize: isEcoMode ? '220px' : undefined,
+                }}
+              >
+                <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                  <Gamepad2 size={32} className="text-purple-400/40 group-hover:scale-110 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-purple-950/80 backdrop-blur-md border border-purple-500/30 text-purple-300 uppercase">
+                    Offline
+                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                    <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                      <Play size={16} className="ml-0.5 fill-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      Single-file HTML5 offline unblocked
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] text-purple-400 font-medium flex items-center gap-1">
+                      <Play size={10} /> Local Sandbox
+                    </span>
+                    <span className="text-[9px] font-mono text-emerald-400">Offline</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Julian Lockibarra Games View Renderer
+  const renderJulianView = () => {
+    const filtered = julianList.filter((g) => {
+      const q = julianSearch.trim().toLowerCase();
+      const matchesSearch = !q || g.title.toLowerCase().includes(q);
+      const matchesCat = julianCategory === 'All' || g.category === julianCategory;
+      return matchesSearch && matchesCat;
+    });
+
+    const pageSize = 32;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const paginated = filtered.slice((julianPage - 1) * pageSize, julianPage * pageSize);
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
+        {/* Header Bar */}
+        <div className={`p-4 border-b border-white/[0.06] ${isEcoMode ? 'bg-[#090a14]' : 'bg-[#08080f80] backdrop-blur-xl'} flex items-center justify-between gap-3 shrink-0 flex-wrap`}>
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/30">
+              <Rocket size={18} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white">julianlockibarra-cat Games</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-mono border border-pink-500/30">
+                  {julianList.length} Titles • Active CDN
+                </span>
+              </div>
+              <p className="text-[11px] text-white/40">Active GitHub repository with Drive Mad, Geometry Dash, Snow Rider 3D & Google Doodles</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={julianSearch}
+                onChange={(e) => {
+                  setJulianSearch(e.target.value);
+                  setJulianPage(1);
+                }}
+                placeholder="Search Julian Games..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-pink-500/50"
+              />
+              {julianSearch && (
+                <button onClick={() => { setJulianSearch(''); setJulianPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                disabled={julianPage <= 1}
+                onClick={() => {
+                  sound.playClick();
+                  setJulianPage((p) => Math.max(1, p - 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs font-mono text-white/70 px-2 font-semibold">
+                {julianPage} <span className="text-white/30 font-normal">/ {totalPages}</span>
+              </span>
+              <button
+                disabled={julianPage >= totalPages}
+                onClick={() => {
+                  sound.playClick();
+                  setJulianPage((p) => Math.min(totalPages, p + 1));
+                }}
+                className="p-1 rounded-lg text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Bar */}
+        <div className="px-4 py-2 border-b border-white/[0.04] bg-white/[0.01] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          <span className="text-[10px] uppercase font-mono text-white/40 mr-1 flex items-center gap-1">
+            <Filter size={11} /> Genre:
+          </span>
+          {julianCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                sound.playClick();
+                setJulianCategory(cat);
+                setJulianPage(1);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all border ${
+                julianCategory === cat
+                  ? 'bg-pink-500/20 text-pink-300 border-pink-500/40 shadow-sm'
+                  : 'bg-white/[0.02] text-white/50 hover:text-white border-white/[0.06]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {paginated.map((game) => (
+              <div
+                key={game.id}
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: game.id,
+                    title: game.title,
+                    url: game.url,
+                    thumbnail: game.thumbnail,
+                    source: 'Julian Games',
+                    category: game.category,
+                    fetchGame: true,
+                    sourceColor: '#ec4899',
+                  });
+                }}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-pink-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-pink-900/20"
+                style={{
+                  contentVisibility: isEcoMode ? 'auto' : undefined,
+                  containIntrinsicSize: isEcoMode ? '220px' : undefined,
+                }}
+              >
+                <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                  <Gamepad2 size={32} className="text-pink-400/40 group-hover:scale-110 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-pink-950/80 backdrop-blur-md border border-pink-500/30 text-pink-300 uppercase">
+                    {game.category}
+                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                    <div className="w-10 h-10 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-lg shadow-pink-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                      <Play size={16} className="ml-0.5 fill-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-pink-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      jsDelivr GitHub CDN
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] text-pink-400 font-medium flex items-center gap-1">
+                      <Play size={10} /> Instant Run
+                    </span>
+                    <span className="text-[9px] font-mono text-white/30">CDN</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Retro Sites Hub View Renderer (Schplay & SerpGames)
+  const renderRetroSitesView = () => {
+    const filtered = retroSiteGames.filter((g) => {
+      const q = retroSitesSearch.trim().toLowerCase();
+      return !q || g.title.toLowerCase().includes(q) || (g.description && g.description.toLowerCase().includes(q));
+    });
+
+    return (
+      <div className={`w-full h-full flex flex-col overflow-y-auto p-6 gap-6 ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'} custom-scrollbar`}>
+        {/* Retro Portals Featured Banners */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Schplay Arcade Card */}
+          <div className="relative rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#130d08] to-black p-5 shadow-xl overflow-hidden flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Compass size={16} />
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+                  SCHPLAY.GITHUB.IO • 500+ TITLES
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white tracking-tight">Schplay Unblocked Arcade</h3>
+              <p className="text-xs text-white/60 mt-1.5 leading-relaxed">
+                Site-based unblocked repository hosting Nitrome classics (Deep Freeze, Bad Ice Cream), Dadish trilogy, Doodle Jump, and EvoWars.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 mt-4">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: 'schplay_portal',
+                    title: 'Schplay Unblocked Portal',
+                    url: 'https://schplay.github.io/',
+                    source: 'Schplay',
+                    category: 'Web Portal',
+                    frameFallback: true,
+                    fetchGame: false,
+                    sourceColor: '#f59e0b',
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 transition-all hover:scale-105"
+              >
+                <Play size={13} className="fill-white" />
+                Launch Sandboxed Portal
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  window.open('https://schplay.github.io/', '_blank');
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] text-white/70 hover:text-white border border-white/[0.08] text-xs font-semibold transition-all"
+              >
+                <ExternalLink size={13} />
+                Direct
+              </button>
+            </div>
+          </div>
+
+          {/* SerpGames Retro Engine Card */}
+          <div className="relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-[#07130c] to-black p-5 shadow-xl overflow-hidden flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Gamepad2 size={16} />
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">
+                  SERPGAMES.GITHUB.IO • RETRO HUB
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white tracking-tight">SerpGames Retro Hub</h3>
+              <p className="text-xs text-white/60 mt-1.5 leading-relaxed">
+                Preserved browser arcade site featuring Google Snake, 2048, Flappy Bird, Pacman, Tetris N-Blox, and neon Slope.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 mt-4">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: 'serpgames_portal',
+                    title: 'SerpGames Retro Portal',
+                    url: 'https://serpgames.github.io/',
+                    source: 'SerpGames',
+                    category: 'Web Portal',
+                    frameFallback: true,
+                    fetchGame: false,
+                    sourceColor: '#10b981',
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all hover:scale-105"
+              >
+                <Play size={13} className="fill-white" />
+                Launch Sandboxed Portal
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  window.open('https://serpgames.github.io/', '_blank');
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] text-white/70 hover:text-white border border-white/[0.08] text-xs font-semibold transition-all"
+              >
+                <ExternalLink size={13} />
+                Direct
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Featured Direct Playables */}
+        <div>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Direct Playable Retro Favorites</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono">
+                  {filtered.length} Games
+                </span>
+              </h3>
+              <p className="text-[11px] text-white/40">Tested unblocked web games playable instantly inside Godly OS</p>
+            </div>
+
+            <div className="relative w-56 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                type="text"
+                value={retroSitesSearch}
+                onChange={(e) => setRetroSitesSearch(e.target.value)}
+                placeholder="Search retro favorites..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-amber-500/50"
+              />
+              {retroSitesSearch && (
+                <button onClick={() => setRetroSitesSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+            {filtered.map((game) => (
+              <div
+                key={game.id}
+                onClick={() => {
+                  sound.playClick();
+                  handleLaunchUniversalGame({
+                    id: game.id,
+                    title: game.title,
+                    url: game.url,
+                    thumbnail: game.thumbnail,
+                    source: game.source,
+                    category: game.category,
+                    frameFallback: true,
+                    fetchGame: false,
+                    sourceColor: game.source === 'Schplay' ? '#f59e0b' : '#10b981',
+                  });
+                }}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.08] hover:border-amber-500/40 bg-white/[0.03] hover:bg-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-lg hover:shadow-amber-900/20"
+              >
+                <div className="relative aspect-[16/10] w-full bg-[#0a0c16] overflow-hidden flex items-center justify-center">
+                  <img
+                    src={game.thumbnail}
+                    alt={game.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06070d] via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-mono font-bold bg-black/60 backdrop-blur-md border border-white/10 text-white/90 uppercase">
+                    {game.source}
+                  </span>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                    <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-600/40 transform scale-75 group-hover:scale-100 transition-transform">
+                      <Play size={16} className="ml-0.5 fill-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 flex flex-col justify-between flex-1">
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">
+                      {game.title}
+                    </h4>
+                    <p className="text-[10px] text-white/40 truncate mt-0.5">
+                      {game.description}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    <span className="text-[10px] text-amber-400 font-medium flex items-center gap-1">
+                      <Play size={10} /> Play Game
+                    </span>
+                    <span className="text-[9px] font-mono text-white/30">{game.category}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Source Theme Colors Mapping
   const SOURCE_COLOR_MAP: Record<string, string> = {
     'Godly OS': '#c084fc',
@@ -1801,6 +3115,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     Seraph: '#8b5cf6',
     Truffled: '#d946ef',
     DuckMath: '#eab308',
+    GameMonetize: '#ff5722',
+    HTMLGames: '#10b981',
+    MadKidGames: '#3b82f6',
+    CoolDude2349: '#8b5cf6',
+    'Julian Games': '#ec4899',
+    Schplay: '#f59e0b',
+    SerpGames: '#10b981',
     Selenite: '#6366f1',
     Bloxy: '#ef4444',
     'Mini JS Games Hub': '#14b8a6',
@@ -2636,11 +3957,17 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 }}
               >
                 {!isEcoMode && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />}
-                {activeTab === 'all' && `${(catalogGames.length || 28534).toLocaleString()}+ All Sources Combined`}
+                {activeTab === 'all' && `${(catalogGames.length || 31053).toLocaleString()}+ All Sources Combined`}
                 {activeTab === 'other' && `${(otherSourcesGames.length || 5551).toLocaleString()} Other Playables (${otherSourceNames.length} Sources)`}
                 {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab) && (
                   `${(gamesBySource[MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.sourceKey]?.length || MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.count).toLocaleString()} Games • ${MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!.name}`
                 )}
+                {activeTab === 'gamemonetize' && '~15,800 GameMonetize Live CDN'}
+                {activeTab === 'htmlgames' && `${htmlGamesList.length.toLocaleString()} HTMLGames Catalog`}
+                {activeTab === 'madkidgames' && `${madKidList.length} MadKidGames Vault`}
+                {activeTab === 'cooldude' && `${coolDudeList.length} CoolDude2349 Offline Pack`}
+                {activeTab === 'julian' && `${julianList.length} Julian Lockibarra Games`}
+                {activeTab === 'retrosites' && 'Retro Sites Hub (Schplay & SerpGames)'}
                 {activeTab === 'sixkho' && `${sixKhoGames.length} 6kh0 Projects`}
                 {activeTab === 'ynrbsu' && `${ynrbsuGames.length} Ynrbsu Arcade`}
                 {activeTab === 'vault' && `${vaultGames.length > 0 ? vaultGames.length : '1,567'} Vault`}
@@ -2730,6 +4057,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               const counts = {
                 all: sourceOptions.filter((s) => s.id !== 'all').length,
                 major: sourceOptions.filter((s) => s.group === 'major').length,
+                publishers: sourceOptions.filter((s) => s.group === 'publishers').length,
                 core: sourceOptions.filter((s) => s.group === 'core').length,
                 consoles: sourceOptions.filter((s) => s.group === 'consoles').length,
                 other: sourceOptions.filter((s) => s.group === 'other').length,
@@ -2779,6 +4107,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                       [
                         { id: 'all', label: `All (${counts.all})` },
                         { id: 'major', label: `Major (${counts.major})` },
+                        { id: 'publishers', label: `Publishers (${counts.publishers})` },
                         { id: 'core', label: `Core (${counts.core})` },
                         { id: 'consoles', label: `Consoles (${counts.consoles})` },
                         { id: 'other', label: `Other (${counts.other})` },
@@ -2929,6 +4258,12 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             {activeTab === 'sixkho' && renderSixKhoView()}
             {activeTab === 'ynrbsu' && renderYnrbsuView()}
             {activeTab === 'nettleweb' && renderNettleWebView()}
+            {activeTab === 'gamemonetize' && renderGameMonetizeView()}
+            {activeTab === 'htmlgames' && renderHtmlGamesView()}
+            {activeTab === 'madkidgames' && renderMadKidView()}
+            {activeTab === 'cooldude' && renderCoolDudeView()}
+            {activeTab === 'julian' && renderJulianView()}
+            {activeTab === 'retrosites' && renderRetroSitesView()}
 
             {/* =========================================================================
                 TAB 1: LOCAL GAME VAULT (1,567 Games from /home/dono/Downloads/Game Files/)

@@ -396,6 +396,7 @@ export interface MajorSourceMeta {
 }
 
 export const MAJOR_SOURCES_CONFIG: MajorSourceMeta[] = [
+  { id: 'gamemonetize', sourceKey: 'GameMonetize', name: 'GameMonetize CDN', badge: '15,800+ Games', count: 15800, repo: 'GameMonetize Feed & CDN', repoUrl: 'https://gamemonetize.com', color: '#ff5722', desc: 'Direct public JSON feed with ~15,800 live embeddable HTML5 titles' },
   { id: 'nebula', sourceKey: 'Nebula', name: 'Nebula CDN', badge: '3,062 Games', count: 3062, repo: 'GoatTech-42/NEBULA-CDN', repoUrl: 'https://github.com/GoatTech-42/NEBULA-CDN', color: '#818cf8', desc: 'Massive unblocked HTML5 game repository & CDN mirror' },
   { id: 'ugs', sourceKey: 'UGS', name: 'UGS Library', badge: '2,823 Games', count: 2823, repo: 'bubbls/ugs-singlefile', repoUrl: 'https://github.com/bubbls/ugs-singlefile', color: '#38bdf8', desc: 'Single-file optimized unblocked games archive' },
   { id: 'js13kgames', sourceKey: 'js13kGames', name: 'js13kGames', badge: '2,800 Games', count: 2800, repo: 'js13kGames/games', repoUrl: 'https://github.com/js13kGames/games', color: '#facc15', desc: 'Ultra-lightweight 13kB game jam masterpieces' },
@@ -1586,15 +1587,14 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
     ...MAJOR_SOURCES_CONFIG.map(s => ({
       id: s.id,
       name: s.name,
-      badge: `${(gamesBySource[s.sourceKey]?.length || s.count).toLocaleString()} Games`,
-      icon: <Rocket size={14} />,
+      badge: s.id === 'gamemonetize' ? '15,800+ Games' : `${(gamesBySource[s.sourceKey]?.length || s.count).toLocaleString()} Games`,
+      icon: s.id === 'gamemonetize' ? <Flame size={14} /> : <Rocket size={14} />,
       desc: s.desc,
       color: s.color,
       group: 'major' as const,
     })),
 
     // Web Publishers & Curated Repos
-    { id: 'gamemonetize', name: 'GameMonetize CDN', badge: '15,800+ Games', icon: <Flame size={14} />, desc: 'Public HTML5 live feed with instant embeddable CDN games', color: '#ff5722', group: 'publishers' },
     { id: 'htmlgames', name: 'HTMLGames Catalog', badge: `${htmlGamesList.length.toLocaleString()} Games`, icon: <Sparkles size={14} />, desc: 'Public index with free embeddable HTML5 games across all genres', color: '#10b981', group: 'publishers' },
     { id: 'madkidgames', name: 'MadKidGames Vault', badge: `${madKidList.length} Games`, icon: <Globe size={14} />, desc: 'Sitemap unblocked HTML5 arcade collection with native popout', color: '#3b82f6', group: 'publishers' },
     { id: 'cooldude', name: 'CoolDude Offline Pack', badge: `${coolDudeList.length} Games`, icon: <Box size={14} />, desc: 'Offline standalone single-file HTML5 arcade preservation pack', color: '#8b5cf6', group: 'publishers' },
@@ -2094,12 +2094,21 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               <input
                 type="text"
                 value={gmSearch}
-                onChange={(e) => setGmSearch(e.target.value)}
+                onChange={(e) => {
+                  setGmSearch(e.target.value);
+                  setGmPage(1);
+                }}
                 placeholder="Search GameMonetize..."
                 className="w-full pl-9 pr-8 py-1.5 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-orange-500/50"
               />
               {gmSearch && (
-                <button onClick={() => setGmSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <button
+                  onClick={() => {
+                    setGmSearch('');
+                    setGmPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                >
                   <X size={12} />
                 </button>
               )}
@@ -2147,6 +2156,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               onClick={() => {
                 sound.playClick();
                 setGmCategory(cat);
+                setGmPage(1);
               }}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all border ${
                 gmCategory === cat
@@ -3438,13 +3448,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 <input
                   type="text"
                   value={majorSourceSearch}
-                  onChange={(e) => setMajorSourceSearch(e.target.value)}
+                  onChange={(e) => {
+                    setMajorSourceSearch(e.target.value);
+                    setMajorSourcePage(1);
+                  }}
                   placeholder={`Search ${rawGames.length.toLocaleString()} ${meta.name} games...`}
                   className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
                 />
                 {majorSourceSearch && (
                   <button
-                    onClick={() => setMajorSourceSearch('')}
+                    onClick={() => {
+                      setMajorSourceSearch('');
+                      setMajorSourcePage(1);
+                    }}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                   >
                     <X size={13} />
@@ -3457,7 +3473,10 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 <ArrowUpDown size={13} className="text-white/40" />
                 <select
                   value={majorSourceSort}
-                  onChange={(e) => setMajorSourceSort(e.target.value as SortOption)}
+                  onChange={(e) => {
+                    setMajorSourceSort(e.target.value as SortOption);
+                    setMajorSourcePage(1);
+                  }}
                   className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
                 >
                   <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
@@ -3531,13 +3550,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <input
                     type="text"
                     value={otherSearch}
-                    onChange={(e) => setOtherSearch(e.target.value)}
+                    onChange={(e) => {
+                      setOtherSearch(e.target.value);
+                      setOtherPage(1);
+                    }}
                     placeholder="Search across other sources..."
                     className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
                   />
                   {otherSearch && (
                     <button
-                      onClick={() => setOtherSearch('')}
+                      onClick={() => {
+                        setOtherSearch('');
+                        setOtherPage(1);
+                      }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                     >
                       <X size={13} />
@@ -3549,7 +3574,10 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <ArrowUpDown size={13} className="text-white/40" />
                   <select
                     value={otherSort}
-                    onChange={(e) => setOtherSort(e.target.value as SortOption)}
+                    onChange={(e) => {
+                      setOtherSort(e.target.value as SortOption);
+                      setOtherPage(1);
+                    }}
                     className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
                   >
                     <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
@@ -3568,7 +3596,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 <Filter size={11} /> Filter:
               </span>
               <button
-                onClick={() => { sound.playClick(); setOtherSubFilter('all'); }}
+                onClick={() => { sound.playClick(); setOtherSubFilter('all'); setOtherPage(1); }}
                 className={`px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
                   otherSubFilter === 'all'
                     ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
@@ -3584,7 +3612,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                 return (
                   <button
                     key={name}
-                    onClick={() => { sound.playClick(); setOtherSubFilter(name); }}
+                    onClick={() => { sound.playClick(); setOtherSubFilter(name); setOtherPage(1); }}
                     className={`flex items-center gap-1 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
                       isSelected
                         ? 'text-white border-white/40 shadow-sm'
@@ -3668,13 +3696,19 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <input
                     type="text"
                     value={allSearch}
-                    onChange={(e) => setAllSearch(e.target.value)}
-                    placeholder="Search 28,000+ games..."
+                    onChange={(e) => {
+                      setAllSearch(e.target.value);
+                      setAllPage(1);
+                    }}
+                    placeholder={`Search ${(catalogGames.length || 31053).toLocaleString()}+ games...`}
                     className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-white/[0.06] border border-white/10 text-white placeholder-white/30 outline-none focus:border-purple-500/50 transition-all"
                   />
                   {allSearch && (
                     <button
-                      onClick={() => setAllSearch('')}
+                      onClick={() => {
+                        setAllSearch('');
+                        setAllPage(1);
+                      }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
                     >
                       <X size={13} />
@@ -3687,6 +3721,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   onClick={() => {
                     sound.playClick();
                     setIsDeduplicated(!isDeduplicated);
+                    setAllPage(1);
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm ${
                     isDeduplicated
@@ -3695,12 +3730,12 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   }`}
                   title={
                     isDeduplicated
-                      ? 'Duplicates removed across all 64 repositories (10,872 unique titles). Click to view all mirror copies.'
+                      ? 'Duplicates removed across all repositories. Click to view all mirror copies.'
                       : 'Showing all mirror copies. Click to deduplicate.'
                   }
                 >
                   <Sparkles size={13} className={isDeduplicated ? 'text-purple-300' : 'text-white/40'} />
-                  <span>{isDeduplicated ? '10.9K Unique' : 'All 28.5K Mirrors'}</span>
+                  <span>{isDeduplicated ? '11.8K Unique' : `${(catalogGames.length || 31053).toLocaleString()} Mirrors`}</span>
                   <span
                     className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
                       isDeduplicated
@@ -3724,7 +3759,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                     <Filter size={13} className="text-purple-400 shrink-0" />
                     <span className="truncate max-w-[130px]">
                       {allSourceFilter === 'all'
-                        ? `All Sources (${isDeduplicated ? '10.9K' : '28.5K'})`
+                        ? `All Sources (${isDeduplicated ? '11.8K' : `${(catalogGames.length || 31053).toLocaleString()}`})`
                         : `${allSourceFilter} (${(gamesBySource[allSourceFilter]?.length || 0).toLocaleString()})`}
                     </span>
                     <ChevronDown
@@ -3775,6 +3810,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                           onClick={() => {
                             sound.playClick();
                             setAllSourceFilter('all');
+                            setAllPage(1);
                             setIsAllSourcePickerOpen(false);
                             setAllSourcePickerSearch('');
                           }}
@@ -3790,25 +3826,56 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-mono text-white/40">
-                              {isDeduplicated ? '10,854' : catalogGames.length.toLocaleString()}
+                              {isDeduplicated ? '11,824' : (catalogGames.length || 31053).toLocaleString()}
                             </span>
                             {allSourceFilter === 'all' && <Check size={13} className="text-purple-400" />}
                           </div>
                         </button>
+
+                        {/* Direct Jump to GameMonetize Live CDN */}
+                        {(!allSourcePickerSearch || 'gamemonetize 15800 cdn live'.includes(allSourcePickerSearch.toLowerCase().trim())) && (
+                          <button
+                            onClick={() => {
+                              sound.playClick();
+                              setActiveTab('gamemonetize');
+                              setIsAllSourcePickerOpen(false);
+                              setAllSourcePickerSearch('');
+                            }}
+                            className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all text-left bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-white font-medium"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Flame size={14} className="text-orange-400 fill-orange-400" />
+                              <span>GameMonetize Live CDN</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-mono text-orange-300 font-bold">
+                                15,800+
+                              </span>
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-orange-500/30 text-orange-200 uppercase font-mono">
+                                Live Feed
+                              </span>
+                            </div>
+                          </button>
+                        )}
 
                         {allUniqueSources
                           .filter((src) =>
                             src.toLowerCase().includes(allSourcePickerSearch.toLowerCase().trim())
                           )
                           .map((src) => {
-                            const count = gamesBySource[src]?.length || 0;
+                            const count = src === 'GameMonetize' ? 15800 : (gamesBySource[src]?.length || 0);
                             const isSelected = allSourceFilter === src;
                             return (
                               <button
                                 key={src}
                                 onClick={() => {
                                   sound.playClick();
-                                  setAllSourceFilter(src);
+                                  if (src === 'GameMonetize') {
+                                    setActiveTab('gamemonetize');
+                                  } else {
+                                    setAllSourceFilter(src);
+                                    setAllPage(1);
+                                  }
                                   setIsAllSourcePickerOpen(false);
                                   setAllSourcePickerSearch('');
                                 }}
@@ -3842,7 +3909,10 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                   <ArrowUpDown size={13} className="text-white/40" />
                   <select
                     value={allSort}
-                    onChange={(e) => setAllSort(e.target.value as SortOption)}
+                    onChange={(e) => {
+                      setAllSort(e.target.value as SortOption);
+                      setAllPage(1);
+                    }}
                     className="bg-transparent border-0 outline-none text-white text-xs cursor-pointer font-medium"
                   >
                     <option value="name_asc" className="bg-[#0b0c1c] text-white">Title (A → Z)</option>
@@ -3859,22 +3929,40 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
               <span className="text-[10px] font-mono uppercase text-white/30 tracking-wider shrink-0 mr-1">Quick Select:</span>
               <button
-                onClick={() => { sound.playClick(); setAllSourceFilter('all'); }}
+                onClick={() => { sound.playClick(); setAllSourceFilter('all'); setAllPage(1); }}
                 className={`px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
                   allSourceFilter === 'all'
                     ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
                     : 'bg-white/[0.04] text-white/70 hover:text-white border-white/10'
                 }`}
               >
-                All Combined ({isDeduplicated ? '10.9K' : '28.5K'})
+                All Combined ({isDeduplicated ? '11.8K' : `${(catalogGames.length || 31053).toLocaleString()}`})
               </button>
-              {MAJOR_SOURCES_CONFIG.slice(0, 8).map((s) => {
+              {/* GameMonetize 1-Click Tab Switch */}
+              <button
+                onClick={() => { sound.playClick(); setActiveTab('gamemonetize'); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border bg-orange-500/15 hover:bg-orange-500/25 border-orange-500/40 text-orange-300"
+              >
+                <Flame size={12} className="text-orange-400 fill-orange-400" />
+                <span>GameMonetize</span>
+                <span className="text-[9.5px] font-mono text-orange-200 bg-orange-500/20 px-1 rounded">15.8K Live</span>
+              </button>
+              {/* HTMLGames 1-Click Tab Switch */}
+              <button
+                onClick={() => { sound.playClick(); setActiveTab('htmlgames'); }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300"
+              >
+                <Sparkles size={12} className="text-emerald-400" />
+                <span>HTMLGames</span>
+                <span className="text-[9.5px] font-mono text-emerald-200 bg-emerald-500/20 px-1 rounded">1,249</span>
+              </button>
+              {MAJOR_SOURCES_CONFIG.filter(s => s.id !== 'gamemonetize').slice(0, 7).map((s) => {
                 const count = gamesBySource[s.sourceKey]?.length || s.count;
                 const isSelected = allSourceFilter === s.sourceKey;
                 return (
                   <button
                     key={s.id}
-                    onClick={() => { sound.playClick(); setAllSourceFilter(s.sourceKey); }}
+                    onClick={() => { sound.playClick(); setAllSourceFilter(s.sourceKey); setAllPage(1); }}
                     className={`flex items-center gap-1 px-3 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
                       isSelected
                         ? 'text-white border-white/40 shadow-sm'
@@ -4045,7 +4133,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               const q = dropdownSourceSearch.trim().toLowerCase();
               const filteredSources = sourceOptions.filter((opt) => {
                 if (opt.id === 'all') return false;
-                if (dropdownCategory !== 'all' && opt.group !== dropdownCategory) return false;
+                if (dropdownCategory !== 'all') {
+                  if (dropdownCategory === 'publishers' && opt.id === 'gamemonetize') {
+                    // Show in publishers as well
+                  } else if (opt.group !== dropdownCategory) {
+                    return false;
+                  }
+                }
                 if (!q) return true;
                 return (
                   opt.name.toLowerCase().includes(q) ||
@@ -4057,7 +4151,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
               const counts = {
                 all: sourceOptions.filter((s) => s.id !== 'all').length,
                 major: sourceOptions.filter((s) => s.group === 'major').length,
-                publishers: sourceOptions.filter((s) => s.group === 'publishers').length,
+                publishers: sourceOptions.filter((s) => s.group === 'publishers' || s.id === 'gamemonetize').length,
                 core: sourceOptions.filter((s) => s.group === 'core').length,
                 consoles: sourceOptions.filter((s) => s.group === 'consoles').length,
                 other: sourceOptions.filter((s) => s.group === 'other').length,
@@ -4159,7 +4253,7 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs font-bold text-white">All Sources Combined</span>
                               <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold">
-                                {isDeduplicated ? '10.9K Unique' : '28.5K Mirrors'}
+                                {isDeduplicated ? '11.8K Unique' : `${(catalogGames.length || 31053).toLocaleString()} Mirrors`}
                               </span>
                               {isDeduplicated && (
                                 <span className="text-[8.5px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-medium">
@@ -4243,6 +4337,77 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
         </div>
       </div>
 
+      {/* ── Top Header Quick Source Navigation Strip ── */}
+      {!activeUniversalGame && (
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-white/[0.06] bg-[#070812] overflow-x-auto no-scrollbar shrink-0 text-xs z-10">
+          <span className="text-[10px] font-mono uppercase text-white/40 tracking-wider shrink-0 mr-1 flex items-center gap-1">
+            <Layers size={11} className="text-purple-400" /> Sources:
+          </span>
+          {[
+            { id: 'all' as const, name: 'All Combined', badge: isDeduplicated ? '11.8K' : `${(catalogGames.length || 31053).toLocaleString()}`, icon: <Sparkles size={12} />, color: '#a855f7' },
+            { id: 'gamemonetize' as const, name: 'GameMonetize', badge: '15.8K Live', icon: <Flame size={12} />, color: '#ff5722' },
+            { id: 'htmlgames' as const, name: 'HTMLGames', badge: '1.2K', icon: <Sparkles size={12} />, color: '#10b981' },
+            { id: 'nebula' as const, name: 'Nebula CDN', badge: '3.1K', icon: <Rocket size={12} />, color: '#818cf8' },
+            { id: 'ugs' as const, name: 'UGS Library', badge: '2.8K', icon: <Box size={12} />, color: '#38bdf8' },
+            { id: 'js13kgames' as const, name: 'js13kGames', badge: '2.8K', icon: <Target size={12} />, color: '#facc15' },
+            { id: 'godly-os' as const, name: 'Godly OS', badge: '2.4K', icon: <Star size={12} />, color: '#c084fc' },
+            { id: 'cvk' as const, name: "Chicken King's Vault", badge: '1.7K', icon: <Target size={12} />, color: '#fb923c' },
+            { id: 'hydra' as const, name: 'Hydra Network', badge: '1.6K', icon: <Rocket size={12} />, color: '#4ade80' },
+            { id: 'vault' as const, name: 'Local Vault', badge: '1.5K', icon: <Layers size={12} />, color: '#ec4899' },
+            { id: 'cloudmoon' as const, name: 'CloudMoon', badge: '60FPS', icon: <Cloud size={12} />, color: '#06b6d4' },
+            { id: 'retrosites' as const, name: 'Retro Sites', badge: 'Schplay', icon: <Compass size={12} />, color: '#f59e0b' },
+            { id: 'eaglercraft' as const, name: 'Eaglercraft', badge: 'SMP', icon: <Box size={12} />, color: '#10b981' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  sound.playClick();
+                  setActiveTab(tab.id);
+                  setActiveVaultGame(null);
+                  setActiveUniversalGame(null);
+                  setActiveNowGGGame(null);
+                  setActiveGnGame(null);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-medium text-[11px] shrink-0 transition-all border ${
+                  isActive
+                    ? 'text-white border-white/40 shadow-sm'
+                    : 'text-white/60 hover:text-white border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06]'
+                }`}
+                style={{
+                  background: isActive ? `${tab.color}35` : undefined,
+                  borderColor: isActive ? `${tab.color}60` : undefined,
+                  color: isActive ? '#fff' : undefined,
+                }}
+              >
+                <span style={{ color: tab.color }}>{tab.icon}</span>
+                <span>{tab.name}</span>
+                <span
+                  className="text-[9px] font-mono px-1.5 py-0.2 rounded-md font-bold"
+                  style={{
+                    background: isActive ? `${tab.color}45` : 'rgba(255,255,255,0.06)',
+                    color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  {tab.badge}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => {
+              sound.playClick();
+              setIsSourceDropdownOpen(true);
+            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-white/50 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-[11px] font-medium shrink-0 transition-all ml-auto"
+          >
+            <span>All 33+ Sources</span>
+            <ChevronDown size={11} />
+          </button>
+        </div>
+      )}
+
       {/* ── Main App Content ── */}
       <div className={`flex-1 w-full min-h-0 relative overflow-hidden ${isEcoMode ? 'bg-[#06070c]' : 'bg-[#050508]'}`}>
         {/* Universal Sandboxed Game Player (Active Game from 6kh0, Ynrbsu, NettleWeb, or Catalog) */}
@@ -4252,13 +4417,13 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
           <>
             {activeTab === 'all' && renderAllSourcesView()}
             {activeTab === 'other' && renderOtherSourcesView()}
-            {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab) && (
+            {activeTab === 'gamemonetize' && renderGameMonetizeView()}
+            {MAJOR_SOURCES_CONFIG.some(s => s.id === activeTab && s.id !== 'gamemonetize') && (
               renderMajorSourceView(MAJOR_SOURCES_CONFIG.find(s => s.id === activeTab)!)
             )}
             {activeTab === 'sixkho' && renderSixKhoView()}
             {activeTab === 'ynrbsu' && renderYnrbsuView()}
             {activeTab === 'nettleweb' && renderNettleWebView()}
-            {activeTab === 'gamemonetize' && renderGameMonetizeView()}
             {activeTab === 'htmlgames' && renderHtmlGamesView()}
             {activeTab === 'madkidgames' && renderMadKidView()}
             {activeTab === 'cooldude' && renderCoolDudeView()}
@@ -4749,265 +4914,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
           </div>
         )}
 
-        {/* =========================================================================
-            TAB 2: GN-MATH SECONDARY GAME SOURCE (840 Integrated Cards)
-           ========================================================================= */}
-        {activeTab === 'gnmath' && (
-          <div className="w-full h-full flex flex-col overflow-hidden">
-            {activeGnGame ? (
-              /* Active GN-Math Game Player */
-              <div className="w-full h-full flex flex-col bg-black">
-                <div 
-                  className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] bg-[#09090fc0] backdrop-blur-xl flex-shrink-0 z-10"
-                  style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        sound.playClick();
-                        setActiveGnGame(null);
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white/80 hover:text-white bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.08] transition-all"
-                    >
-                      <ChevronLeft size={14} />
-                      Back to GN-Math Library
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white truncate max-w-xs sm:max-w-md">
-                        {activeGnGame.title}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.06] text-white/60 border border-white/[0.06] font-mono">
-                        {activeGnGame.author}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono hidden sm:inline">
-                        ● 60FPS Hardware Accel
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => {
-                        sound.playClick();
-                        if (activeGnGame) {
-                          handleLaunchGnGame(activeGnGame);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
-                      title="Reload Game"
-                    >
-                      <RotateCcw size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleFullscreenGame(gnFrameRef)}
-                      className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
-                      title="Fullscreen"
-                    >
-                      <Maximize2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        sound.playClick();
-                        if (gnHtmlContent) {
-                          const blob = new Blob([gnHtmlContent], { type: 'text/html; charset=utf-8' });
-                          const blobUrl = URL.createObjectURL(blob);
-                          window.open(blobUrl, '_blank');
-                        } else {
-                          window.open(encodeUvUrl(activeGnGame.url), '_blank');
-                        }
-                      }}
-                      className="p-1.5 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
-                      title="Popout Window"
-                    >
-                      <ExternalLink size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 w-full h-full relative bg-black flex items-center justify-center">
-                  {gnLoadingGame && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07070d] z-20">
-                      <div className="w-10 h-10 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin mb-3" />
-                      <span className="text-xs font-mono text-white/80 font-bold">Launching {activeGnGame.title}...</span>
-                      <span className="text-[11px] font-mono text-white/40 mt-1">Initializing Canvas &amp; WebGL Engine</span>
-                    </div>
-                  )}
-                  <iframe
-                    ref={gnFrameRef}
-                    key={gnRefreshKey}
-                    srcDoc={gnHtmlContent || undefined}
-                    src={!gnHtmlContent && !gnLoadingGame ? encodeUvUrl(activeGnGame.url) : undefined}
-                    title={activeGnGame.title}
-                    className="w-full h-full border-0 bg-black"
-                    sandbox="allow-scripts allow-forms allow-pointer-lock"
-                    allow="autoplay; fullscreen; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope"
-                  />
-                </div>
-              </div>
-            ) : (
-              /* GN-Math Catalog View with Integrated Cards */
-              <div className="flex-1 w-full h-full flex flex-col overflow-hidden">
-                <div className="p-4 pb-3 border-b border-white/[0.06] bg-[#08080f80] backdrop-blur-xl flex items-center justify-between gap-3 flex-shrink-0">
-                  <div className="relative flex-1 max-w-md">
-                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
-                    <input
-                      type="text"
-                      value={gnSearch}
-                      onChange={(e) => {
-                        setGnSearch(e.target.value);
-                        setGnPage(1);
-                      }}
-                      placeholder="Search 840 GN-Math games (e.g. OvO, Bowmasters, Drive Mad)..."
-                      className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-white/20 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-white/30 outline-none transition-all"
-                    />
-                    {gnSearch && (
-                      <button
-                        onClick={() => {
-                          setGnSearch('');
-                          setGnPage(1);
-                        }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-0.5"
-                      >
-                        <X size={13} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono text-white/50 bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                      {filteredGnMathGames.length.toLocaleString()} / {gnMathGames.length.toLocaleString()} GN-Math Games
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4">
-                  {gnLoading ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center py-20 text-white/50">
-                      <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mb-3" />
-                      <p className="text-xs font-mono">Loading GN-Math Game Library...</p>
-                    </div>
-                  ) : filteredGnMathGames.length === 0 ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center py-20 text-center text-white/50">
-                      <Sparkles size={36} className="text-white/20 mb-3" />
-                      <p className="text-sm font-semibold text-white/80">No GN-Math games found</p>
-                      <button
-                        onClick={() => setGnSearch('')}
-                        className="mt-4 px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-white transition-all"
-                      >
-                        Clear Search
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                      {paginatedGnGames.map((game) => (
-                        <div
-                          key={game.id}
-                          onClick={() => handleLaunchGnGame(game)}
-                          className="group relative flex flex-col justify-between p-2.5 rounded-2xl cursor-pointer transition-all duration-200 border"
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.025)',
-                            borderColor: 'rgba(255, 255, 255, 0.07)',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.borderColor = 'var(--accent-border)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.025)';
-                          }}
-                        >
-                          {/* Game Cover Art Image */}
-                          <div 
-                            className="w-full aspect-square rounded-xl flex items-center justify-center mb-2 relative overflow-hidden transition-all group-hover:scale-[1.02] bg-white/[0.02]"
-                          >
-                            <img
-                              src={game.cover}
-                              alt={game.title}
-                              loading="lazy"
-                              onError={(e) => {
-                                // Fallback if cover fails
-                                e.currentTarget.style.display = 'none';
-                              }}
-                              className="w-full h-full object-cover"
-                            />
-
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              style={{ background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(3px)' }}
-                            >
-                              <div 
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110"
-                                style={{ background: 'var(--accent)', boxShadow: '0 0 16px var(--accent-glow)' }}
-                              >
-                                <Play size={13} fill="currentColor" className="ml-0.5" />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Game Info */}
-                          <div>
-                            <h4 className="text-[12px] font-medium text-white/90 group-hover:text-white line-clamp-1 leading-tight">
-                              {game.title}
-                            </h4>
-                            <p className="text-[10px] text-white/40 truncate mt-0.5 font-mono">
-                              {game.author}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {totalGnPages > 1 && (
-                  <div className="px-4 py-2.5 border-t border-white/[0.06] bg-[#08080eb8] backdrop-blur-xl flex items-center justify-between flex-shrink-0">
-                    <span className="text-[11px] font-mono text-white/40">
-                      Showing {(gnPage - 1) * PAGE_SIZE + 1} - {Math.min(gnPage * PAGE_SIZE, filteredGnMathGames.length)} of {filteredGnMathGames.length}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => { sound.playClick(); setGnPage(1); }}
-                        disabled={gnPage === 1}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-mono text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition-all"
-                      >
-                        First
-                      </button>
-                      <button
-                        onClick={() => { sound.playClick(); setGnPage((p) => Math.max(1, p - 1)); }}
-                        disabled={gnPage === 1}
-                        className="p-1 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition-all"
-                      >
-                        <ChevronLeft size={15} />
-                      </button>
-                      <span className="text-[11px] font-mono px-3 py-1 text-white/80">
-                        Page {gnPage} of {totalGnPages}
-                      </span>
-                      <button
-                        onClick={() => { sound.playClick(); setGnPage((p) => Math.min(totalGnPages, p + 1)); }}
-                        disabled={gnPage === totalGnPages}
-                        className="p-1 rounded-lg text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition-all"
-                      >
-                        <ChevronRight size={15} />
-                      </button>
-                      <button
-                        onClick={() => { sound.playClick(); setGnPage(totalGnPages); }}
-                        disabled={gnPage === totalGnPages}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-mono text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition-all"
-                      >
-                        Last
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* =========================================================================
             TAB: ZEN GS (1,700+ Cloud Games Wall & Player)
@@ -5385,55 +5291,6 @@ export const GamesApp: React.FC<GamesAppProps> = ({ initialTab }) => {
           </div>
         )}
 
-        {/* =========================================================================
-            TAB 4: LUMIN GAMES SDK
-           ========================================================================= */}
-        <div className={`w-full h-full flex flex-col relative ${activeTab === 'lumin' ? 'flex' : 'hidden'}`}>
-          {/* Scrollable Lumin games container */}
-          <div className="flex-1 w-full overflow-y-auto overflow-x-hidden custom-scrollbar min-h-0 relative p-4">
-            <div
-              id="games-container"
-              ref={luminContainerRef}
-              className="w-full text-white min-h-[420px]"
-              style={{ minHeight: '100%', height: 'auto', overflowY: 'visible' }}
-            >
-              {luminStatus === 'loading' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/70 backdrop-blur-md z-10">
-                  <div 
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 animate-bounce shadow-xl border border-white/20"
-                    style={{ background: 'var(--accent)', boxShadow: '0 8px 32px var(--accent-glow)' }}
-                  >
-                    <Gamepad2 size={28} className="text-white" />
-                  </div>
-                  <h4 className="text-sm font-bold text-white mb-1">Initializing Lumin Games SDK...</h4>
-                  <p className="text-xs text-slate-400 max-w-sm">
-                    Connecting to jsDelivr Lumin engine with dark theme container...
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="px-5 py-2.5 bg-black/60 backdrop-blur-xl border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 flex-shrink-0 z-10">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Lumin Engine Active (#games-container)</span>
-            </div>
-            <div className="flex items-center gap-3 font-mono">
-              <span>Theme: Dark</span>
-              <span>Container: #games-container</span>
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  initLuminSDK(true);
-                }}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all flex items-center gap-1.5"
-              >
-                <RotateCcw size={12} /> Reload SDK
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* =========================================================================
             TAB 6: P2P WEBSIGHT / GAMEWEBSIGHT ENGINE (Bitbucket Raw Mirror)

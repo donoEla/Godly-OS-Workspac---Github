@@ -63,10 +63,11 @@ export const WindowManager: React.FC = () => {
     }
 
     const KNOWN_GAME_TABS = new Set([
-      'all', 'nebula', 'ugs', 'js13kgames', 'cvk', 'hydra', 'lumin', 'diesmos',
+      'all', 'gamemonetize', 'htmlgames', 'madkidgames', 'cooldude', 'julian', 'retrosites',
+      'nebula', 'ugs', 'js13kgames', 'godly-os', 'cvk', 'hydra', 'lumin', 'diesmos',
       'gnmath', 'ghostproxy', 'alexr', 'gamezone', 'petezah', 'daknux', 'seraph',
       'truffled', 'duckmath', 'vault', 'zengs', 'sixkho', 'ynrbsu', 'nettleweb',
-      'nowgg', 'p2p', 'emulator', 'eaglercraft', 'other'
+      'nowgg', 'cloudmoon', 'p2p', 'emulator', 'eaglercraft', 'other'
     ]);
 
     if (
